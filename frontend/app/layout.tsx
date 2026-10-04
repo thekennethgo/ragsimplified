@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import HealthBadge from "../components/HealthBadge";
 import Nav from "../components/Nav";
 import "./globals.css";
 
@@ -13,7 +14,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <Nav />
+        <header>
+          <Nav />
+          <HealthBadge />
+        </header>
         <main>{children}</main>
       </body>
     </html>
