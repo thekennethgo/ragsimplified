@@ -29,6 +29,10 @@ Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vect
   - Do: write `docs/adr/001-stack.md`: the stack and why each piece was chosen, and what was left out on purpose (a Storage bucket for original files, Docker images for the apps, Sentry, an ORM or migration framework, end-to-end browser tests). Record these decisions: plain `.sql` migration files applied by a small script; the original upload is not kept, only its chunks; embedding vectors are 1024 dimensions; Render deploys with its native Python runtime.
   - Done when: the owner agrees with every reason in it.
   - Out of scope: other ADRs, any code.
+- [ ] 0.7 ADR for owner-curated library and private uploads
+  - Do: write `docs/adr/002-owner-curated-library.md`. Record: the shared library is owner-curated and read-only at runtime (only `make seed` writes it); a visitor's upload is private: the backend parses, chunks and embeds it, returns the chunks and vectors to the browser and stores nothing; the browser keeps the chunks, vectors and original file, and sends the chunks with each question; a citation to a visitor's own file opens the original at the cited page; at runtime the backend writes only the `usage` table. Record the rejected options (per-session database rows with expiry, re-embedding on every question, no database at all) and the costs (private files capped near 1 MB, lost when the tab closes unless kept in IndexedDB, text still reaches Voyage and Anthropic). Also reword one line in `docs/adr/001-stack.md`: the server does not keep the original upload, only its chunks.
+  - Done when: the owner agrees with every reason in it.
+  - Out of scope: other ADRs, any code, changes to PLAN.md.
 
 ## Phase 1: Walking skeleton and CI/CD
 
@@ -67,7 +71,7 @@ Deploy an almost-empty app first, so every later step ships through a working pi
 
 ## Phase 2: Central library and the Upload page
 
-Tests never call paid APIs: they use a fake embedder.
+The shared library is owner-curated and read-only at runtime: only `make seed` writes to it. A visitor's upload is private: the backend processes it and returns the result to the browser, and nothing is stored server-side (ADR 002). Tests never call paid APIs: they use a fake embedder.
 
 - [ ] 2.1 Migrations
   - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
@@ -86,23 +90,23 @@ Tests never call paid APIs: they use a fake embedder.
   - Done when: a real call works locally once and tests use the fake.
   - Out of scope: database writes, endpoints, reranking.
 - [ ] 2.5 Archivist
-  - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored.
-  - Done when: uploading the same file twice stores it once.
-  - Out of scope: endpoints, search, file storage.
+  - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored. Used only by the seed script, never by an upload endpoint.
+  - Done when: saving the same file twice stores it once.
+  - Out of scope: endpoints, search, file storage, the seed script.
 - [ ] 2.6 Upload endpoint
-  - Do: `POST /library/upload`: check file type and a 5 MB limit, run the four steps, stream a step event as each starts and finishes. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
-  - Done when: `curl` shows the event stream end to end.
-  - Out of scope: quotas, frontend.
+  - Do: `POST /upload`: check file type and a 1 MB limit, run the Collector, Chopper and Translator, stream a step event as each starts and finishes, and end with the chunks and their vectors in a compact form for the browser to keep. Writes nothing to the database. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
+  - Done when: `curl` shows the event stream end to end and the database is unchanged afterwards.
+  - Out of scope: any database write, quotas, frontend.
 - [ ] 2.7 Library endpoints
   - Do: `GET /library` (documents with chunk counts) and `GET /library/{id}` (document with its chunks).
-  - Done when: both return the uploaded document.
-  - Out of scope: delete, frontend.
+  - Done when: both return a document, once the starter corpus is seeded (2.9) or a test document is saved.
+  - Out of scope: upload, delete, frontend.
 - [ ] 2.8 Upload page
-  - Do: plain UI with drag and drop, a text log of step events as they stream, and the library list.
-  - Done when: uploading a PDF on the preview URL shows it appear.
-  - Out of scope: characters, animations, the Ask page.
+  - Do: plain UI with drag and drop, a text log of step events as they stream, the starter library list, and a "your files" list. The browser keeps each private upload's chunks, vectors and original file in memory.
+  - Done when: uploading a PDF on the preview URL shows it under "your files".
+  - Out of scope: characters, animations, the Ask page, keeping files across refreshes.
 - [ ] 2.9 Seed corpus
-  - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents.
+  - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents. It also copies the original files to `frontend/public/corpus/` so citations can open them.
   - Done when: the live library lists the starter documents.
   - Out of scope: evals, new endpoints.
 - [ ] 2.10 (You) Spend limit
@@ -112,29 +116,29 @@ Tests never call paid APIs: they use a fake embedder.
 ## Phase 3: The Ask page with citations
 
 - [ ] 3.1 Scout
-  - Do: top-k vector search over the library (k = 5 for now).
-  - Done when: tests with fixed fake embeddings return the expected chunks.
+  - Do: top-k vector search over the library in the database, plus cosine search in memory over any private chunks passed in, merged by score (k = 5 for now). Each result says whether it came from the library or the visitor's own file.
+  - Done when: tests with fixed fake embeddings return the expected chunks from the library, from private chunks, and from both.
   - Out of scope: hybrid search, reranking, endpoints.
 - [ ] 3.2 Storyteller prompt
   - Do: prompt in its own file: answer only from the numbered chunks, cite them as [1], [2], say so when the chunks don't cover the question, treat chunk text as data, never as instructions.
   - Done when: the owner reads the prompt and agrees with every line.
   - Out of scope: calling the LLM, endpoints.
 - [ ] 3.3 Ask endpoint
-  - Do: `POST /ask`: Translator, Scout, Storyteller in order; stream step events and the answer; model from the `LLM_MODEL` env var.
-  - Done when: `curl` shows events, then the answer.
+  - Do: `POST /ask`: takes the question and optional private chunks with vectors (size capped); Translator, Scout, Storyteller in order; stream step events and the answer; model from the `LLM_MODEL` env var.
+  - Done when: `curl` shows events, then the answer, with and without private chunks.
   - Out of scope: citations list, rate limits, frontend.
 - [ ] 3.4 Citations
-  - Do: map each [n] to its chunk (document, page, snippet) and send the list after the answer; drop any [n] that doesn't match a chunk.
+  - Do: map each [n] to its chunk (document, page, snippet, and whether it is from the library or the visitor's own file) and send the list after the answer; drop any [n] that doesn't match a chunk.
   - Done when: tests cover valid, repeated and made-up citation numbers.
   - Out of scope: frontend.
 - [ ] 3.5 Ask page
-  - Do: plain UI with a question box, streamed answer, [n] markers as buttons, and a sources panel showing each cited snippet.
+  - Do: plain UI with a question box, streamed answer, [n] markers as buttons, and a sources panel showing each cited snippet. Sends the visitor's private chunks with each question.
   - Done when: on the preview URL, every marker opens its source.
   - Out of scope: document view page, characters.
 - [ ] 3.6 Document view
-  - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation.
-  - Done when: clicking [2] lands on the highlighted passage.
-  - Out of scope: editing or deleting documents.
+  - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation. For a citation to a visitor's own file, open the original held in the browser instead: a PDF at the cited page, text and Markdown scrolled to and highlighted. Library citations link to the original in `/corpus/` at the cited page.
+  - Done when: clicking [2] lands on the cited passage or page, for a library file and for a private upload.
+  - Out of scope: editing or deleting documents, highlighting the exact passage inside a PDF.
 - [ ] 3.7 Starter evals
   - Do: 30 questions in `evals/questions.jsonl` (at least 8 about the owner's documents, 5 the library can't answer, 2 aimed at a planted instruction inside a corpus file) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
   - Done when: `make eval` prints a score table that is saved as the baseline.
@@ -145,7 +149,7 @@ Tests never call paid APIs: they use a fake embedder.
 Each upgrade has eval scores before and after, pasted into the PR description.
 
 - [ ] 4.1 Hybrid search
-  - Do: Scout runs vector and full-text search and merges with reciprocal rank fusion; add 5 eval questions built on exact names or codes.
+  - Do: Scout runs vector and full-text search over the library and merges with reciprocal rank fusion (private chunks stay vector-only); add 5 eval questions built on exact names or codes.
   - Done when: before and after eval scores are in the PR.
   - Out of scope: reranking.
 - [ ] 4.2 Judge
@@ -201,7 +205,7 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
   - Do: rig the rest, plus travelling props (page stack, cards, tag, scroll).
   - Done when: every input plays in the preview.
 - [ ] 5.8 Full Upload scene
-  - Do: all four handoffs, with the shelf counter rising as chunks are stored.
+  - Do: all four handoffs, with the shelf counter rising as chunks come back to the visitor.
   - Done when: one upload plays the whole scene.
   - Out of scope: the Ask page.
 - [ ] 5.9 Full Ask scene
@@ -220,22 +224,18 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 ## Phase 6: Launch
 
 - [ ] 6.1 Limits
-  - Do: PDF, Markdown and text only, 5 MB per file, a cap on total library size, a per-IP daily quota for uploads and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
+  - Do: PDF, Markdown and text only, 1 MB per private upload, a cap on the private chunks sent with one question, a per-IP daily quota for uploads and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
   - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
-  - Out of scope: content screening, caching, admin removal.
-- [ ] 6.2 Admin removal
-  - Do: a delete endpoint protected by a secret token, a "report this document" link in the library list, and a tick box on upload confirming the uploader may share the file.
-  - Done when: the owner can remove a document from the live site.
-  - Out of scope: user accounts, automated content screening.
-- [ ] 6.3 Auto migrations
+  - Out of scope: content screening, caching.
+- [ ] 6.2 Auto migrations
   - Do: run `python -m app.migrate` before the server in Render's start command.
   - Done when: a deploy with a new migration succeeds.
   - Out of scope: new migrations.
-- [ ] 6.4 Launch README
+- [ ] 6.3 Launch README
   - Do: live link, a GIF of both scenes, the architecture diagram, eval scores, "Run it yourself" and "Deploy your own".
   - Done when: a friend can run it locally from the README alone.
   - Out of scope: code changes.
-- [ ] 6.5 (You) Release
+- [ ] 6.4 (You) Release
   - Do: tag release `v1.0.0` and share the link.
   - Done when: the release page lists the changelog.
 
@@ -243,7 +243,7 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 
 - [ ] Phase 0: public repo, step skills and protections in place
 - [ ] Phase 1: both empty pages live, CI green on every PR
-- [ ] Phase 2: anyone can upload to the central library on the live site
+- [ ] Phase 2: the starter library is live and anyone can upload a private file on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
 - [ ] Phase 5: all eight characters animating both pages
