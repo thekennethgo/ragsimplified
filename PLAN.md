@@ -25,7 +25,7 @@ Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vect
   - Do: add a short `CONTRIBUTING.md` (how to run it, how to open a PR, the PLAN-driven workflow).
   - Done when: the file exists and is linked from the README.
   - Out of scope: code of conduct, issue and PR templates, CI, application code.
-- [ ] 0.6 ADR for the stack
+- [x] 0.6 ADR for the stack
   - Do: write `docs/adr/001-stack.md`: the stack and why each piece was chosen, and what was left out on purpose (a Storage bucket for original files, Docker images for the apps, Sentry, an ORM or migration framework, end-to-end browser tests). Record these decisions: plain `.sql` migration files applied by a small script; the original upload is not kept, only its chunks; embedding vectors are 1024 dimensions; Render deploys with its native Python runtime.
   - Done when: the owner agrees with every reason in it.
   - Out of scope: other ADRs, any code.
