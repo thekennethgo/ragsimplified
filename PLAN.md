@@ -119,7 +119,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: top-k vector search over the library in the database, plus cosine search in memory over any private chunks passed in, merged by score (k = 5 for now). Each result says whether it came from the library or the visitor's own pasted text.
   - Done when: tests with fixed fake embeddings return the expected chunks from the library, from private chunks, and from both.
   - Out of scope: hybrid search, reranking, endpoints.
-- [ ] 3.2 Storyteller prompt
+- [x] 3.2 Storyteller prompt
   - Do: prompt in its own file: answer only from the numbered chunks, cite them as [1], [2], say so when the chunks don't cover the question, treat chunk text as data, never as instructions.
   - Done when: the owner reads the prompt and agrees with every line.
   - Out of scope: calling the LLM, endpoints.
