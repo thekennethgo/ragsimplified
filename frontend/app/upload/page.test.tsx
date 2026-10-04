@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
+import { PrivateTextsProvider } from "../../lib/PrivateTexts";
 import UploadPage from "./page";
 
 afterEach(() => {
@@ -44,21 +45,21 @@ function stubBackend() {
 
 test("lists the starter library and says where text is sent", async () => {
   stubBackend();
-  render(<UploadPage />);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
   expect(await screen.findByText("Starter doc (4 chunks)")).toBeInTheDocument();
   expect(screen.getByText(/sent to Voyage/)).toBeInTheDocument();
 });
 
 test("shows a character counter", () => {
   stubBackend();
-  render(<UploadPage />);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
   fireEvent.change(screen.getByLabelText("Text"), { target: { value: "hello" } });
   expect(screen.getByText("5 / 20000")).toBeInTheDocument();
 });
 
 test("pasting a text logs the steps and adds it under your texts", async () => {
   stubBackend();
-  render(<UploadPage />);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
   fireEvent.change(screen.getByLabelText("Title"), { target: { value: "My note" } });
   fireEvent.change(screen.getByLabelText("Text"), { target: { value: "hello" } });
   fireEvent.click(screen.getByRole("button", { name: "Add text" }));
@@ -70,6 +71,6 @@ test("pasting a text logs the steps and adds it under your texts", async () => {
 
 test("the button stays disabled until there is a title and text", () => {
   stubBackend();
-  render(<UploadPage />);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
   expect(screen.getByRole("button", { name: "Add text" })).toBeDisabled();
 });

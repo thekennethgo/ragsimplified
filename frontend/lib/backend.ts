@@ -10,8 +10,13 @@ export type StepEvent = {
   data?: Record<string, unknown>;
 };
 
+/** A piece of the answer text, sent by /ask as it is written. */
+export type DeltaEvent = { step: "answer"; delta: string };
+
+export type StreamEvent = StepEvent | DeltaEvent;
+
 /** Read a newline-delimited JSON response as a stream of events. */
-export async function* readEvents(response: Response): AsyncGenerator<StepEvent> {
+export async function* readEvents(response: Response): AsyncGenerator<StreamEvent> {
   if (!response.body) return;
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -23,8 +28,8 @@ export async function* readEvents(response: Response): AsyncGenerator<StepEvent>
     const lines = buffer.split("\n");
     buffer = lines.pop() ?? "";
     for (const line of lines) {
-      if (line.trim()) yield JSON.parse(line) as StepEvent;
+      if (line.trim()) yield JSON.parse(line) as StreamEvent;
     }
   }
-  if (buffer.trim()) yield JSON.parse(buffer) as StepEvent;
+  if (buffer.trim()) yield JSON.parse(buffer) as StreamEvent;
 }
