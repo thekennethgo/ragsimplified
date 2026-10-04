@@ -1,6 +1,6 @@
 # ADR 003: Provider-agnostic LLM client, free Gemini model for development
 
-Status: Proposed
+Status: Accepted
 
 ## Context
 
