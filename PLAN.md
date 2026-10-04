@@ -89,7 +89,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: Voyage embedding client (voyage-4, `output_dimension=1024`) with batching and retries, plus a fake embedder for tests; key from env.
   - Done when: a real call works locally once and tests use the fake.
   - Out of scope: database writes, endpoints, reranking.
-- [ ] 2.5 Archivist
+- [x] 2.5 Archivist
   - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored. Used only by the seed script, never by an upload endpoint.
   - Done when: saving the same file twice stores it once.
   - Out of scope: endpoints, search, file storage, the seed script.
