@@ -22,7 +22,7 @@ ragsimplified is a public, forkable RAG web app: an Upload page and an Ask page 
 ### Recorded decisions
 
 - **Migrations are plain `.sql` files applied by a small script.** The files live in `backend/migrations/`, numbered in order. `backend/app/migrate.py` applies the ones not yet applied and records them, so `make migrate` brings any database (local, CI or live) to the same structure. This keeps the local, CI and Supabase databases from drifting apart as the schema changes.
-- **The original upload is not kept, only its chunks.** The app never needs the original file once it has been parsed and chunked, and the citations point to chunks. This avoids file storage entirely.
+- **The server does not keep the original upload, only its chunks.** The app never needs the original file once it has been parsed and chunked, and the citations point to chunks. This avoids file storage entirely.
 - **Embedding vectors are 1024 dimensions.** voyage-4 is called with `output_dimension=1024`, and the `chunks.embedding` column is `vector(1024)`. Changing it later means a new migration and re-embedding everything.
 - **Render deploys with its native Python runtime.** The build is `pip install -r requirements.txt` and the start command runs `uvicorn`. No container is needed.
 
@@ -36,8 +36,8 @@ ragsimplified is a public, forkable RAG web app: an Upload page and an Ask page 
 
 ## Consequences
 
-- Chunks cannot be re-made from the originals. A change to chunking means re-uploading the documents (or re-seeding the starter corpus).
+- Chunks cannot be re-made from the originals. A change to chunking means re-seeding the starter corpus.
 - Render's free web service sleeps when idle, so the first request after a quiet spell is slow.
 - We own about 30 lines of migration script and write the SQL by hand. That is small now but would not scale to a large schema.
-- Supabase, Voyage, Langfuse and Render free tiers have limits. The per-IP quotas and the library size cap (step 6.1) exist to stay inside them.
+- Supabase, Voyage, Langfuse and Render free tiers have limits. The per-IP daily quotas and the pasted-text size limit (step 6.1) exist to stay inside them.
 - The vector size is fixed at 1024, so switching embedding models later means re-embedding.
