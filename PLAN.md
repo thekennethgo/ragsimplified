@@ -29,8 +29,8 @@ Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vect
   - Do: write `docs/adr/001-stack.md`: the stack and why each piece was chosen, and what was left out on purpose (a Storage bucket for original files, Docker images for the apps, Sentry, an ORM or migration framework, end-to-end browser tests). Record these decisions: plain `.sql` migration files applied by a small script; the original upload is not kept, only its chunks; embedding vectors are 1024 dimensions; Render deploys with its native Python runtime.
   - Done when: the owner agrees with every reason in it.
   - Out of scope: other ADRs, any code.
-- [ ] 0.7 ADR for owner-curated library and private uploads
-  - Do: write `docs/adr/002-owner-curated-library.md`. Record: the shared library is owner-curated and read-only at runtime (only `make seed` writes it); a visitor's upload is private: the backend parses, chunks and embeds it, returns the chunks and vectors to the browser and stores nothing; the browser keeps the chunks, vectors and original file, and sends the chunks with each question; a citation to a visitor's own file opens the original at the cited page; at runtime the backend writes only the `usage` table. Record the rejected options (per-session database rows with expiry, re-embedding on every question, no database at all) and the costs (private files capped near 1 MB, lost when the tab closes unless kept in IndexedDB, text still reaches Voyage and Anthropic). Also reword one line in `docs/adr/001-stack.md`: the server does not keep the original upload, only its chunks.
+- [x] 0.7 ADR for owner-curated library and private pasted text
+  - Do: write `docs/adr/002-owner-curated-library.md`. Record: the shared library is owner-curated and read-only at runtime (only `make seed` writes it, and the Collector is used only there); visitors paste text instead of uploading files, with a title and a 20,000-character limit, so the backend never parses a visitor's file; a visitor's pasted text is private: the backend chunks and embeds it, returns the chunks and vectors to the browser and stores nothing; the browser keeps the text, chunks and vectors, and sends the chunks with each question; a citation to a visitor's own text highlights the exact passage in the browser; at runtime the backend writes only the `usage` table. Record the rejected options (file uploads of a few MB, per-session database rows with expiry, re-embedding on every question, no database at all) and the costs (no PDF upload and no page numbers for private text, text lost when the tab closes unless kept in IndexedDB, text still reaches Voyage and Anthropic). Also reword one line in `docs/adr/001-stack.md`: the server does not keep the original upload, only its chunks.
   - Done when: the owner agrees with every reason in it.
   - Out of scope: other ADRs, any code, changes to PLAN.md.
 
@@ -71,14 +71,14 @@ Deploy an almost-empty app first, so every later step ships through a working pi
 
 ## Phase 2: Central library and the Upload page
 
-The shared library is owner-curated and read-only at runtime: only `make seed` writes to it. A visitor's upload is private: the backend processes it and returns the result to the browser, and nothing is stored server-side (ADR 002). Tests never call paid APIs: they use a fake embedder.
+The shared library is owner-curated and read-only at runtime: only `make seed` writes to it. A visitor's pasted text is private: the backend chunks and embeds it, returns the result to the browser, and nothing is stored server-side (ADR 002). Visitors paste text instead of uploading files. Tests never call paid APIs: they use a fake embedder.
 
 - [ ] 2.1 Migrations
   - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
   - Done when: `make migrate` works against the local database and runs in CI against the service container.
   - Out of scope: any code that reads or writes the tables.
 - [ ] 2.2 Collector
-  - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files.
+  - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files. Used by the seed script only; visitors paste text.
   - Done when: tests pass on all three file types.
   - Out of scope: chunking, embeddings, database writes, endpoints.
 - [ ] 2.3 Chopper
@@ -94,7 +94,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Done when: saving the same file twice stores it once.
   - Out of scope: endpoints, search, file storage, the seed script.
 - [ ] 2.6 Upload endpoint
-  - Do: `POST /upload`: check file type and a 1 MB limit, run the Collector, Chopper and Translator, stream a step event as each starts and finishes, and end with the chunks and their vectors in a compact form for the browser to keep. Writes nothing to the database. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
+  - Do: `POST /upload`: takes a `title` and `text` (at most 20,000 characters), runs the Chopper and Translator, streams a step event as each starts and finishes, and ends with the chunks and their vectors in a compact form for the browser to keep. Writes nothing to the database. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
   - Done when: `curl` shows the event stream end to end and the database is unchanged afterwards.
   - Out of scope: any database write, quotas, frontend.
 - [ ] 2.7 Library endpoints
@@ -102,9 +102,9 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Done when: both return a document, once the starter corpus is seeded (2.9) or a test document is saved.
   - Out of scope: upload, delete, frontend.
 - [ ] 2.8 Upload page
-  - Do: plain UI with drag and drop, a text log of step events as they stream, the starter library list, and a "your files" list. The browser keeps each private upload's chunks, vectors and original file in memory.
-  - Done when: uploading a PDF on the preview URL shows it under "your files".
-  - Out of scope: characters, animations, the Ask page, keeping files across refreshes.
+  - Do: plain UI with a title field, a text box with a character counter (20,000 maximum), a text log of step events as they stream, the starter library list, and a "your texts" list. The browser keeps each private text, its chunks and vectors in memory. The page says the text is sent to Voyage and Anthropic.
+  - Done when: pasting a text on the preview URL shows it under "your texts".
+  - Out of scope: characters, animations, the Ask page, file upload, keeping texts across refreshes.
 - [ ] 2.9 Seed corpus
   - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents. It also copies the original files to `frontend/public/corpus/` so citations can open them.
   - Done when: the live library lists the starter documents.
@@ -116,7 +116,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
 ## Phase 3: The Ask page with citations
 
 - [ ] 3.1 Scout
-  - Do: top-k vector search over the library in the database, plus cosine search in memory over any private chunks passed in, merged by score (k = 5 for now). Each result says whether it came from the library or the visitor's own file.
+  - Do: top-k vector search over the library in the database, plus cosine search in memory over any private chunks passed in, merged by score (k = 5 for now). Each result says whether it came from the library or the visitor's own pasted text.
   - Done when: tests with fixed fake embeddings return the expected chunks from the library, from private chunks, and from both.
   - Out of scope: hybrid search, reranking, endpoints.
 - [ ] 3.2 Storyteller prompt
@@ -128,7 +128,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Done when: `curl` shows events, then the answer, with and without private chunks.
   - Out of scope: citations list, rate limits, frontend.
 - [ ] 3.4 Citations
-  - Do: map each [n] to its chunk (document, page, snippet, and whether it is from the library or the visitor's own file) and send the list after the answer; drop any [n] that doesn't match a chunk.
+  - Do: map each [n] to its chunk (document, page, snippet, and whether it is from the library or the visitor's own pasted text) and send the list after the answer; drop any [n] that doesn't match a chunk.
   - Done when: tests cover valid, repeated and made-up citation numbers.
   - Out of scope: frontend.
 - [ ] 3.5 Ask page
@@ -136,8 +136,8 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Done when: on the preview URL, every marker opens its source.
   - Out of scope: document view page, characters.
 - [ ] 3.6 Document view
-  - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation. For a citation to a visitor's own file, open the original held in the browser instead: a PDF at the cited page, text and Markdown scrolled to and highlighted. Library citations link to the original in `/corpus/` at the cited page.
-  - Done when: clicking [2] lands on the cited passage or page, for a library file and for a private upload.
+  - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation. For a citation to a visitor's own pasted text, show that text from the browser with the cited passage scrolled to and highlighted. Library citations link to the original in `/corpus/` at the cited page.
+  - Done when: clicking [2] lands on the cited passage or page, for a library document and for a pasted text.
   - Out of scope: editing or deleting documents, highlighting the exact passage inside a PDF.
 - [ ] 3.7 Starter evals
   - Do: 30 questions in `evals/questions.jsonl` (at least 8 about the owner's documents, 5 the library can't answer, 2 aimed at a planted instruction inside a corpus file) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
@@ -224,7 +224,7 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 ## Phase 6: Launch
 
 - [ ] 6.1 Limits
-  - Do: PDF, Markdown and text only, 1 MB per private upload, a cap on the private chunks sent with one question, a per-IP daily quota for uploads and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
+  - Do: a 20,000-character limit on pasted text, a cap on the private chunks sent with one question, a per-IP daily quota for pastes and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
   - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
   - Out of scope: content screening, caching.
 - [ ] 6.2 Auto migrations
@@ -243,7 +243,7 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 
 - [ ] Phase 0: public repo, step skills and protections in place
 - [ ] Phase 1: both empty pages live, CI green on every PR
-- [ ] Phase 2: the starter library is live and anyone can upload a private file on the live site
+- [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
 - [ ] Phase 5: all eight characters animating both pages
