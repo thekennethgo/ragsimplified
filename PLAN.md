@@ -73,7 +73,7 @@ Deploy an almost-empty app first, so every later step ships through a working pi
 
 The shared library is owner-curated and read-only at runtime: only `make seed` writes to it. A visitor's pasted text is private: the backend chunks and embeds it, returns the result to the browser, and nothing is stored server-side (ADR 002). Visitors paste text instead of uploading files. Tests never call paid APIs: they use a fake embedder.
 
-- [ ] 2.1 Migrations
+- [x] 2.1 Migrations
   - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
   - Done when: `make migrate` works against the local database and runs in CI against the service container.
   - Out of scope: any code that reads or writes the tables.

@@ -36,6 +36,7 @@ jobs:
           pip install -r requirements.txt
           ruff check .
           ruff format --check .
+          python -m app.migrate
           pytest
 
       - uses: actions/setup-node@v4
