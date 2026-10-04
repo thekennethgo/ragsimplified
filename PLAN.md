@@ -46,15 +46,15 @@ Deploy an almost-empty app first, so every later step ships through a working pi
   - Do: Next.js app in `frontend/` with a shared nav and two empty pages, `/upload` and `/ask`; one Vitest test.
   - Done when: both pages load locally.
   - Out of scope: backend calls, styling beyond the basics, Makefile, CI.
-- [ ] 1.3 Local database
+- [x] 1.3 Local database
   - Do: `docker-compose.yml` with one service: Postgres using the `pgvector/pgvector:pg16` image, port and credentials matching `.env.example`.
   - Done when: `docker compose up` starts a database where `CREATE EXTENSION vector;` succeeds.
   - Out of scope: migrations, schema, containers for the apps, deployment config.
-- [ ] 1.4 Makefile and formatter hook
+- [x] 1.4 Makefile and formatter hook
   - Do: `Makefile` with `format`, `lint`, `test` targets for both apps; add the PostToolUse `make format` hook to `.claude/settings.json`.
   - Done when: `make lint` and `make test` pass and editing a file reformats it.
   - Out of scope: CI, new tests.
-- [ ] 1.5 CI
+- [x] 1.5 CI
   - Do: GitHub Actions `ci.yml`: lint and tests for both apps on every PR, plus `tsc` for the frontend and a `pgvector/pgvector:pg16` service container for later database tests. Then mark the CI job as a required check on `main`.
   - Done when: this step's PR shows green checks.
   - Out of scope: Python type checking, eval workflow, deploys.
