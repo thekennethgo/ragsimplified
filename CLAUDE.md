@@ -13,7 +13,7 @@ A public, forkable RAG web app: an Upload page and an Ask page sharing one centr
 - Never commit secrets. Read every key from environment variables.
 
 ## Stack
-Next.js (frontend/) on Vercel, FastAPI (backend/) on Render, Supabase Postgres + pgvector + Storage, Voyage AI embeddings and reranker, Claude Haiku 4.5 via `LLM_MODEL` env var, Langfuse, Sentry, Rive for characters.
+Next.js (frontend/) on Vercel, FastAPI (backend/) on Render, Supabase Postgres + pgvector (chunks only, no file storage), Voyage AI embeddings and reranker, Claude Haiku 4.5 via `LLM_MODEL` env var, Langfuse, Rive for characters.
 
 ## Layout
 `frontend/`, `backend/app/pipeline/` (one module per character), `evals/`, `docs/adr/`, `corpus/`.

@@ -4,6 +4,8 @@ Source of truth for the build. Work the first unticked step only. Background, ar
 
 Steps marked **(You)** are done by hand, outside Claude Code. Every other step is one `/next-step` cycle, one commit, one PR that the owner reviews and merges.
 
+Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vector + keyword search, rerank, cited answers, evals, tracing) and nothing else. Free tiers wherever possible; the only paid service is Claude Haiku, capped by a spend limit.
+
 ## Phase 0: Repo and Claude Code setup
 
 - [x] 0.1 (You) Repo
@@ -12,19 +14,19 @@ Steps marked **(You)** are done by hand, outside Claude Code. Every other step i
 - [x] 0.2 (You) Claude Code setup
   - Do: add `CLAUDE.md`, `PLAN.md` and the two step skills; push.
   - Done when: `/next-step` appears in Claude Code.
-- [ ] 0.3 (You) Repo protections
-  - Do: turn on secret scanning and push protection; protect `main` (require a PR and passing checks, block force pushes).
+- [x] 0.3 (You) Repo protections
+  - Do: turn on secret scanning and push protection; protect `main` (require a PR, block force pushes). Required status checks are added in 1.5, once CI exists.
   - Done when: a direct push to `main` is rejected.
-- [ ] 0.4 Folder layout
+- [x] 0.4 Folder layout
   - Do: create `frontend/`, `backend/app/pipeline/`, `evals/`, `docs/adr/`, `corpus/`; add `.env.example` listing every variable with fake values.
   - Done when: folders exist and `.env` is git-ignored.
   - Out of scope: any application code, `CONTRIBUTING.md`, templates.
-- [ ] 0.5 Community files
-  - Do: add `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and issue and PR templates.
-  - Done when: templates show when opening a test issue.
-  - Out of scope: CI, application code.
+- [ ] 0.5 Contributing guide
+  - Do: add a short `CONTRIBUTING.md` (how to run it, how to open a PR, the PLAN-driven workflow).
+  - Done when: the file exists and is linked from the README.
+  - Out of scope: code of conduct, issue and PR templates, CI, application code.
 - [ ] 0.6 ADR for the stack
-  - Do: write `docs/adr/001-stack.md`: the stack and why each piece was chosen.
+  - Do: write `docs/adr/001-stack.md`: the stack and why each piece was chosen, and what was left out on purpose (a Storage bucket for original files, Docker images for the apps, Sentry, an ORM or migration framework, end-to-end browser tests). Record these decisions: plain `.sql` migration files applied by a small script; the original upload is not kept, only its chunks; embedding vectors are 1024 dimensions; Render deploys with its native Python runtime.
   - Done when: the owner agrees with every reason in it.
   - Out of scope: other ADRs, any code.
 
@@ -33,27 +35,27 @@ Steps marked **(You)** are done by hand, outside Claude Code. Every other step i
 Deploy an almost-empty app first, so every later step ships through a working pipeline.
 
 - [ ] 1.1 Backend skeleton
-  - Do: FastAPI app in `backend/` with `GET /health`, one pytest test, Ruff config.
+  - Do: FastAPI app in `backend/` with `GET /health`, one pytest test, Ruff config, `requirements.txt`.
   - Done when: `pytest` passes and `/health` returns ok locally.
-  - Out of scope: database, Dockerfile, Makefile, CI.
+  - Out of scope: database, Makefile, CI, Docker.
 - [ ] 1.2 Frontend skeleton
   - Do: Next.js app in `frontend/` with a shared nav and two empty pages, `/upload` and `/ask`; one Vitest test.
   - Done when: both pages load locally.
   - Out of scope: backend calls, styling beyond the basics, Makefile, CI.
-- [ ] 1.3 Docker Compose
-  - Do: `docker-compose.yml` running frontend, backend and Postgres with the pgvector extension.
-  - Done when: `docker compose up` starts all three.
-  - Out of scope: migrations, schema, deployment config.
+- [ ] 1.3 Local database
+  - Do: `docker-compose.yml` with one service: Postgres using the `pgvector/pgvector:pg16` image, port and credentials matching `.env.example`.
+  - Done when: `docker compose up` starts a database where `CREATE EXTENSION vector;` succeeds.
+  - Out of scope: migrations, schema, containers for the apps, deployment config.
 - [ ] 1.4 Makefile and formatter hook
   - Do: `Makefile` with `format`, `lint`, `test` targets for both apps; add the PostToolUse `make format` hook to `.claude/settings.json`.
   - Done when: `make lint` and `make test` pass and editing a file reformats it.
   - Out of scope: CI, new tests.
 - [ ] 1.5 CI
-  - Do: GitHub Actions `ci.yml`: lint, typecheck and tests for both apps on every PR.
+  - Do: GitHub Actions `ci.yml`: lint and tests for both apps on every PR, plus `tsc` for the frontend and a `pgvector/pgvector:pg16` service container for later database tests. Then mark the CI job as a required check on `main`.
   - Done when: this step's PR shows green checks.
-  - Out of scope: eval workflow, deploys, CodeQL.
+  - Out of scope: Python type checking, eval workflow, deploys.
 - [ ] 1.6 (You) Hosting
-  - Do: connect `frontend/` to Vercel; create a Supabase dev project; deploy `backend/` to Render from its Dockerfile with env vars set.
+  - Do: connect `frontend/` to Vercel; create one Supabase project (free) and enable the `vector` extension; deploy `backend/` to Render's free web service with the native Python runtime (build `pip install -r requirements.txt`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`) with env vars set.
   - Done when: Vercel posts a preview URL on PRs and live `/health` works.
 - [ ] 1.7 Health badge
   - Do: frontend shows a "library online" badge from the backend's `/health`; backend URL comes from an env var.
@@ -68,8 +70,8 @@ Deploy an almost-empty app first, so every later step ships through a working pi
 Tests never call paid APIs: they use a fake embedder.
 
 - [ ] 2.1 Migrations
-  - Do: migrations for `documents` (title, filename, content hash, storage path, uploaded at) and `chunks` (document ID, position, page, heading, text, embedding vector sized to the embedding model, full-text column).
-  - Done when: the migration runs locally and in CI.
+  - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
+  - Done when: `make migrate` works against the local database and runs in CI against the service container.
   - Out of scope: any code that reads or writes the tables.
 - [ ] 2.2 Collector
   - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files.
@@ -80,17 +82,17 @@ Tests never call paid APIs: they use a fake embedder.
   - Done when: unit tests cover empty input, one huge section and a code block.
   - Out of scope: embeddings, database writes.
 - [ ] 2.4 Translator
-  - Do: Voyage embedding client with batching and retries, plus a fake embedder for tests; key from env.
+  - Do: Voyage embedding client (voyage-4, `output_dimension=1024`) with batching and retries, plus a fake embedder for tests; key from env.
   - Done when: a real call works locally once and tests use the fake.
   - Out of scope: database writes, endpoints, reranking.
 - [ ] 2.5 Archivist
-  - Do: save a document and its chunks in one transaction; skip duplicates by content hash; store the original file in Supabase Storage.
+  - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored.
   - Done when: uploading the same file twice stores it once.
-  - Out of scope: endpoints, search.
+  - Out of scope: endpoints, search, file storage.
 - [ ] 2.6 Upload endpoint
-  - Do: `POST /library/upload`: check file type and a 5 MB limit, run the four steps, stream a step event as each starts and finishes.
+  - Do: `POST /library/upload`: check file type and a 5 MB limit, run the four steps, stream a step event as each starts and finishes. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
   - Done when: `curl` shows the event stream end to end.
-  - Out of scope: quotas, screening, frontend.
+  - Out of scope: quotas, frontend.
 - [ ] 2.7 Library endpoints
   - Do: `GET /library` (documents with chunk counts) and `GET /library/{id}` (document with its chunks).
   - Done when: both return the uploaded document.
@@ -100,12 +102,12 @@ Tests never call paid APIs: they use a fake embedder.
   - Done when: uploading a PDF on the preview URL shows it appear.
   - Out of scope: characters, animations, the Ask page.
 - [ ] 2.9 Seed corpus
-  - Do: `make seed` loads an openly licensed starter corpus from `corpus/` so the library is never empty.
+  - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents.
   - Done when: the live library lists the starter documents.
   - Out of scope: evals, new endpoints.
-- [ ] 2.10 (You) Playwright MCP
-  - Do: add the Playwright MCP (and the Supabase MCP for the dev project, read-only, optional).
-  - Done when: `/mcp` lists them.
+- [ ] 2.10 (You) Spend limit
+  - Do: set a monthly spend limit (about $10) in the Anthropic Console, before any endpoint that calls Claude goes live.
+  - Done when: the limit shows in the Console.
 
 ## Phase 3: The Ask page with citations
 
@@ -134,7 +136,7 @@ Tests never call paid APIs: they use a fake embedder.
   - Done when: clicking [2] lands on the highlighted passage.
   - Out of scope: editing or deleting documents.
 - [ ] 3.7 Starter evals
-  - Do: 30 questions in `evals/questions.jsonl` (5 the library can't answer) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
+  - Do: 30 questions in `evals/questions.jsonl` (at least 8 about the owner's documents, 5 the library can't answer, 2 aimed at a planted instruction inside a corpus file) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
   - Done when: `make eval` prints a score table that is saved as the baseline.
   - Out of scope: LLM-judged metrics, CI workflow.
 
@@ -151,32 +153,29 @@ Each upgrade has eval scores before and after, pasted into the PR description.
   - Done when: before and after eval scores are in the PR.
   - Out of scope: Fact-Checker.
 - [ ] 4.3 Fact-Checker
-  - Do: one Haiku call checks each cited claim against its chunk and flags unsupported ones; off by default, behind a toggle.
+  - Do: one Haiku call checks each cited claim against its chunk and flags unsupported ones, as a reusable function; off by default, behind a toggle.
   - Done when: a planted wrong claim gets flagged.
   - Out of scope: frontend display beyond the toggle, LLM-judged evals.
 - [ ] 4.4 LLM-judged evals
-  - Do: faithfulness and answer correctness scored by Haiku, added to `make eval`.
+  - Do: faithfulness (reusing the Fact-Checker function) and answer correctness scored by Haiku, added to `make eval`.
   - Done when: scores look sensible on 3 answers the owner grades.
   - Out of scope: CI workflow.
 - [ ] 4.5 Evals in CI
-  - Do: `evals.yml` runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails below baseline, skips when secrets are missing (forks).
+  - Do: `evals.yml` runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when a score drops more than 5 points below baseline (LLM scores are noisy), skips when secrets are missing (forks).
   - Done when: a PR with a deliberately bad prompt fails.
   - Out of scope: new eval questions.
 - [ ] 4.6 Tracing
   - Do: send every upload and question to Langfuse with a span per character (inputs, outputs, time, tokens, cost).
   - Done when: one trace shows all steps of a question.
-  - Out of scope: Sentry.
-- [ ] 4.7 Repo upkeep
-  - Do: Dependabot, CodeQL, and release-please for changelogs from conventional commits.
-  - Done when: a release PR appears after the next merge.
-  - Out of scope: application code.
-- [ ] 4.8 (You) Claude Code GitHub Action
-  - Do: optional; install the Action limited to your own comments for `@claude` PR reviews.
-  - Done when: `@claude review` replies on a PR.
+  - Out of scope: error monitoring.
+- [ ] 4.7 Dependabot
+  - Do: one `.github/dependabot.yml` covering pip, npm and GitHub Actions.
+  - Done when: Dependabot shows as enabled in the repo's security tab.
+  - Out of scope: CodeQL, release automation, application code.
 
 ## Phase 5: Cartoon characters (Figma and Rive)
 
-Rive convention for every character (write it into `CLAUDE.md` before 5.5): one `.riv` file per character in `frontend/public/characters/`; one state machine named `main`; inputs `working` (boolean), `handoff` (trigger), `done` (trigger), `confused` (trigger).
+Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.riv` file per character in `frontend/public/characters/`; one state machine named `main`; inputs `working` (boolean), `handoff` (trigger), `done` (trigger), `confused` (trigger).
 
 - [ ] 5.1 (You) Figma characters
   - Do: style sheet (palette, line weight) and all 8 characters with separate layers for moving parts.
@@ -188,7 +187,7 @@ Rive convention for every character (write it into `CLAUDE.md` before 5.5): one 
   - Do: install the Figma plugin in Claude Code.
   - Done when: `/mcp` shows Figma connected.
 - [ ] 5.4 Static layouts
-  - Do: build both page layouts from the Figma frames with static character images, keeping all existing behaviour.
+  - Do: add the Rive convention above to `CLAUDE.md`; build both page layouts from the Figma frames with static character images, keeping all existing behaviour.
   - Done when: pages match Figma and existing tests still pass.
   - Out of scope: Rive, animations.
 - [ ] 5.5 (You) Rive: first two characters
@@ -220,42 +219,23 @@ Rive convention for every character (write it into `CLAUDE.md` before 5.5): one 
 
 ## Phase 6: Launch
 
-- [ ] 6.1 Upload limits
-  - Do: PDF, Markdown and text only, 5 MB per file, a per-IP daily quota, and a cap on total library size.
-  - Done when: each limit returns a clear error on the page.
-  - Out of scope: screening, Ask limits.
-- [ ] 6.2 Upload screening
-  - Do: before storing, one Haiku call flags spam or abusive content; uploaders tick a box confirming they may share the file.
-  - Done when: a spam test file is rejected.
-  - Out of scope: admin removal.
-- [ ] 6.3 Admin removal
-  - Do: a delete endpoint protected by a secret token, and a "report this document" link in the library list.
+- [ ] 6.1 Limits
+  - Do: PDF, Markdown and text only, 5 MB per file, a cap on total library size, a per-IP daily quota for uploads and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
+  - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
+  - Out of scope: content screening, caching, admin removal.
+- [ ] 6.2 Admin removal
+  - Do: a delete endpoint protected by a secret token, a "report this document" link in the library list, and a tick box on upload confirming the uploader may share the file.
   - Done when: the owner can remove a document from the live site.
-  - Out of scope: user accounts.
-- [ ] 6.4 Ask limits
-  - Do: per-IP rate limit (20 questions a day), question length cap, and a cache for repeated questions.
-  - Done when: the 21st question in a day is politely refused.
-  - Out of scope: upload limits.
-- [ ] 6.5 (You) Spend limit and production DB
-  - Do: set a monthly spend limit in the Anthropic Console; create the production Supabase project and point Render at it.
-  - Done when: the limit shows in the Console.
-- [ ] 6.6 Auto migrations
-  - Do: run migrations automatically on deploy, before the new backend starts.
+  - Out of scope: user accounts, automated content screening.
+- [ ] 6.3 Auto migrations
+  - Do: run `python -m app.migrate` before the server in Render's start command.
   - Done when: a deploy with a new migration succeeds.
   - Out of scope: new migrations.
-- [ ] 6.7 Monitoring
-  - Do: Sentry in both apps and an uptime check on `/health`.
-  - Done when: a test error shows up in Sentry.
-  - Out of scope: tracing changes.
-- [ ] 6.8 End-to-end tests
-  - Do: Playwright tests for upload, ask and citation clicks, added to CI.
-  - Done when: tests pass in CI against the preview URL.
-  - Out of scope: new features.
-- [ ] 6.9 Launch README
+- [ ] 6.4 Launch README
   - Do: live link, a GIF of both scenes, the architecture diagram, eval scores, "Run it yourself" and "Deploy your own".
   - Done when: a friend can run it locally from the README alone.
   - Out of scope: code changes.
-- [ ] 6.10 (You) Release
+- [ ] 6.5 (You) Release
   - Do: tag release `v1.0.0` and share the link.
   - Done when: the release page lists the changelog.
 
@@ -267,4 +247,4 @@ Rive convention for every character (write it into `CLAUDE.md` before 5.5): one 
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
 - [ ] Phase 5: all eight characters animating both pages
-- [ ] Phase 6: limits, monitoring and README done; v1.0.0 released
+- [ ] Phase 6: limits and README done; v1.0.0 released
