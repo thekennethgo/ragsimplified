@@ -77,19 +77,19 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
   - Done when: `make migrate` works against the local database and runs in CI against the service container.
   - Out of scope: any code that reads or writes the tables.
-- [ ] 2.2 Collector
+- [x] 2.2 Collector
   - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files. Used by the seed script only; visitors paste text.
   - Done when: tests pass on all three file types.
   - Out of scope: chunking, embeddings, database writes, endpoints.
-- [ ] 2.3 Chopper
+- [x] 2.3 Chopper
   - Do: split parsed text into ~500-token chunks with a 50-token overlap, keeping page and heading.
   - Done when: unit tests cover empty input, one huge section and a code block.
   - Out of scope: embeddings, database writes.
-- [ ] 2.4 Translator
+- [x] 2.4 Translator
   - Do: Voyage embedding client (voyage-4, `output_dimension=1024`) with batching and retries, plus a fake embedder for tests; key from env.
   - Done when: a real call works locally once and tests use the fake.
   - Out of scope: database writes, endpoints, reranking.
-- [ ] 2.5 Archivist
+- [x] 2.5 Archivist
   - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored. Used only by the seed script, never by an upload endpoint.
   - Done when: saving the same file twice stores it once.
   - Out of scope: endpoints, search, file storage, the seed script.
