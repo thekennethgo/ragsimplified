@@ -228,6 +228,10 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
   - Do: reduce-motion mode that swaps animations for a step list, alt text, keyboard access.
   - Done when: the site is usable with motion off and with keyboard only.
   - Out of scope: new features.
+- [ ] 5.12 Source side panel
+  - Do: clicking a `[n]` marker or "Open source" on the Ask page opens a side panel next to the answer, without leaving the page. The panel shows the whole original so the visitor can scroll around and check it: a library Markdown or text document as text, a library PDF in the browser's PDF viewer opened at the cited page, and a pasted text from the browser's memory. In a text source the cited passage is highlighted and scrolled into view, as in step 3.6. The panel has next and previous buttons to move between the answer's citations, a close button, and a link to the full page (`/library/[id]`, `/texts/[index]`).
+  - Done when: on the live site, every kind of source (Markdown, PDF, pasted text) opens in the panel with its cited passage visible, the answer stays on screen, and the panel can be opened, moved between citations and closed with the keyboard only.
+  - Out of scope: highlighting the exact passage inside a PDF (ADR 002), editing or deleting documents, new backend endpoints.
 
 ## Phase 6: Launch
 
@@ -261,5 +265,5 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
-- [ ] Phase 5: all eight characters animating both pages
+- [ ] Phase 5: all eight characters animating both pages, and a source side panel
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
