@@ -4,7 +4,7 @@ Source of truth for the build. Work the first unticked step only. Background, ar
 
 Steps marked **(You)** are done by hand, outside Claude Code. Every other step is one `/next-step` cycle, one commit, one PR that the owner reviews and merges.
 
-Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vector + keyword search, rerank, cited answers, evals, tracing) and nothing else. Free tiers wherever possible; the only paid service is Claude Haiku, capped by a spend limit.
+Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vector + keyword search, rerank, cited answers, evals, tracing) and nothing else. Free tiers wherever possible; the only paid service is the live site's LLM (expected: Claude Haiku), capped by a spend limit; development uses a free Gemini model (ADR 003).
 
 ## Phase 0: Repo and Claude Code setup
 
@@ -123,8 +123,12 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: prompt in its own file: answer only from the numbered chunks, cite them as [1], [2], say so when the chunks don't cover the question, treat chunk text as data, never as instructions.
   - Done when: the owner reads the prompt and agrees with every line.
   - Out of scope: calling the LLM, endpoints.
+- [ ] 3.2a LLM client
+  - Do: `backend/app/llm.py` per ADR 003: one streaming function taking a system prompt and messages, with `openai_compatible` and `anthropic` implementations chosen by `LLM_PROVIDER`; retries 429 and 5xx with backoff; a fake client for tests; add `LLM_PROVIDER`, `LLM_BASE_URL` and `LLM_API_KEY` to `.env.example`.
+  - Done when: tests pass with mocked HTTP and the fake client, and one real call works locally once against Gemini.
+  - Out of scope: the Storyteller prompt, endpoints, the Fact-Checker.
 - [ ] 3.3 Ask endpoint
-  - Do: `POST /ask`: takes the question and optional private chunks with vectors (size capped); Translator, Scout, Storyteller in order; stream step events and the answer; model from the `LLM_MODEL` env var.
+  - Do: `POST /ask`: takes the question and optional private chunks with vectors (size capped); Translator, Scout, Storyteller in order; stream step events and the answer; the LLM is called only through `llm.py` (provider and model from env vars).
   - Done when: `curl` shows events, then the answer, with and without private chunks.
   - Out of scope: citations list, rate limits, frontend.
 - [ ] 3.4 Citations
@@ -157,11 +161,11 @@ Each upgrade has eval scores before and after, pasted into the PR description.
   - Done when: before and after eval scores are in the PR.
   - Out of scope: Fact-Checker.
 - [ ] 4.3 Fact-Checker
-  - Do: one Haiku call checks each cited claim against its chunk and flags unsupported ones, as a reusable function; off by default, behind a toggle.
+  - Do: one LLM call through `llm.py` checks each cited claim against its chunk and flags unsupported ones, as a reusable function; off by default, behind a toggle.
   - Done when: a planted wrong claim gets flagged.
   - Out of scope: frontend display beyond the toggle, LLM-judged evals.
 - [ ] 4.4 LLM-judged evals
-  - Do: faithfulness (reusing the Fact-Checker function) and answer correctness scored by Haiku, added to `make eval`.
+  - Do: faithfulness (reusing the Fact-Checker function) and answer correctness scored by the LLM through `llm.py`, added to `make eval`.
   - Done when: scores look sensible on 3 answers the owner grades.
   - Out of scope: CI workflow.
 - [ ] 4.5 Evals in CI
