@@ -97,7 +97,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: `POST /upload`: takes a `title` and `text` (at most 20,000 characters), runs the Chopper and Translator, streams a step event as each starts and finishes, and ends with the chunks and their vectors in a compact form for the browser to keep. Writes nothing to the database. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
   - Done when: `curl` shows the event stream end to end and the database is unchanged afterwards.
   - Out of scope: any database write, quotas, frontend.
-- [ ] 2.7 Library endpoints
+- [x] 2.7 Library endpoints
   - Do: `GET /library` (documents with chunk counts) and `GET /library/{id}` (document with its chunks).
   - Done when: both return a document, once the starter corpus is seeded (2.9) or a test document is saved.
   - Out of scope: upload, delete, frontend.
