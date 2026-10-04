@@ -115,7 +115,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
 
 ## Phase 3: The Ask page with citations
 
-- [ ] 3.1 Scout
+- [x] 3.1 Scout
   - Do: top-k vector search over the library in the database, plus cosine search in memory over any private chunks passed in, merged by score (k = 5 for now). Each result says whether it came from the library or the visitor's own pasted text.
   - Done when: tests with fixed fake embeddings return the expected chunks from the library, from private chunks, and from both.
   - Out of scope: hybrid search, reranking, endpoints.
