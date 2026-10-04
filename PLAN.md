@@ -131,7 +131,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: `POST /ask`: takes the question and optional private chunks with vectors (size capped); Translator, Scout, Storyteller in order; stream step events and the answer; the LLM is called only through `llm.py` (provider and model from env vars).
   - Done when: `curl` shows events, then the answer, with and without private chunks.
   - Out of scope: citations list, rate limits, frontend.
-- [ ] 3.4 Citations
+- [x] 3.4 Citations
   - Do: map each [n] to its chunk (document, page, snippet, and whether it is from the library or the visitor's own pasted text) and send the list after the answer; drop any [n] that doesn't match a chunk.
   - Done when: tests cover valid, repeated and made-up citation numbers.
   - Out of scope: frontend.
