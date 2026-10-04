@@ -184,17 +184,25 @@ Each upgrade has eval scores before and after, pasted into the PR description.
   - Do: one `.github/dependabot.yml` covering pip, npm and GitHub Actions.
   - Done when: Dependabot shows as enabled in the repo's security tab.
   - Out of scope: CodeQL, release automation, application code.
+- [ ] 4.8 Visual data in step events
+  - Do: make the step events carry the real data the characters will show (see "What each character shows on screen" in `docs/PROJECT_BRIEF.md`): the Chopper's `done` event lists each chunk's position, heading, length in characters and the length of the overlap it shares with the previous chunk; the Translator's `done` event for a question lists each word of the question with an influence weight (leave-one-out: embed the question once with every word removed in turn, in one batch, and use how far the vector moves, scaled 0 to 1); the Scout's `done` event gives each result its vector rank and score, its keyword rank and score, and the words that matched (from the full-text search), and says which of the two lists found it. The question text is escaped, and no new endpoint is added.
+  - Done when: tests with the fake embedder cover each new field, and `curl` shows them on a real question and a real upload.
+  - Out of scope: the vector map (4.9), any frontend.
+- [ ] 4.9 Vector map data
+  - Do: a new migration with `map_projection` (one row: the 1024-number mean and the two principal components) and `map_points` (chunk ID, x, y). `make seed` fits a 2-D PCA with numpy over all library chunk vectors, stores the projection and every chunk's point, and writes nothing else. `GET /map` returns the points (chunk ID, document ID, title, x, y). `/ask` adds the question's point, and `/upload` adds each new chunk's point, by projecting their vectors with the stored projection. Add `numpy` to `requirements.txt`.
+  - Done when: tests with fixed vectors check the projection, and chunks of the same document land closer together than chunks of different documents in a seeded test library.
+  - Out of scope: any frontend, 3-D, UMAP or t-SNE, re-projecting when a document is added without re-seeding.
 
 ## Phase 5: Cartoon characters (Figma and Rive)
 
 Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.riv` file per character in `frontend/public/characters/`; one state machine named `main`; inputs `working` (boolean), `handoff` (trigger), `done` (trigger), `confused` (trigger).
 
 - [ ] 5.1 (You) Figma characters
-  - Do: style sheet (palette, line weight) and all 8 characters with separate layers for moving parts.
+  - Do: style sheet (palette, line weight) and all 8 characters with separate layers for moving parts, plus the props from the brief's "What each character shows on screen" (cleaver, glowing stamp, lantern with a separate light cone, gavel, quill, magnifying glass, book and card shapes, the owl's shelves).
   - Done when: they look like one cast.
 - [ ] 5.2 (You) Figma layouts
-  - Do: layouts for the Upload page (workshop) and Ask page (library), including the answer scroll and sources panel.
-  - Done when: every UI element from Phases 2 and 3 has a place.
+  - Do: layouts for the Upload page (workshop) and Ask page (library), including the answer scroll and sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge.
+  - Done when: every UI element from Phases 2 and 3, and every visual in the brief's "What each character shows on screen", has a place.
 - [ ] 5.3 (You) Figma plugin
   - Do: install the Figma plugin in Claude Code.
   - Done when: `/mcp` shows Figma connected.
@@ -212,20 +220,24 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] 5.7 (You) Rive: other six characters
   - Do: rig the rest, plus travelling props (page stack, cards, tag, scroll).
   - Done when: every input plays in the preview.
+- [ ] 5.7a Vector map
+  - Do: a React component (canvas or SVG, no new charting library unless one is clearly needed) that draws the library's points from `GET /map`, coloured by document, with a legend, hover cards showing the chunk's title and heading, zoom and pan, and a text label saying the map is a flattened 2-D picture of the 1024-number vectors, so distances are approximate. It can show the visitor's own chunks as a separate coloured group, the question as a marker, and a set of highlighted points with lines from the question to them. It plays no character animation itself.
+  - Done when: component tests with fixed points cover drawing, highlighting and hover, and the map shows the live library on the Ask page.
+  - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
 - [ ] 5.8 Full Upload scene
-  - Do: all four handoffs, with the shelf counter rising as chunks come back to the visitor.
+  - Do: all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
   - Done when: one upload plays the whole scene.
   - Out of scope: the Ask page.
 - [ ] 5.9 Full Ask scene
-  - Do: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, Fact-Checker when enabled, and the "nothing found" scene.
+  - Do: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, Fact-Checker when enabled, and the "nothing found" scene. The Translator highlights the question's words by their real influence weights and stamps a fingerprint on the question; the question then appears as a marker on the vector map; the Scout walks into the library with the lantern, whose light spreads over the map and lights the candidates it found, with words-based finds in a different colour from meaning-based finds; the Archivist points at the shelves (documents) they belong to; the Judge reorders the candidates and fades the rejected ones, using the real old and new ranks; the Storyteller's badges fly to the cited cards.
   - Done when: a good question and an unanswerable one both play correctly.
   - Out of scope: character detail panels.
 - [ ] 5.10 Character detail panels
-  - Do: click a character to see what it did: the Chopper's chunks, the Scout's matches with scores, the Judge's rank changes, the Fact-Checker's verdicts.
+  - Do: click a character to see what it did: the Chopper's chunks and overlaps, the Translator's word weights, the Scout's matches with vector and keyword scores and matched words, the Judge's rank changes, the Fact-Checker's verdicts.
   - Done when: each panel shows real data from that question.
   - Out of scope: accessibility work.
 - [ ] 5.11 Accessibility
-  - Do: reduce-motion mode that swaps animations for a step list, alt text, keyboard access.
+  - Do: reduce-motion mode that swaps animations for a step list, alt text, keyboard access, and a text alternative for the vector map (a table of the nearest chunks with their scores).
   - Done when: the site is usable with motion off and with keyboard only.
   - Out of scope: new features.
 - [ ] 5.12 Source side panel
