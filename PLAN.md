@@ -58,10 +58,10 @@ Deploy an almost-empty app first, so every later step ships through a working pi
   - Do: GitHub Actions `ci.yml`: lint and tests for both apps on every PR, plus `tsc` for the frontend and a `pgvector/pgvector:pg16` service container for later database tests. Then mark the CI job as a required check on `main`.
   - Done when: this step's PR shows green checks.
   - Out of scope: Python type checking, eval workflow, deploys.
-- [ ] 1.6 (You) Hosting
+- [x] 1.6 (You) Hosting
   - Do: connect `frontend/` to Vercel; create one Supabase project (free) and enable the `vector` extension; deploy `backend/` to Render's free web service with the native Python runtime (build `pip install -r requirements.txt`, start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`) with env vars set.
   - Done when: Vercel posts a preview URL on PRs and live `/health` works.
-- [ ] 1.7 Health badge
+- [x] 1.7 Health badge
   - Do: frontend shows a "library online" badge from the backend's `/health`; backend URL comes from an env var.
   - Done when: the badge is green on the live site.
   - Out of scope: any other backend endpoint.

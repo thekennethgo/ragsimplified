@@ -3,11 +3,39 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+}
+
 nav {
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  border-bottom: 1px solid #ddd;
+}
+
+.badge {
+  margin-right: 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+}
+
+.badge-checking {
+  background: #eee;
+  color: #555;
+}
+
+.badge-online {
+  background: #d7f5dd;
+  color: #14532d;
+}
+
+.badge-offline {
+  background: #fbdcdc;
+  color: #7f1d1d;
 }
 
 main {
