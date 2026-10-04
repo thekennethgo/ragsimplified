@@ -38,11 +38,11 @@ Design rule: keep every piece a real RAG system needs (parse, chunk, embed, vect
 
 Deploy an almost-empty app first, so every later step ships through a working pipeline.
 
-- [ ] 1.1 Backend skeleton
+- [x] 1.1 Backend skeleton
   - Do: FastAPI app in `backend/` with `GET /health`, one pytest test, Ruff config, `requirements.txt`.
   - Done when: `pytest` passes and `/health` returns ok locally.
   - Out of scope: database, Makefile, CI, Docker.
-- [ ] 1.2 Frontend skeleton
+- [x] 1.2 Frontend skeleton
   - Do: Next.js app in `frontend/` with a shared nav and two empty pages, `/upload` and `/ask`; one Vitest test.
   - Done when: both pages load locally.
   - Out of scope: backend calls, styling beyond the basics, Makefile, CI.
