@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import HealthBadge from "../components/HealthBadge";
 import Nav from "../components/Nav";
+import { PrivateTextsProvider } from "../lib/PrivateTexts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,11 +15,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <header>
-          <Nav />
-          <HealthBadge />
-        </header>
-        <main>{children}</main>
+        <PrivateTextsProvider>
+          <header>
+            <Nav />
+            <HealthBadge />
+          </header>
+          <main>{children}</main>
+        </PrivateTextsProvider>
       </body>
     </html>
   );

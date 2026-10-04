@@ -3,15 +3,9 @@
 import { type FormEvent, useEffect, useState } from "react";
 
 import { MAX_TEXT_CHARS, backendUrl, readEvents } from "../../lib/backend";
+import { type PrivateText, usePrivateTexts } from "../../lib/PrivateTexts";
 
 type LibraryDocument = { id: number; title: string; chunk_count: number };
-
-type PrivateText = {
-  title: string;
-  text: string;
-  chunks: { position: number; heading: string | null; text: string }[];
-  vectors: number[][];
-};
 
 export default function UploadPage() {
   const [title, setTitle] = useState("");
@@ -19,8 +13,8 @@ export default function UploadPage() {
   const [log, setLog] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [library, setLibrary] = useState<LibraryDocument[] | null>(null);
-  // Private texts live only in this component's memory (ADR 002): nothing is stored server-side.
-  const [yourTexts, setYourTexts] = useState<PrivateText[]>([]);
+  // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
+  const { texts: yourTexts, add } = usePrivateTexts();
 
   useEffect(() => {
     fetch(`${backendUrl()}/library`)
@@ -44,12 +38,13 @@ export default function UploadPage() {
         return;
       }
       for await (const e of readEvents(response)) {
+        if (!("status" in e)) continue;
         setLog((lines) => [...lines, `${e.step}: ${e.status}`]);
         if (e.step === "error") {
           setLog((lines) => [...lines, String(e.data?.message ?? "Upload failed")]);
         } else if (e.step === "translator" && e.status === "done" && e.data) {
           const { chunks, vectors } = e.data as Pick<PrivateText, "chunks" | "vectors">;
-          setYourTexts((items) => [...items, { title, text, chunks, vectors }]);
+          add({ title, text, chunks, vectors });
           setTitle("");
           setText("");
         }

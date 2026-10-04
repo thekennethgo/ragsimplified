@@ -135,7 +135,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: map each [n] to its chunk (document, page, snippet, and whether it is from the library or the visitor's own pasted text) and send the list after the answer; drop any [n] that doesn't match a chunk.
   - Done when: tests cover valid, repeated and made-up citation numbers.
   - Out of scope: frontend.
-- [ ] 3.5 Ask page
+- [x] 3.5 Ask page
   - Do: plain UI with a question box, streamed answer, [n] markers as buttons, and a sources panel showing each cited snippet. Sends the visitor's private chunks with each question.
   - Done when: on the preview URL, every marker opens its source.
   - Out of scope: document view page, characters.
