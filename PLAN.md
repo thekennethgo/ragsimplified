@@ -77,7 +77,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: plain `.sql` files in `backend/migrations/` and a small `backend/app/migrate.py` (psycopg) that applies unapplied files in order and records them; `make migrate`. Tables: `documents` (title, filename, content hash, uploaded at) and `chunks` (document ID, position, page, heading, text, `embedding vector(1024)`, full-text column with a GIN index, and an HNSW index on the embedding).
   - Done when: `make migrate` works against the local database and runs in CI against the service container.
   - Out of scope: any code that reads or writes the tables.
-- [ ] 2.2 Collector
+- [x] 2.2 Collector
   - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files. Used by the seed script only; visitors paste text.
   - Done when: tests pass on all three file types.
   - Out of scope: chunking, embeddings, database writes, endpoints.
