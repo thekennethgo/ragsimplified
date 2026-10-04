@@ -101,7 +101,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: `GET /library` (documents with chunk counts) and `GET /library/{id}` (document with its chunks).
   - Done when: both return a document, once the starter corpus is seeded (2.9) or a test document is saved.
   - Out of scope: upload, delete, frontend.
-- [ ] 2.8 Upload page
+- [x] 2.8 Upload page
   - Do: plain UI with a title field, a text box with a character counter (20,000 maximum), a text log of step events as they stream, the starter library list, and a "your texts" list. The browser keeps each private text, its chunks and vectors in memory. The page says the text is sent to Voyage and Anthropic.
   - Done when: pasting a text on the preview URL shows it under "your texts".
   - Out of scope: characters, animations, the Ask page, file upload, keeping texts across refreshes.

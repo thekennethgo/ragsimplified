@@ -15,7 +15,8 @@ app.add_middleware(
         for origin in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
         if origin.strip()
     ],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(upload_router)
