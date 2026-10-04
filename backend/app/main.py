@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ask import router as ask_router
 from app.library import router as library_router
 from app.upload import router as upload_router
 
@@ -20,6 +21,7 @@ app.add_middleware(
 )
 
 app.include_router(upload_router)
+app.include_router(ask_router)
 app.include_router(library_router)
 
 

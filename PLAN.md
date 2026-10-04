@@ -127,7 +127,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: `backend/app/llm.py` per ADR 003: one streaming function taking a system prompt and messages, with `openai_compatible` and `anthropic` implementations chosen by `LLM_PROVIDER`; retries 429 and 5xx with backoff; a fake client for tests; add `LLM_PROVIDER`, `LLM_BASE_URL` and `LLM_API_KEY` to `.env.example`.
   - Done when: tests pass with mocked HTTP and the fake client, and one real call works locally once against Gemini.
   - Out of scope: the Storyteller prompt, endpoints, the Fact-Checker.
-- [ ] 3.3 Ask endpoint
+- [x] 3.3 Ask endpoint
   - Do: `POST /ask`: takes the question and optional private chunks with vectors (size capped); Translator, Scout, Storyteller in order; stream step events and the answer; the LLM is called only through `llm.py` (provider and model from env vars).
   - Done when: `curl` shows events, then the answer, with and without private chunks.
   - Out of scope: citations list, rate limits, frontend.
