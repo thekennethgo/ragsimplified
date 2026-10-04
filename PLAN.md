@@ -227,6 +227,13 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 
 ## Phase 6: Launch
 
+- [ ] 6.0 (You) Write the launch documents
+  - Do: put the owner's own documents in `corpus/`: a FAQ about yourself (the questions a recruiter or collaborator would ask, with your real answers), CV, experience, projects and public contact details; plus 2 or 3 short made-up demo documents (for example a fictional company handbook) so visitors can try questions whose answers no model could know. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
+  - Done when: the files are in `corpus/`.
+- [ ] 6.0a Launch corpus and owner evals
+  - Do: move the placeholder Wikipedia documents that do not fit the launch (Apple, Android, Microsoft, Samsung, Star Wars, Cyberpunk) from `corpus/` to `evals/corpus/`, so `make eval` still uses them but the live library does not; keep the RAG-related ones (RAG, information retrieval, vector database, large language model, search engine) as a small explainer set; add at least 8 eval questions about the owner's documents (the requirement deferred from 3.7) and 3 about the demo documents; run `make seed` against Supabase and remove the placeholder rows from it; run `make eval` and save a new baseline.
+  - Done when: the live library lists the launch documents and `make eval` includes the owner questions.
+  - Out of scope: new code.
 - [ ] 6.1 Limits
   - Do: a 20,000-character limit on pasted text, a cap on the private chunks sent with one question, a per-IP daily quota for pastes and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
   - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
@@ -251,4 +258,4 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
 - [ ] Phase 5: all eight characters animating both pages
-- [ ] Phase 6: limits and README done; v1.0.0 released
+- [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
