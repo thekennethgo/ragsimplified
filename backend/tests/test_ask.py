@@ -176,3 +176,19 @@ def test_rejects_bad_requests(client):
         client.post("/ask", json={"question": "q", "private_chunks": [huge_text]}).status_code
         == 422
     )
+
+
+@needs_db
+def test_final_event_has_a_cleaned_answer_and_the_citations(client, llm, library_chunk):
+    llm.reply = "Real claim [1]. Invented claim [8]."
+    final = events(client.post("/ask", json={"question": QUESTION}))[-1]["data"]
+    assert final["answer"] == "Real claim [1]. Invented claim."
+    assert [c["n"] for c in final["citations"]] == [1]
+    citation = final["citations"][0]
+    assert (citation["source"], citation["title"], citation["page"]) == (
+        "library",
+        "Ask test doc",
+        1,
+    )
+    assert citation["snippet"] == "Library text for the ask test."
+    assert citation["document_id"] == library_chunk

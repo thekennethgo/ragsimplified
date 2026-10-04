@@ -1,5 +1,6 @@
 import os
 from collections.abc import Callable, Iterator
+from dataclasses import asdict
 
 import psycopg
 from fastapi import APIRouter, Depends
@@ -8,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.events import DeltaEvent, StepEvent
 from app.llm import LLM, get_llm
+from app.pipeline.citations import extract_citations
 from app.pipeline.scout import PrivateChunk, Result, scout
 from app.pipeline.storyteller import build_prompt
 from app.pipeline.translator import DIMENSION, Embedder
@@ -82,7 +84,13 @@ def run_ask(
             pieces.append(piece)
             yield DeltaEvent(delta=piece)
         answer = "".join(pieces)
-    yield StepEvent(step="storyteller", status="done", data={"answer": answer})
+    # The streamed pieces may hold a made-up [n]; this final answer is the cleaned one.
+    answer, citations = extract_citations(answer, results)
+    yield StepEvent(
+        step="storyteller",
+        status="done",
+        data={"answer": answer, "citations": [asdict(c) for c in citations]},
+    )
 
 
 def stream(request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect) -> Iterator[str]:
