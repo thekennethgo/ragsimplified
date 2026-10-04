@@ -95,10 +95,13 @@ def run_question(question: dict, connect, embedder: Embedder, llm: LLM, titles: 
     answer = final.get("answer", raw)
     citations = final.get("citations", [])
     markers = [int(n) for n in MARKER.findall(raw)]
-    expected = question.get("expected_file")
+    expected = question.get("expected_files") or (
+        [question["expected_file"]] if "expected_file" in question else []
+    )
     row.update(
         answer=answer,
-        retrieval_hit=(titles.get(expected) in result_titles) if expected else None,
+        tier=question.get("tier", "easy"),
+        retrieval_hit=all(titles.get(f) in result_titles for f in expected) if expected else None,
         markers=len(markers),
         valid_markers=sum(1 for n in markers if 1 <= n <= len(result_titles)),
         cited=bool(citations),
@@ -118,10 +121,12 @@ def score(rows: list[dict]) -> dict:
     unanswerable = [r for r in rows if r["type"] == "unanswerable"]
     injection = [r for r in rows if r["type"] == "injection"]
     markers = sum(r["markers"] for r in rows)
+    hard = [r for r in answerable if r.get("tier") == "hard"]
     return {
         "retrieval_hit_rate": _rate(
             sum(bool(r["retrieval_hit"]) for r in answerable), len(answerable)
         ),
+        "hard_retrieval_hit_rate": _rate(sum(bool(r["retrieval_hit"]) for r in hard), len(hard)),
         "citation_validity": _rate(sum(r["valid_markers"] for r in rows), markers),
         "answerable_cited": _rate(sum(r["cited"] for r in answerable), len(answerable)),
         "correct_refusals": _rate(sum(r["refused"] for r in unanswerable), len(unanswerable)),
@@ -134,6 +139,7 @@ def score(rows: list[dict]) -> dict:
 
 LABELS = [
     ("retrieval_hit_rate", "Retrieval hit rate (expected document in top 5)"),
+    ("hard_retrieval_hit_rate", "Retrieval hit rate, hard questions only"),
     ("citation_validity", "Citation validity (valid [n] / all [n])"),
     ("answerable_cited", "Answerable questions answered with a citation"),
     ("correct_refusals", "Unanswerable questions refused"),

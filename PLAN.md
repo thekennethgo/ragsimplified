@@ -147,6 +147,10 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: 30 questions in `evals/questions.jsonl` (at least 8 about the owner's documents, 5 the library can't answer, 2 aimed at a planted instruction inside a corpus file) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
   - Done when: `make eval` prints a score table that is saved as the baseline.
   - Out of scope: LLM-judged metrics, CI workflow.
+- [x] 3.8 Bigger corpus and harder evals
+  - Do: add about 10 more documents to `corpus/` that compete with the first six (other phones and companies, search and LLM topics, a real PDF, Star Wars and Cyberpunk 2077 topics); add an eval-only fictional product manual in `evals/corpus/`; add about 20 harder questions (paraphrases, near-miss topics, needle-in-a-long-document, exact codes, multi-document, near-miss refusals) and report the hard questions' retrieval hit rate separately; save a new baseline.
+  - Done when: `make eval` scores below 100% on the hard questions, so Phase 4 upgrades can show an improvement.
+  - Out of scope: the owner's own documents, evals with private pasted text, LLM-judged metrics.
 
 ## Phase 4: Industry extras
 
