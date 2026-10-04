@@ -65,7 +65,7 @@ Deploy an almost-empty app first, so every later step ships through a working pi
   - Do: frontend shows a "library online" badge from the backend's `/health`; backend URL comes from an env var.
   - Done when: the badge is green on the live site.
   - Out of scope: any other backend endpoint.
-- [ ] 1.8 (You) Context7 MCP
+- [x] 1.8 (You) Context7 MCP
   - Do: add the Context7 MCP at project scope (`.mcp.json`).
   - Done when: `/mcp` lists it.
 
