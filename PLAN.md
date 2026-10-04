@@ -93,7 +93,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: save a document and its chunks in one transaction; skip duplicates by content hash. The original file is not stored. Used only by the seed script, never by an upload endpoint.
   - Done when: saving the same file twice stores it once.
   - Out of scope: endpoints, search, file storage, the seed script.
-- [ ] 2.6 Upload endpoint
+- [x] 2.6 Upload endpoint
   - Do: `POST /upload`: takes a `title` and `text` (at most 20,000 characters), runs the Chopper and Translator, streams a step event as each starts and finishes, and ends with the chunks and their vectors in a compact form for the browser to keep. Writes nothing to the database. Define the event shape once in `backend/app/events.py` (`step`, `status` of `start` or `done`, optional `data`); `/ask` reuses it.
   - Done when: `curl` shows the event stream end to end and the database is unchanged afterwards.
   - Out of scope: any database write, quotas, frontend.

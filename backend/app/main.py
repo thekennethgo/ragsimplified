@@ -3,6 +3,8 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.upload import router as upload_router
+
 app = FastAPI(title="ragsimplified")
 
 app.add_middleware(
@@ -14,6 +16,8 @@ app.add_middleware(
     ],
     allow_methods=["GET"],
 )
+
+app.include_router(upload_router)
 
 
 @app.get("/health")
