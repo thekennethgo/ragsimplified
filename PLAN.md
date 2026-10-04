@@ -85,7 +85,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: split parsed text into ~500-token chunks with a 50-token overlap, keeping page and heading.
   - Done when: unit tests cover empty input, one huge section and a code block.
   - Out of scope: embeddings, database writes.
-- [ ] 2.4 Translator
+- [x] 2.4 Translator
   - Do: Voyage embedding client (voyage-4, `output_dimension=1024`) with batching and retries, plus a fake embedder for tests; key from env.
   - Done when: a real call works locally once and tests use the fake.
   - Out of scope: database writes, endpoints, reranking.
