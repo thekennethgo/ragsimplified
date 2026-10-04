@@ -105,7 +105,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: plain UI with a title field, a text box with a character counter (20,000 maximum), a text log of step events as they stream, the starter library list, and a "your texts" list. The browser keeps each private text, its chunks and vectors in memory. The page says the text is sent to Voyage and Anthropic.
   - Done when: pasting a text on the preview URL shows it under "your texts".
   - Out of scope: characters, animations, the Ask page, file upload, keeping texts across refreshes.
-- [ ] 2.9 Seed corpus
+- [x] 2.9 Seed corpus
   - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents. It also copies the original files to `frontend/public/corpus/` so citations can open them.
   - Done when: the live library lists the starter documents.
   - Out of scope: evals, new endpoints.
