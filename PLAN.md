@@ -143,7 +143,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation. For a citation to a visitor's own pasted text, show that text from the browser with the cited passage scrolled to and highlighted. Library citations link to the original in `/corpus/` at the cited page.
   - Done when: clicking [2] lands on the cited passage or page, for a library document and for a pasted text.
   - Out of scope: editing or deleting documents, highlighting the exact passage inside a PDF.
-- [ ] 3.7 Starter evals
+- [x] 3.7 Starter evals
   - Do: 30 questions in `evals/questions.jsonl` (at least 8 about the owner's documents, 5 the library can't answer, 2 aimed at a planted instruction inside a corpus file) and `make eval`, run against a fresh database holding only the starter corpus, reporting retrieval hit rate, citation validity and refusals.
   - Done when: `make eval` prints a score table that is saved as the baseline.
   - Out of scope: LLM-judged metrics, CI workflow.

@@ -1,4 +1,4 @@
-.PHONY: format lint test migrate seed
+.PHONY: format lint test migrate seed eval
 
 format:
 	cd backend && .venv/bin/ruff format .
@@ -17,3 +17,6 @@ migrate:
 
 seed:
 	cd backend && set -a && { [ ! -f ../.env ] || . ../.env; } && set +a && .venv/bin/python -m app.seed
+
+eval:
+	cd backend && set -a && { [ ! -f ../.env ] || . ../.env; } && set +a && .venv/bin/python -m app.eval_runner $(ARGS)
