@@ -34,6 +34,8 @@ const EVENTS = [
           page: null,
           heading: "Founding",
           snippet: "Apple was founded as a partnership on April 1, 1976.",
+          document_id: 7,
+          position: 3,
         },
       ],
     },
@@ -67,6 +69,14 @@ test("streams the answer, turns [n] into a button and opens its source", async (
   const [item] = within(sources).getAllByRole("listitem");
   expect(item).toHaveTextContent("Apple Inc.");
   expect(item).toHaveAttribute("aria-current", "true");
+});
+
+test("each source links to its document at the cited chunk", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  const link = await screen.findByRole("link", { name: "Open source 1" });
+  expect(link).toHaveAttribute("href", "/library/7?chunk=3");
 });
 
 test("sends the question, with no private chunks when none were pasted", async () => {

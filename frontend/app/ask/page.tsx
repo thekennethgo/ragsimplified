@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, Fragment, useRef, useState } from "react";
 
 import { backendUrl, readEvents } from "../../lib/backend";
@@ -16,6 +17,8 @@ type Citation = {
   page: number | null;
   heading: string | null;
   snippet: string;
+  document_id: number | null;
+  position: number;
 };
 
 /** Split an answer into text and [n] markers; a marker is a button only if it has a source. */
@@ -69,6 +72,15 @@ export default function AskPage() {
     )
     .slice(0, MAX_PRIVATE_CHUNKS);
   const totalPrivateChunks = texts.reduce((sum, item) => sum + item.chunks.length, 0);
+
+  /** Where to read the cited passage in full: a library document, or the visitor's own text. */
+  function sourceHref(c: Citation): string | null {
+    if (c.source === "library") {
+      return c.document_id === null ? null : `/library/${c.document_id}?chunk=${c.position}`;
+    }
+    const index = texts.findIndex((item) => item.title === c.title);
+    return index === -1 ? null : `/texts/${index}?chunk=${c.position}`;
+  }
 
   function openSource(n: number) {
     setSelected(n);
@@ -175,6 +187,7 @@ export default function AskPage() {
                 {c.heading ? ` (${c.heading})` : ""}{" "}
                 <em>{c.source === "private" ? "your pasted text" : "starter library"}</em>
                 <blockquote>{c.snippet}</blockquote>
+                {sourceHref(c) && <Link href={sourceHref(c)!}>Open source {c.n}</Link>}
               </li>
             ))}
           </ul>

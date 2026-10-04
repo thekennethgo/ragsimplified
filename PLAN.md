@@ -139,7 +139,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: plain UI with a question box, streamed answer, [n] markers as buttons, and a sources panel showing each cited snippet. Sends the visitor's private chunks with each question.
   - Done when: on the preview URL, every marker opens its source.
   - Out of scope: document view page, characters.
-- [ ] 3.6 Document view
+- [x] 3.6 Document view
   - Do: page `/library/[id]` that scrolls to and highlights the cited chunk when opened from a citation. For a citation to a visitor's own pasted text, show that text from the browser with the cited passage scrolled to and highlighted. Library citations link to the original in `/corpus/` at the cited page.
   - Done when: clicking [2] lands on the cited passage or page, for a library document and for a pasted text.
   - Out of scope: editing or deleting documents, highlighting the exact passage inside a PDF.
