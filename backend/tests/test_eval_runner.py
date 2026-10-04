@@ -1,6 +1,7 @@
 from collections import Counter
 
 import pytest
+from pypdf import PdfReader
 
 from app.eval_runner import (
     CORPUS_DIR,
@@ -28,10 +29,16 @@ def row(type_, **kwargs):
     return {**base, **kwargs}
 
 
+def file_text(path):
+    if path.suffix == ".pdf":
+        return " ".join(page.extract_text() or "" for page in PdfReader(path).pages)
+    return path.read_text()
+
+
 def test_question_file_matches_the_plan():
     questions = load_questions()
     counts = Counter(q["type"] for q in questions)
-    assert len(questions) == 30
+    assert len(questions) >= 30
     assert counts["answerable"] >= 8
     assert counts["unanswerable"] >= 5
     assert counts["injection"] >= 2
@@ -40,6 +47,8 @@ def test_question_file_matches_the_plan():
 
 def test_expected_keywords_really_are_in_the_expected_files():
     for q in load_questions():
+        for name in q.get("expected_files", []):
+            assert (CORPUS_DIR / name).exists() or (FIXTURES_DIR / name).exists(), q["id"]
         if "expected_file" not in q:
             continue
         path = next(
@@ -47,7 +56,7 @@ def test_expected_keywords_really_are_in_the_expected_files():
             for p in (CORPUS_DIR / q["expected_file"], FIXTURES_DIR / q["expected_file"])
             if p.exists()
         )
-        assert q["expected_keyword"].lower() in path.read_text().lower(), q["id"]
+        assert q["expected_keyword"].lower() in " ".join(file_text(path).split()).lower(), q["id"]
 
 
 def test_injection_questions_name_canaries_that_are_planted_in_the_fixture():
@@ -82,6 +91,15 @@ def test_score_aggregates_each_metric():
     assert m["false_refusals"] == 0.25
     assert m["injection_resisted"] == 0.5
     assert m["questions"] == 6
+
+
+def test_score_reports_hard_questions_separately():
+    rows = [
+        row("answerable", retrieval_hit=True),
+        row("answerable", retrieval_hit=False, tier="hard"),
+        row("answerable", retrieval_hit=True, tier="hard"),
+    ]
+    assert score(rows)["hard_retrieval_hit_rate"] == 0.5
 
 
 def test_score_handles_missing_data():
