@@ -81,7 +81,7 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: parse PDF, Markdown and text into text with page numbers; tests with small fixture files. Used by the seed script only; visitors paste text.
   - Done when: tests pass on all three file types.
   - Out of scope: chunking, embeddings, database writes, endpoints.
-- [ ] 2.3 Chopper
+- [x] 2.3 Chopper
   - Do: split parsed text into ~500-token chunks with a 50-token overlap, keeping page and heading.
   - Done when: unit tests cover empty input, one huge section and a code block.
   - Out of scope: embeddings, database writes.
