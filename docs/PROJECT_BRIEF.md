@@ -181,6 +181,25 @@ Eight cartoon characters each own one pipeline step, and every handoff between s
 
 **When nothing matches:** the Scout returns empty-handed and shrugs, and the Storyteller writes that the library doesn't cover the question. This scene shows users that good RAG doesn't make things up.
 
+### What each character shows on screen
+
+The rule: **every visual is driven by real data from the step events, and anything that is only an illustration is labelled as one on screen.** A character that only plays a canned animation teaches nothing; one that shows the real chunks, words and scores does.
+
+| Character | What it does on screen | The real data behind it |
+| --- | --- | --- |
+| Collector (seed script only) | Loads files onto the owl's cart: a PDF opens, pages flip, page numbers tick. Shown on an optional "how the library was built" view | The pages the Collector parsed (count, page numbers) |
+| Chopper | A chef cuts the pasted scroll on a board. Each cut lands where the real chunk boundary is. Neighbouring cards visibly share a coloured strip of text, the overlap. Each card shows its heading and size | Chunk positions, headings, lengths, overlap length (step 4.8) |
+| Translator | **Questions:** the question's words sit on a strip; the linguist presses the stamp and the words glow brighter in proportion to how much each one shaped the meaning, found by removing each word in turn and measuring how far the vector moves. **Chunks:** each card gets a fingerprint, a row of bars whose heights are the first 32 numbers of its real vector, so cards with similar meaning look alike | Word influence weights (step 4.8) and the vectors already returned by `/upload` |
+| Archivist | The library as a building: a shelf per document, a book per chunk. The owl points to the shelves the Scout is asking about and keeps the counts (documents, chunks) | `GET /library` and the Scout's results |
+| Scout | Walks into the library with a lantern over the **vector map**. The question appears as a marker; the lantern's light spreads and lights up the nearest books. Finds made by meaning and finds made by matching words are different colours; a book found both ways glows in both. Lines run from the question to each candidate with its score. The visitor's own chunks light up in their own region | Vector and keyword ranks, scores, matched words, map points (steps 4.8, 4.9) |
+| Judge | The twenty candidates stand in a row; the judge reads each, bangs the gavel, and reorders them. Cards slide from their old rank to their new one, with a score bar each; the rejected ones fade. This is what makes reranking visible | Old and new ranks and scores (step 4.2) |
+| Storyteller | A quill writes the answer on a scroll as it streams. Each time it cites a card, the numbered badge pins to the sentence and a thread connects it to the card, which opens in the side panel with the passage highlighted | The answer stream, the citations list |
+| Fact-Checker | A magnifying glass sweeps each cited sentence, compares it with its card and stamps a green tick or a red flag; an unsupported sentence is underlined with the reason | The Fact-Checker's verdicts (step 4.3) |
+
+**The vector map.** Every chunk is a list of 1024 numbers, which cannot be drawn directly. The map flattens them to two dimensions with PCA, fitted once when the library is seeded, so chunks about similar things sit near each other: Apple articles in one area, Star Wars in another. The map is the library's floor plan, and it is the backdrop for the Scout. Be honest about its limits on screen: it is a flat shadow of a 1024-dimension space, so distances are approximate and two points that look close may not be. The visitor's own pasted chunks are projected with the same stored projection and appear in a separate region ("your shelf"), and each question appears as a marker.
+
+**Not real, so not shown as real.** The embedding of a chunk is one vector for the whole chunk; there is no per-word value inside it. That is why chunks get a fingerprint and not word highlights. The word highlights on a question are an influence measurement made by removing words (extra, cheap embeddings of the same short question), not a view inside the model. If the UI ever shows word chips on a chunk, they must be labelled "illustration".
+
 Scenes are driven by the step events from the backend. The frontend queues events and gives each scene a minimum on-screen time, about a second, so fast steps are still watchable.
 
 ## Phase 0: Repo and Claude Code setup
@@ -256,6 +275,8 @@ Each upgrade is its own step with eval scores before and after; paste both into 
 | 4.5 | Sonnet | `evals.yml` in GitHub Actions: runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when a score drops more than 5 points below the baseline (LLM scores are noisy), skips when secrets are missing (forks). | A PR with a deliberately bad prompt fails |
 | 4.6 | Sonnet | Tracing: send every upload and question to Langfuse with a span per character (inputs, outputs, time, tokens, cost). | One trace shows all steps of a question |
 | 4.7 | Sonnet | Dependabot: one `.github/dependabot.yml` covering pip, npm and GitHub Actions. | Dependabot shows as enabled in the repo's security tab |
+| 4.8 | Sonnet | Visual data in step events: the Chopper reports chunk boundaries and overlaps, the Translator reports each question word's influence (leave-one-out, one batch), the Scout reports vector and keyword ranks, scores and matched words per result. | Tests cover each field; `curl` shows them |
+| 4.9 | Sonnet | Vector map data: `make seed` fits a 2-D PCA over the library's vectors and stores the projection and every chunk's point; `GET /map` returns them; `/ask` and `/upload` return the question's and the new chunks' points. | Chunks of one document land closer together than chunks of different documents |
 
 ## Phase 5: Cartoon characters (Figma and Rive)
 
@@ -269,17 +290,19 @@ You draw and animate; Sonnet builds the pages and wires your animations to the s
 
 | Step | Who | Do | You check |
 | --- | --- | --- | --- |
-| 5.1 | You | Figma: a style sheet (palette, line weight) and all 8 characters, each with separate layers for parts that move (eyes, mouth, arms, props). | They look like one cast |
-| 5.2 | You | Figma: layouts for the Upload page (a workshop) and the Ask page (a library), including the answer scroll and the sources panel. | Every UI element from Phases 2 and 3 has a place |
+| 5.1 | You | Figma: a style sheet (palette, line weight) and all 8 characters, each with separate layers for parts that move (eyes, mouth, arms, props), plus the props from "What each character shows on screen" (cleaver, glowing stamp, lantern with a separate light cone, gavel, quill, magnifying glass, book and card shapes, the owl's shelves). | They look like one cast |
+| 5.2 | You | Figma: layouts for the Upload page (a workshop) and the Ask page (a library), including the answer scroll, the sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge. | Every UI element from Phases 2 and 3, and every visual in "What each character shows on screen", has a place |
 | 5.3 | You | Install the Figma plugin in Claude Code. | `/mcp` shows Figma connected |
 | 5.4 | Sonnet | Add the Rive convention above to `CLAUDE.md`. Build both page layouts from the Figma frames with static character images, keeping all existing behaviour. | Pages match Figma; existing tests still pass |
 | 5.5 | You | Rive: import the Collector and Chopper from Figma, rig them, and build the `main` state machine with the agreed inputs. | Every input plays in the Rive preview |
 | 5.6 | Sonnet | `CharacterStage` component: plays `.riv` files with `@rive-app/react-canvas`, queues step events, maps them to inputs, and gives each scene a minimum on-screen time. Wire up the Collector and Chopper on the Upload page. | The first two scenes play in order on a real upload |
 | 5.7 | You | Rive: the other six characters, plus props that travel between them (page stack, cards, tag, scroll). | Every input plays in the preview |
-| 5.8 | Sonnet | Full Upload scene: all four handoffs, with the shelf counter rising as chunks come back to the visitor. | One upload plays the whole scene |
-| 5.9 | Sonnet | Full Ask scene: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, Fact-Checker when enabled, and the "nothing found" scene. | A good question and an unanswerable one both play correctly |
-| 5.10 | Sonnet | Click a character to see what it did: the Chopper's chunks, the Scout's matches with scores, the Judge's rank changes, the Fact-Checker's verdicts. | Each panel shows real data from that question |
-| 5.11 | Sonnet | Accessibility: a reduce-motion mode that swaps animations for a step list, alt text, keyboard access. | The site is usable with motion off and with keyboard only |
+| 5.7a | Sonnet | Vector map component: draws the library's points from `GET /map`, coloured by document, with a legend, hover cards, zoom and pan, the visitor's own chunks as a separate group, the question as a marker, and highlighted points with lines from the question. Labelled as a flattened picture. | Component tests pass; the map shows the live library on the Ask page |
+| 5.8 | Sonnet | Full Upload scene: all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries with the overlap shown, the Translator stamps each card with a fingerprint from its real vector, and the cards fly onto the vector map into the visitor's own region. | One upload plays the whole scene |
+| 5.9 | Sonnet | Full Ask scene: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, Fact-Checker when enabled, and the "nothing found" scene. The Translator highlights the question's words by influence, the Scout's lantern lights candidates on the vector map (meaning-based and word-based finds in different colours), and the Judge's cards slide from old to new rank. | A good question and an unanswerable one both play correctly |
+| 5.10 | Sonnet | Click a character to see what it did: the Chopper's chunks and overlaps, the Translator's word weights, the Scout's matches with vector and keyword scores and matched words, the Judge's rank changes, the Fact-Checker's verdicts. | Each panel shows real data from that question |
+| 5.11 | Sonnet | Accessibility: a reduce-motion mode that swaps animations for a step list, alt text, keyboard access, and a text alternative for the vector map. | The site is usable with motion off and with keyboard only |
+| 5.12 | Sonnet | Source side panel: clicking a `[n]` marker opens a panel beside the answer showing the whole original (text, a PDF at the cited page, or the pasted text) with the cited passage highlighted, next and previous buttons, and keyboard access. | Every kind of source opens in the panel with its passage visible |
 
 If Rive's free plan blocks the exports you need, swap Rive for Lottie (the LottieFiles plugin in Figma and `@lottiefiles/dotlottie-react`). Only steps 5.5 to 5.7 change.
 
