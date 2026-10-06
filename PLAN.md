@@ -177,15 +177,15 @@ Each upgrade has eval scores before and after, pasted into the PR description.
   - Do: faithfulness (reusing the Fact-Checker function) and answer correctness scored by the LLM through `llm.py`, added to `make eval`.
   - Done when: scores look sensible on 3 answers the owner grades.
   - Out of scope: CI workflow.
-- [ ] 4.5 Evals in CI
+- [~] 4.5 Evals in CI (SKIPPED for now by the owner; evals are run locally before pushing)
   - Do: `evals.yml` runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when the retrieval hit rate or citation validity drops more than 5 points below baseline, skips when secrets are missing (forks). Only these retrieval and citation scores are checked: no LLM-judged scores exist, since 4.3 and 4.4 are skipped.
   - Done when: a PR with a deliberately bad prompt fails.
   - Out of scope: new eval questions.
-- [ ] 4.6 Tracing
+- [~] 4.6 Tracing (SKIPPED for now by the owner; revisit later)
   - Do: send every upload and question to Langfuse with a span per character (inputs, outputs, time, tokens, cost).
   - Done when: one trace shows all steps of a question.
   - Out of scope: error monitoring.
-- [ ] 4.7 Dependabot
+- [x] 4.7 Dependabot
   - Do: one `.github/dependabot.yml` covering pip, npm and GitHub Actions.
   - Done when: Dependabot shows as enabled in the repo's security tab.
   - Out of scope: CodeQL, release automation, application code.
@@ -281,6 +281,6 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] Phase 1: both empty pages live, CI green on every PR
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
-- [ ] Phase 4: hybrid search, Judge, evals in CI and tracing shipped (Fact-Checker and LLM-judged evals skipped)
+- [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
 - [ ] Phase 5: all eight characters animating both pages, and a source side panel
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
