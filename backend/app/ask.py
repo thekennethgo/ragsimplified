@@ -69,7 +69,7 @@ def run_ask(
     yield StepEvent(step="scout", status="start")
     private = [PrivateChunk(**chunk.model_dump()) for chunk in request.private_chunks]
     with connect() as conn:
-        results = scout(conn, query, private)
+        results = scout(conn, query, private, question=request.question)
     yield StepEvent(step="scout", status="done", data={"results": describe(results)})
 
     yield StepEvent(step="storyteller", status="start")

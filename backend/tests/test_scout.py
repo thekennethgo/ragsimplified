@@ -6,7 +6,16 @@ import pytest
 from app.pipeline.archivist import hash_pages, save_document
 from app.pipeline.chopper import Chunk
 from app.pipeline.collector import Page
-from app.pipeline.scout import PrivateChunk, Result, merge, scout, search_library, search_private
+from app.pipeline.scout import (
+    PrivateChunk,
+    Result,
+    fuse,
+    merge,
+    scout,
+    search_keywords,
+    search_library,
+    search_private,
+)
 from app.pipeline.translator import DIMENSION
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -93,3 +102,73 @@ def test_scout_with_only_library_or_only_private(library_conn):
     library_conn.execute("DELETE FROM documents")
     results = scout(library_conn, axis(0), [private("only mine", axis(0))], k=5)
     assert [r.source for r in results] == ["private"]
+
+
+def lib(text: str, score: float = 0.0, doc: int = 1, position: int = 0) -> Result:
+    return Result("library", score, f"Doc {doc}", position, None, None, text, doc)
+
+
+def test_fuse_ranks_a_chunk_found_by_both_lists_first():
+    vector = [lib("only-vector", 0.9, 1), lib("both", 0.8, 2)]
+    keyword = [lib("both", 5.0, 2), lib("only-keyword", 3.0, 3)]
+    fused = fuse(vector, keyword, k=3)
+    assert [r.text for r in fused] == ["both", "only-vector", "only-keyword"]
+    both = fused[0]
+    assert (both.vector_rank, both.keyword_rank) == (2, 1)
+    assert both.vector_score == 0.8 and both.keyword_score == 5.0
+    assert both.score == pytest.approx(1 / 62 + 1 / 61)
+    assert (fused[1].vector_rank, fused[1].keyword_rank) == (1, None)
+    assert (fused[2].vector_rank, fused[2].keyword_rank) == (None, 2)
+
+
+def test_fuse_with_private_chunks_uses_ranks_not_raw_scores():
+    # A private cosine of 0.95 must not beat a chunk that both lists agree on.
+    mine = Result("private", 0.95, "Mine", 0, None, None, "mine")
+    vector = [mine, lib("both", 0.5, 2)]
+    keyword = [lib("both", 0.1, 2)]
+    assert [r.text for r in fuse(vector, keyword, k=2)] == ["both", "mine"]
+    assert fuse(vector, keyword, k=2)[1].keyword_rank is None
+
+
+def test_fuse_keeps_only_k():
+    assert len(fuse([lib(str(i), doc=i) for i in range(10)], [], k=3)) == 3
+
+
+@pytest.fixture
+def keyword_conn(library_conn):
+    save_document(
+        library_conn,
+        title="Doc zebra",
+        filename="zebra.md",
+        content_hash=hash_pages([Page(None, "zebra")]),
+        chunks=[Chunk(0, None, None, "The quokka code is Q-9931 and nothing else.")],
+        vectors=[axis(7)],
+    )
+    return library_conn
+
+
+def test_keyword_search_finds_exact_codes_and_ignores_stop_words(keyword_conn):
+    results = search_keywords(keyword_conn, "What is the quokka code Q-9931?")
+    assert [r.title for r in results] == ["Doc zebra"]
+    assert results[0].score > 0 and results[0].source == "library"
+
+
+def test_keyword_search_is_safe_and_empty_when_nothing_matches(keyword_conn):
+    assert search_keywords(keyword_conn, "xylophone") == []
+    assert search_keywords(keyword_conn, "the of and") == []
+    assert search_keywords(keyword_conn, "' | & ! ( ) :* \\") == []
+
+
+def test_scout_finds_a_chunk_only_by_keyword(keyword_conn):
+    # The query vector points at "exact"; only the keyword list knows about the quokka chunk.
+    results = scout(keyword_conn, axis(0), k=5, question="quokka Q-9931")
+    zebra = next(r for r in results if r.title == "Doc zebra")
+    assert zebra.keyword_rank == 1
+    assert zebra.vector_rank is not None  # fourth by vector, but still within the 20 candidates
+    assert results[0].title == "Doc zebra" or results[0].vector_rank == 1
+
+
+def test_scout_by_both_beats_by_one(keyword_conn):
+    results = scout(keyword_conn, axis(7), k=2, question="quokka")
+    assert results[0].title == "Doc zebra"
+    assert (results[0].vector_rank, results[0].keyword_rank) == (1, 1)

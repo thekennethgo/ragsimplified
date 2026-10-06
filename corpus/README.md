@@ -1,6 +1,6 @@
 # Starter corpus
 
-Files here are loaded by `make seed` and copied to `frontend/public/corpus/`.
+Files here are loaded by `make seed` and copied to `frontend/public/corpus/`. To add a document, follow [docs/ADDING_DOCUMENTS.md](../docs/ADDING_DOCUMENTS.md).
 
 The Wikipedia articles below are **placeholders for testing**, saved as Markdown with their source URL and revision at the top. They are available under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); keep the attribution line in each file.
 
