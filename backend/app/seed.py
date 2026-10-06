@@ -4,6 +4,7 @@ from pathlib import Path
 
 import psycopg
 
+from app.map import build_map
 from app.pipeline.archivist import document_exists, hash_pages, save_document
 from app.pipeline.chopper import chop
 from app.pipeline.collector import collect
@@ -71,10 +72,12 @@ def seed(
 def main() -> None:
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=True) as conn:
         results = seed(conn, VoyageEmbedder())
+        mapped = build_map(conn)
     for name, status in results.items():
         print(f"{status:8} {name}")
     if not results:
         print(f"No documents found in {CORPUS_DIR}")
+    print(f"Mapped {mapped} chunks")
 
 
 if __name__ == "__main__":

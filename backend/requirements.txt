@@ -5,3 +5,4 @@ httpx==0.28.1
 ruff==0.16.10
 psycopg[binary]==3.3.6
 pypdf==6.19.0
+numpy==2.5.3
