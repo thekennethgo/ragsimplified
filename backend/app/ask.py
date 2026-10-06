@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field
 from app.events import DeltaEvent, StepEvent
 from app.llm import LLM, get_llm
 from app.pipeline.citations import extract_citations
-from app.pipeline.scout import PrivateChunk, Result, scout
+from app.pipeline.judge import Reranker, get_reranker, judge
+from app.pipeline.scout import CANDIDATES, PrivateChunk, Result, scout
 from app.pipeline.storyteller import build_prompt
 from app.pipeline.translator import DIMENSION, Embedder
 from app.upload import get_embedder
@@ -45,22 +46,41 @@ def get_connect() -> Connect:
     return lambda: psycopg.connect(os.environ["DATABASE_URL"])
 
 
-def describe(results: list[Result]) -> list[dict]:
+def describe_candidates(results: list[Result]) -> list[dict]:
     return [
         {
-            "n": n,
+            "rank": rank,
             "source": r.source,
             "title": r.title,
             "page": r.page,
             "heading": r.heading,
             "score": round(r.score, 4),
         }
-        for n, r in enumerate(results, start=1)
+        for rank, r in enumerate(results, start=1)
+    ]
+
+
+def describe_judgement(candidates: list[Result], kept: list[Result]) -> list[dict]:
+    """Every candidate with its old and new rank, in new order; `n` is the citation number."""
+    numbers = {id(r): n for n, r in enumerate(kept, start=1)}
+    return [
+        {
+            "n": numbers.get(id(r)),
+            "kept": id(r) in numbers,
+            "old_rank": r.old_rank,
+            "new_rank": r.new_rank,
+            "rerank_score": None if r.rerank_score is None else round(r.rerank_score, 4),
+            "source": r.source,
+            "title": r.title,
+            "page": r.page,
+            "heading": r.heading,
+        }
+        for r in candidates
     ]
 
 
 def run_ask(
-    request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect
+    request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect, reranker: Reranker
 ) -> Iterator[StepEvent | DeltaEvent]:
     yield StepEvent(step="translator", status="start")
     [query] = embedder.embed([request.question], input_type="query")
@@ -69,8 +89,20 @@ def run_ask(
     yield StepEvent(step="scout", status="start")
     private = [PrivateChunk(**chunk.model_dump()) for chunk in request.private_chunks]
     with connect() as conn:
-        results = scout(conn, query, private, question=request.question)
-    yield StepEvent(step="scout", status="done", data={"results": describe(results)})
+        candidates = scout(conn, query, private, k=CANDIDATES, question=request.question)
+    yield StepEvent(step="scout", status="done", data={"results": describe_candidates(candidates)})
+
+    yield StepEvent(step="judge", status="start")
+    judgement = judge(request.question, candidates, reranker)
+    results = judgement.kept
+    yield StepEvent(
+        step="judge",
+        status="done",
+        data={
+            "results": describe_judgement(judgement.candidates, results),
+            "fallback": judgement.fallback,
+        },
+    )
 
     yield StepEvent(step="storyteller", status="start")
     if not results:
@@ -93,9 +125,11 @@ def run_ask(
     )
 
 
-def stream(request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect) -> Iterator[str]:
+def stream(
+    request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect, reranker: Reranker
+) -> Iterator[str]:
     try:
-        for event in run_ask(request, embedder, llm, connect):
+        for event in run_ask(request, embedder, llm, connect, reranker):
             yield event.to_line()
     except Exception:
         yield StepEvent(step="error", status="done", data={"message": "Ask failed"}).to_line()
@@ -107,7 +141,8 @@ def ask(
     embedder: Embedder = Depends(get_embedder),
     llm: LLM = Depends(get_llm),
     connect: Connect = Depends(get_connect),
+    reranker: Reranker = Depends(get_reranker),
 ) -> StreamingResponse:
     return StreamingResponse(
-        stream(request, embedder, llm, connect), media_type="application/x-ndjson"
+        stream(request, embedder, llm, connect, reranker), media_type="application/x-ndjson"
     )
