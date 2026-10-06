@@ -272,8 +272,8 @@ Each upgrade is its own step with eval scores before and after; paste both into 
 | 4.2 | Sonnet | Judge: the Scout fetches 20; rerank-3-lite keeps the best 5. Private chunks are reranked in the same pool. Step events include each card's old and new rank; if the reranker fails, fall back to the fused top 5. | Eval scores before and after are in the PR |
 | 4.3 | Sonnet | (Skipped for now) Fact-Checker: one Haiku call checks each cited claim against its chunk and flags unsupported ones, as a reusable function. Off by default, behind a toggle. | A planted wrong claim gets flagged |
 | 4.4 | Sonnet | (Skipped for now) LLM-judged evals: faithfulness (reusing the Fact-Checker function) and answer correctness scored by Haiku, added to `make eval`. | Scores look sensible on 3 answers you grade yourself |
-| 4.5 | Sonnet | `evals.yml` in GitHub Actions: runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when the retrieval hit rate or citation validity drops more than 5 points below the baseline (no LLM-judged scores while 4.3 and 4.4 are skipped), skips when secrets are missing (forks). | A PR with a deliberately bad prompt fails |
-| 4.6 | Sonnet | Tracing: send every upload and question to Langfuse with a span per character (inputs, outputs, time, tokens, cost). | One trace shows all steps of a question |
+| 4.5 | Sonnet | (Skipped for now) `evals.yml` in GitHub Actions: runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when the retrieval hit rate or citation validity drops more than 5 points below the baseline (no LLM-judged scores while 4.3 and 4.4 are skipped), skips when secrets are missing (forks). | A PR with a deliberately bad prompt fails |
+| 4.6 | Sonnet | (Skipped for now) Tracing: send every upload and question to Langfuse with a span per character (inputs, outputs, time, tokens, cost). | One trace shows all steps of a question |
 | 4.7 | Sonnet | Dependabot: one `.github/dependabot.yml` covering pip, npm and GitHub Actions. | Dependabot shows as enabled in the repo's security tab |
 | 4.8 | Sonnet | Visual data in step events: the Chopper reports chunk boundaries and overlaps, the Translator reports each question word's influence (leave-one-out, one batch), the Scout reports vector and keyword ranks, scores and matched words per result. | Tests cover each field; `curl` shows them |
 | 4.9 | Sonnet | Vector map data: `make seed` fits a 2-D PCA over the library's vectors and stores the projection and every chunk's point; `GET /map` returns them; `/ask` and `/upload` return the question's and the new chunks' points. | Chunks of one document land closer together than chunks of different documents |
@@ -323,7 +323,7 @@ A site where strangers upload files and ask questions needs guard rails. After t
 - [ ] Phase 1: both empty pages live, CI green on every PR
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
-- [ ] Phase 4: hybrid search, Judge, evals in CI and tracing shipped (Fact-Checker and LLM-judged evals skipped)
+- [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
 - [ ] Phase 5: all eight characters animating both pages
 - [ ] Phase 6: limits and README done; v1.0.0 released
 
