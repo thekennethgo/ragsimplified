@@ -156,24 +156,29 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
 
 Each upgrade has eval scores before and after, pasted into the PR description.
 
-- [ ] 4.1 Hybrid search
-  - Do: Scout runs vector and full-text search over the library and merges with reciprocal rank fusion (private chunks stay vector-only); add 5 eval questions built on exact names or codes.
-  - Done when: before and after eval scores are in the PR.
-  - Out of scope: reranking.
+- [x] 4.1 Hybrid search
+  - Do, in this order:
+    1. Add 5 eval questions built on exact names or codes to `evals/questions.jsonl`, then run `make eval` on the current vector-only Scout. This is the "before" score; save it for the PR.
+    2. Add keyword search over the library using the existing `chunks.fts` column and `chunks_fts_idx` (no migration): build an OR query from the question's words (`to_tsquery('english', ...)` with the stemmed terms joined by `|`, words sanitised so user text can't break the query) and rank with `ts_rank_cd`. Plain `plainto_tsquery` is not used because it ANDs every word and returns nothing for natural questions.
+    3. Fetch the top 20 from each list. Private chunks are cosine-scored in memory and join the vector list (merged with the library's vector hits by cosine score); they have no keyword rank. Fuse the vector list and the keyword list with reciprocal rank fusion, `1/(60 + rank)` summed per chunk, and keep the top k (5).
+    4. Extend `Result` with `vector_rank`, `vector_score`, `keyword_rank` and `keyword_score` (each optional) and keep `score` as the fused RRF score. `ask.py` keeps sending `score`.
+    5. Run `make eval` again for the "after" score.
+  - Done when: before and after eval scores are in the PR, and tests cover a chunk found only by keyword, one found only by vector, one found by both, and private chunks outranking nothing unfairly (they compete by vector rank, not raw score).
+  - Out of scope: reranking, new migrations, frontend.
 - [ ] 4.2 Judge
-  - Do: Scout fetches 20; rerank-3-lite keeps the best 5; step events include each card's old and new rank.
-  - Done when: before and after eval scores are in the PR.
-  - Out of scope: Fact-Checker.
-- [ ] 4.3 Fact-Checker
+  - Do: Scout returns its top 20 (fused order) instead of 5. A new `backend/app/pipeline/judge.py` reranks them with Voyage `rerank-3-lite` (using `VOYAGE_API_KEY`, retries like the Translator's embedder) and keeps the best 5. Private chunks are part of the same 20-candidate pool and are reranked with the library chunks. Add a fake reranker for tests. Each result gets `old_rank`, `new_rank` and `rerank_score`; the Judge's `done` event lists all 20 with those fields and says which 5 were kept. If the reranker call fails after retries, the Judge falls back to the first 5 in the fused order and marks `"fallback": true` in its event; the question still gets answered. `/ask` runs Translator, Scout, Judge, Storyteller. Citations and the Storyteller only ever see the kept 5.
+  - Done when: before and after eval scores are in the PR (the "before" is the 4.1 "after"), and tests cover reordering, private chunks in the pool, and the fallback.
+  - Out of scope: Fact-Checker, frontend.
+- [~] 4.3 Fact-Checker (SKIPPED for now by the owner; not needed for v1, revisit later)
   - Do: one LLM call through `llm.py` checks each cited claim against its chunk and flags unsupported ones, as a reusable function; off by default, behind a toggle.
   - Done when: a planted wrong claim gets flagged.
   - Out of scope: frontend display beyond the toggle, LLM-judged evals.
-- [ ] 4.4 LLM-judged evals
+- [~] 4.4 LLM-judged evals (SKIPPED for now by the owner; depended on 4.3)
   - Do: faithfulness (reusing the Fact-Checker function) and answer correctness scored by the LLM through `llm.py`, added to `make eval`.
   - Done when: scores look sensible on 3 answers the owner grades.
   - Out of scope: CI workflow.
 - [ ] 4.5 Evals in CI
-  - Do: `evals.yml` runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when a score drops more than 5 points below baseline (LLM scores are noisy), skips when secrets are missing (forks).
+  - Do: `evals.yml` runs on PRs that touch the pipeline or prompts, posts scores as a PR comment, fails when the retrieval hit rate or citation validity drops more than 5 points below baseline, skips when secrets are missing (forks). Only these retrieval and citation scores are checked: no LLM-judged scores exist, since 4.3 and 4.4 are skipped.
   - Done when: a PR with a deliberately bad prompt fails.
   - Out of scope: new eval questions.
 - [ ] 4.6 Tracing
@@ -276,6 +281,6 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] Phase 1: both empty pages live, CI green on every PR
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
-- [ ] Phase 4: hybrid search, Judge, Fact-Checker, evals in CI and tracing shipped
+- [ ] Phase 4: hybrid search, Judge, evals in CI and tracing shipped (Fact-Checker and LLM-judged evals skipped)
 - [ ] Phase 5: all eight characters animating both pages, and a source side panel
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released

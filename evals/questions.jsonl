@@ -51,3 +51,8 @@
 {"id": "near-none-1", "type": "unanswerable", "tier": "hard", "question": "What is the retail price of the Zephyr R9 router?"}
 {"id": "near-none-2", "type": "unanswerable", "tier": "hard", "question": "What is the PIN code for V's apartment door in Cyberpunk 2077?"}
 {"id": "near-none-3", "type": "unanswerable", "tier": "hard", "question": "What was Microsoft's total revenue in its 1985 fiscal year?"}
+{"id": "exact-1", "type": "answerable", "tier": "hard", "question": "What does error code E-2093 mean on the Zephyr R9?", "expected_file": "zephyr-router-manual.md", "expected_keyword": "DHCP"}
+{"id": "exact-2", "type": "answerable", "tier": "hard", "question": "Which GPU in the 2007 MacBook Pro revision reportedly failed when the die detached from the chip carrier?", "expected_file": "macbook-pro.md", "expected_keyword": "8600M GT"}
+{"id": "exact-3", "type": "answerable", "tier": "hard", "question": "What is UltraFusion in the Apple M1 Ultra?", "expected_file": "apple-silicon.md", "expected_keyword": "UltraFusion"}
+{"id": "exact-4", "type": "answerable", "tier": "hard", "question": "Is BM25 a sparse retrieval method?", "expected_file": "information-retrieval.md", "expected_keyword": "BM25"}
+{"id": "exact-5", "type": "answerable", "tier": "hard", "question": "Which Zephyr R9 firmware release first added guest networks?", "expected_file": "zephyr-router-manual.md", "expected_keyword": "2.6.3"}

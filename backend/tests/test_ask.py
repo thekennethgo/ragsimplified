@@ -96,8 +96,9 @@ def test_private_chunks_are_searched_and_sent_to_the_storyteller(client, llm):
     chunk = private_chunk(QUESTION)  # identical text, so cosine similarity 1.0
     got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
     scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
-    assert scout_done["data"]["results"][0]["source"] == "private"
-    assert scout_done["data"]["results"][0]["title"] == "My note"
+    # Fusion ranks by agreement between lists, so a library chunk matching by keyword may lead.
+    mine = [r for r in scout_done["data"]["results"] if r["source"] == "private"]
+    assert [r["title"] for r in mine] == ["My note"]
     assert 'from="your pasted text"' in llm.calls[0][1][0]["content"]
 
 
