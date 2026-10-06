@@ -15,9 +15,25 @@ function ndjson(lines: object[]): Response {
 
 const EVENTS = [
   { step: "translator", status: "start" },
-  { step: "translator", status: "done" },
+  {
+    step: "translator",
+    status: "done",
+    data: {
+      words: [
+        { text: "When", influence: 0.2 },
+        { text: "Apple", influence: 1 },
+        { text: "founded?", influence: null },
+      ],
+    },
+  },
   { step: "scout", status: "start" },
-  { step: "scout", status: "done", data: { results: [] } },
+  { step: "scout", status: "done", data: { results: [{}, {}, {}] } },
+  { step: "judge", status: "start" },
+  {
+    step: "judge",
+    status: "done",
+    data: { results: [{ kept: true }, { kept: false }, { kept: false }], fallback: false },
+  },
   { step: "storyteller", status: "start" },
   { step: "answer", delta: "Apple was founded in 1976 [1]. " },
   { step: "answer", delta: "Also [9]." },
@@ -63,9 +79,11 @@ test("streams the answer, turns [n] into a button and opens its source", async (
   expect(answer).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
   expect(answer).not.toHaveTextContent("[9]");
 
-  const sources = screen.getByRole("region", { name: "Sources" });
-  expect(within(sources).getByText(/partnership on April 1, 1976/)).toBeInTheDocument();
+  // The sources stay out of the way until the answer or a marker is pressed.
+  expect(screen.queryByRole("complementary", { name: "Sources" })).toBeNull();
   fireEvent.click(button);
+  const sources = screen.getByRole("complementary", { name: "Sources" });
+  expect(within(sources).getByText(/partnership on April 1, 1976/)).toBeInTheDocument();
   const [item] = within(sources).getAllByRole("listitem");
   expect(item).toHaveTextContent("Apple Inc.");
   expect(item).toHaveAttribute("aria-current", "true");
@@ -75,6 +93,7 @@ test("each source links to its document at the cited chunk", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
+  fireEvent.click(await screen.findByRole("button", { name: "Source 1" }));
   const link = await screen.findByRole("link", { name: "Open source 1" });
   expect(link).toHaveAttribute("href", "/library/7?chunk=3");
 });
@@ -140,8 +159,9 @@ test("a refusal shows no sources", async () => {
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("Capital of Peru?");
+  fireEvent.click(await screen.findByRole("button", { name: "Show sources" }));
   expect(await screen.findByText("No sources cited.")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /Source/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Source \d/ })).toBeNull();
 });
 
 test("an error event is shown in the progress log", async () => {
@@ -157,4 +177,90 @@ test("the button stays disabled until there is a question", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
+});
+
+test("the question's words are highlighted by their influence", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  const words = await screen.findByLabelText("Question words by influence");
+  const apple = within(words).getByText("Apple");
+  expect(apple).toHaveAttribute("data-influence", "1");
+  expect(apple).toHaveAttribute("title", "Influence 1.00");
+  expect(within(words).getByText("When")).toHaveAttribute("data-influence", "0.2");
+  // A word the backend did not weigh is not highlighted.
+  expect(within(words).getByText("founded?")).toHaveAttribute(
+    "title",
+    "Not weighted (long question)",
+  );
+});
+
+test("markup in a question's words is shown as text, not rendered", async () => {
+  stubAsk([
+    {
+      step: "translator",
+      status: "done",
+      data: { words: [{ text: "<img src=x onerror=alert(1)>", influence: 0.5 }] },
+    },
+  ]);
+  const { container } = render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("anything");
+  expect(await screen.findByText("<img src=x onerror=alert(1)>")).toBeInTheDocument();
+  expect(container.querySelector("img")).toBeNull();
+});
+
+test("each character shows its state from the step events", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const group = (name: string) => screen.getByRole("group", { name });
+  expect(group("Translator")).toHaveTextContent("waiting");
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  for (const name of ["Translator", "Scout", "Judge", "Storyteller"]) {
+    expect(group(name)).toHaveTextContent("done");
+  }
+  expect(group("Scout")).toHaveTextContent("3 candidates");
+  expect(group("Judge")).toHaveTextContent("kept 1 of 3");
+  // The Archivist has no step of its own yet: it stands by in the library.
+  expect(within(group("Library")).getByRole("group", { name: "Archivist" })).toHaveTextContent(
+    "standing by",
+  );
+  expect(within(group("Library")).getByRole("group", { name: "Scout" })).toBeInTheDocument();
+});
+
+test("a failed step shows the running character as an error", async () => {
+  stubAsk([
+    { step: "translator", status: "start" },
+    { step: "error", status: "done", data: { message: "Ask failed" } },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("Hi?");
+  await waitFor(() =>
+    expect(screen.getByRole("group", { name: "Translator" })).toHaveTextContent("error"),
+  );
+});
+
+test("pressing the answer opens the sources sidebar and it can be closed", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+
+  fireEvent.click(screen.getByText(/Apple was founded in 1976/));
+  const sidebar = screen.getByRole("complementary", { name: "Sources" });
+  expect(within(sidebar).getByText(/partnership on April 1, 1976/)).toBeInTheDocument();
+
+  fireEvent.click(within(sidebar).getByRole("button", { name: "Close sources" }));
+  expect(screen.queryByRole("complementary", { name: "Sources" })).toBeNull();
+});
+
+test("asking again closes the sidebar and clears the scene", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  fireEvent.click(await screen.findByRole("button", { name: "Show sources" }));
+  expect(screen.getByRole("complementary", { name: "Sources" })).toBeInTheDocument();
+  ask("Another question?");
+  expect(screen.queryByRole("complementary", { name: "Sources" })).toBeNull();
+  await screen.findByRole("button", { name: "Source 1" });
 });

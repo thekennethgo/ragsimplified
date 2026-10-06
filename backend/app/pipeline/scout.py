@@ -1,4 +1,5 @@
 import math
+import re
 from dataclasses import dataclass, replace
 from typing import Literal
 
@@ -34,6 +35,7 @@ class Result:
     vector_score: float | None = None  # cosine similarity
     keyword_rank: int | None = None  # 1-based rank in the keyword list, if it appears there
     keyword_score: float | None = None  # ts_rank_cd
+    matched_words: tuple[str, ...] | None = None  # question words found in this library chunk
     old_rank: int | None = None  # 1-based rank before the Judge (fused order)
     new_rank: int | None = None  # 1-based rank after the Judge
     rerank_score: float | None = None  # the reranker's relevance score
@@ -98,6 +100,34 @@ def search_keywords(conn: psycopg.Connection, question: str, k: int = CANDIDATES
             document_id=document_id,
         )
         for document_id, title, position, heading, page, text, score in rows
+    ]
+
+
+def matched_words(conn: psycopg.Connection, question: str, results: list[Result]) -> list[Result]:
+    """Add the question words that full-text-match each library result.
+
+    A word matches when its stem appears in the chunk's `fts` column, so "directed" matches
+    "directs". Stop words never match. Private results keep `None`: they have no full-text index.
+    """
+    words = list(dict.fromkeys(re.findall(r"\w+", question.lower())))
+    library = [r for r in results if r.source == "library"]
+    if not words or not library:
+        return results
+    rows = conn.execute(
+        "SELECT c.document_id, c.position, array_agg(w ORDER BY w) "
+        "FROM unnest(%s::bigint[], %s::int[]) AS k(document_id, position) "
+        "JOIN chunks c ON c.document_id = k.document_id AND c.position = k.position "
+        "CROSS JOIN unnest(%s::text[]) AS w "
+        "WHERE c.fts @@ plainto_tsquery('english', w) "
+        "GROUP BY c.document_id, c.position",
+        ([r.document_id for r in library], [r.position for r in library], words),
+    ).fetchall()
+    found = {(document_id, position): tuple(ws) for document_id, position, ws in rows}
+    return [
+        replace(r, matched_words=found.get((r.document_id, r.position), ()))
+        if r.source == "library"
+        else r
+        for r in results
     ]
 
 
@@ -179,4 +209,5 @@ def scout(
         k=CANDIDATES,
     )
     keyword_results = search_keywords(conn, question) if question else []
-    return fuse(vector_results, keyword_results, k)
+    fused = fuse(vector_results, keyword_results, k)
+    return matched_words(conn, question, fused) if question else fused

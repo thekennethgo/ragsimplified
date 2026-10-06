@@ -172,3 +172,19 @@ def test_scout_by_both_beats_by_one(keyword_conn):
     results = scout(keyword_conn, axis(7), k=2, question="quokka")
     assert results[0].title == "Doc zebra"
     assert (results[0].vector_rank, results[0].keyword_rank) == (1, 1)
+
+
+def test_matched_words_lists_the_question_words_found_in_each_library_result(keyword_conn):
+    results = scout(
+        keyword_conn, axis(7), k=5, question="What is the quokka code, and a xylophone?"
+    )
+    zebra = next(r for r in results if r.title == "Doc zebra")
+    assert zebra.matched_words == ("code", "quokka")  # stems match; stop words and misses do not
+    assert next(r for r in results if r.title == "Doc exact").matched_words == ()
+
+
+def test_matched_words_is_none_for_private_results_and_without_a_question(keyword_conn):
+    mine = [private("quokka code", axis(0))]
+    results = scout(keyword_conn, axis(0), mine, k=5, question="quokka")
+    assert next(r for r in results if r.source == "private").matched_words is None
+    assert all(r.matched_words is None for r in scout(keyword_conn, axis(0), k=5))

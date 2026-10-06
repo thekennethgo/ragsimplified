@@ -1,4 +1,5 @@
 import hashlib
+import math
 import os
 import time
 from typing import Literal, Protocol
@@ -64,3 +65,36 @@ class FakeEmbedder:
         raw = [digest[i % len(digest)] / 255 - 0.5 for i in range(DIMENSION)]
         norm = sum(v * v for v in raw) ** 0.5
         return [v / norm for v in raw]
+
+
+MAX_WEIGHTED_WORDS = 40  # leave-one-out embeds one variant per word, so the batch is capped
+
+
+def _cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    norm = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))
+    return dot / norm if norm else 0.0
+
+
+def translate_question(embedder: Embedder, question: str) -> tuple[list[float], list[dict]]:
+    """Embed a question and say how much each word shaped its vector.
+
+    Leave-one-out: the question and every variant with one word removed are embedded in a single
+    batch; a word's influence is how far removing it moves the vector (1 - cosine), scaled so the
+    most influential word is 1. Words are the question's whitespace-separated pieces. Only the
+    first MAX_WEIGHTED_WORDS are weighted; later words get `influence: None`. A one-word question
+    has nothing to compare against, so its word is simply 1.
+    """
+    words = question.split()
+    weighted = words[:MAX_WEIGHTED_WORDS] if len(words) > 1 else []
+    variants = [" ".join(words[:i] + words[i + 1 :]) for i in range(len(weighted))]
+    vectors = embedder.embed([question, *variants], input_type="query")
+    query, variant_vectors = vectors[0], vectors[1:]
+    distances = [1 - _cosine(query, v) for v in variant_vectors]
+    top = max(distances, default=0.0)
+    if len(words) == 1:
+        influences: list[float | None] = [1.0]
+    else:
+        influences = [round(d / top, 4) if top > 0 else 0.0 for d in distances]
+    influences += [None] * (len(words) - len(influences))
+    return query, [{"text": w, "influence": i} for w, i in zip(words, influences)]
