@@ -9,7 +9,7 @@ The library is owner-curated: documents come from `corpus/` and are loaded by `m
    - Use `##` headings. Each chunk keeps its heading, and citations show it.
    - For a Wikipedia article, keep the source URL and the CC BY-SA attribution line at the top.
 2. **Add a row to the table in `corpus/README.md`** with the file name and where it came from.
-3. **Load it locally:** `make seed`. It needs `VOYAGE_API_KEY` and `DATABASE_URL` in `.env`. Output is one line per file: `saved`, `skipped` (already in the library) or `empty` (no text found).
+3. **Load it locally:** `make seed`. It needs `VOYAGE_API_KEY` and `DATABASE_URL` in `.env`. Output is one line per file: `saved`, `skipped` (already in the library) or `empty` (no text found), then `Mapped N chunks`.
 4. **Check it:** `make eval`, then add a few questions about the new document to `evals/questions.jsonl` (an `expected_file` and an `expected_keyword`). More documents make retrieval harder, so scores can move.
 5. **Load it on the live site:** run `make seed` with `DATABASE_URL` pointing at Supabase. Seeding locally does not touch the live database.
 6. **Commit** the file, the README row and the new questions in one PR.
@@ -24,5 +24,5 @@ Nothing sorts or tags documents. All chunks sit in one pool and are found by mea
 
 - **Re-running is safe.** Files are matched by a hash of their content, so unchanged files are skipped.
 - **Editing a file adds a new document.** The changed content has a new hash, so it is saved as a second document and the old one stays. Remove the old row from the database by hand until a delete tool exists.
-- **After step 4.9**, `make seed` also refits the vector map over every chunk, so re-seed after adding documents.
+- **The vector map is refitted on every `make seed`** over all library chunks (it prints `Mapped N chunks`), so every point can move when a document is added. New documents only appear on the map after a seed. Run `make migrate` once first if the database predates migration 002.
 - **Private or sensitive text does not belong here.** `corpus/` is public in the repo.

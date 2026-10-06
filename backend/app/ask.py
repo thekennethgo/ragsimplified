@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.events import DeltaEvent, StepEvent
 from app.llm import LLM, get_llm
+from app.map import Projection, get_projection
 from app.pipeline.citations import extract_citations
 from app.pipeline.judge import Reranker, get_reranker, judge
 from app.pipeline.scout import CANDIDATES, PrivateChunk, Result, scout
@@ -96,11 +97,19 @@ def describe_judgement(candidates: list[Result], kept: list[Result]) -> list[dic
 
 
 def run_ask(
-    request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect, reranker: Reranker
+    request: AskRequest,
+    embedder: Embedder,
+    llm: LLM,
+    connect: Connect,
+    reranker: Reranker,
+    projection: Projection | None = None,
 ) -> Iterator[StepEvent | DeltaEvent]:
     yield StepEvent(step="translator", status="start")
     query, words = translate_question(embedder, request.question)
-    yield StepEvent(step="translator", status="done", data={"words": words})
+    translated: dict = {"words": words}
+    if projection is not None:
+        [translated["point"]] = projection.project([query])
+    yield StepEvent(step="translator", status="done", data=translated)
 
     yield StepEvent(step="scout", status="start")
     private = [PrivateChunk(**chunk.model_dump()) for chunk in request.private_chunks]
@@ -142,10 +151,15 @@ def run_ask(
 
 
 def stream(
-    request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect, reranker: Reranker
+    request: AskRequest,
+    embedder: Embedder,
+    llm: LLM,
+    connect: Connect,
+    reranker: Reranker,
+    projection: Projection | None,
 ) -> Iterator[str]:
     try:
-        for event in run_ask(request, embedder, llm, connect, reranker):
+        for event in run_ask(request, embedder, llm, connect, reranker, projection):
             yield event.to_line()
     except Exception:
         yield StepEvent(step="error", status="done", data={"message": "Ask failed"}).to_line()
@@ -158,7 +172,9 @@ def ask(
     llm: LLM = Depends(get_llm),
     connect: Connect = Depends(get_connect),
     reranker: Reranker = Depends(get_reranker),
+    projection: Projection | None = Depends(get_projection),
 ) -> StreamingResponse:
     return StreamingResponse(
-        stream(request, embedder, llm, connect, reranker), media_type="application/x-ndjson"
+        stream(request, embedder, llm, connect, reranker, projection),
+        media_type="application/x-ndjson",
     )
