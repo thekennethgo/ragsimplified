@@ -26,7 +26,22 @@ def get_embedder() -> Embedder:
 def run_upload(request: UploadRequest, embedder: Embedder) -> Iterator[StepEvent]:
     yield StepEvent(step="chopper", status="start")
     chunks = chop([Page(number=None, text=request.text)])
-    yield StepEvent(step="chopper", status="done", data={"chunks": len(chunks)})
+    yield StepEvent(
+        step="chopper",
+        status="done",
+        data={
+            "chunks": len(chunks),
+            "chunk_details": [
+                {
+                    "position": c.position,
+                    "heading": c.heading,
+                    "length": len(c.text),
+                    "overlap": c.overlap,
+                }
+                for c in chunks
+            ],
+        },
+    )
 
     yield StepEvent(step="translator", status="start")
     vectors = embedder.embed([chunk.text for chunk in chunks], input_type="document")

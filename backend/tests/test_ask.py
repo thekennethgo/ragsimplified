@@ -220,3 +220,20 @@ def test_a_reranker_failure_still_answers(client, llm, library_chunk):
     judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
     assert judge_done["data"]["fallback"] is True
     assert got[-1]["data"]["answer"] == "The answer is here [1]."
+
+
+@needs_db
+def test_translator_event_carries_word_weights_and_scout_event_carries_both_ranks(
+    client, library_chunk
+):
+    got = events(client.post("/ask", json={"question": QUESTION}))
+    translator = next(e for e in got if e.get("step") == "translator" and e["status"] == "done")
+    words = translator["data"]["words"]
+    assert [w["text"] for w in words] == QUESTION.split()
+    assert max(w["influence"] for w in words) == 1.0
+    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
+    mine = next(r for r in scout_done["data"]["results"] if r["title"] == "Ask test doc")
+    # The vector matches exactly; the keyword list matches on the question's words.
+    assert mine["vector_rank"] is not None and mine["vector_score"] == 1.0
+    assert mine["found_by"] in {"vector", "both"}
+    assert set(mine) >= {"keyword_rank", "keyword_score", "matched_words", "found_by"}

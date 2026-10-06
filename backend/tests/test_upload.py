@@ -75,3 +75,17 @@ def test_upload_writes_nothing_to_the_database(client):
     before = counts()
     client.post("/upload", json={"title": "T", "text": "Nothing should be stored."})
     assert counts() == before
+
+
+def test_chopper_event_lists_each_chunks_position_heading_length_and_overlap(client):
+    text = "# Guide\n\n" + "\n\n".join("Paragraph " + "word " * 150 for _ in range(8))
+    got = events(client.post("/upload", json={"title": "Long", "text": text}))
+    data = got[1]["data"]
+    details = data["chunk_details"]
+    assert data["chunks"] == len(details) > 1
+    assert [d["position"] for d in details] == list(range(len(details)))
+    assert details[0]["heading"] == "Guide" and details[0]["overlap"] == 0
+    assert all(d["length"] > 0 for d in details)
+    assert all(d["overlap"] > 0 for d in details[1:])
+    translator = got[-1]["data"]
+    assert [d["length"] for d in details] == [len(c["text"]) for c in translator["chunks"]]

@@ -41,3 +41,105 @@ nav {
 main {
   padding: 1rem;
 }
+
+/* Placeholder Ask scene (step 4.8a). Real characters replace the boxes in Phase 5. */
+.scene {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.character {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem;
+  min-width: 7rem;
+  border: 2px dashed #999;
+  border-radius: 0.75rem;
+  background: #fafafa;
+}
+
+.character-working {
+  border-color: #d97706;
+  background: #fff7e0;
+}
+
+.character-done {
+  border-color: #15803d;
+  background: #e8f7ec;
+}
+
+.character-error {
+  border-color: #b91c1c;
+  background: #fdecec;
+}
+
+.character-state {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 2px solid #8b6b3d;
+  border-radius: 0.75rem;
+  background: #f6efe2;
+}
+
+.library-label {
+  font-weight: 600;
+  color: #5a4524;
+}
+
+.library-cast {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.bubble {
+  padding: 0.75rem 1rem;
+  border: 1px solid #bbb;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.answer-bubble {
+  min-height: 3rem;
+  cursor: pointer;
+  background: #eef4ff;
+}
+
+.question-bubble textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(24rem, 100%);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1rem;
+  border-left: 1px solid #ccc;
+  background: #fff;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+}

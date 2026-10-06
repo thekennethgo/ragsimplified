@@ -19,6 +19,7 @@ class Chunk:
     page: int | None
     heading: str | None
     text: str
+    overlap: int = 0  # characters shared with the end of the previous chunk (0 for the first)
 
 
 def _segments(text: str) -> list[tuple[str, str | None]]:
@@ -99,12 +100,16 @@ def chop(pages: list[Page]) -> list[Chunk]:
         buffer = ""  # text of the chunk being built, including any overlap
         fresh = False  # whether the buffer holds anything beyond the overlap
         buffer_heading: str | None = None
+        carried = 0  # length of the overlap at the start of the buffer
 
         def flush(page_number: int | None = page.number) -> None:
-            nonlocal buffer, fresh
+            nonlocal buffer, fresh, carried
             if fresh:
-                chunks.append(Chunk(len(chunks), page_number, buffer_heading, buffer.strip()))
+                chunks.append(
+                    Chunk(len(chunks), page_number, buffer_heading, buffer.strip(), carried)
+                )
                 buffer = _tail(buffer)
+                carried = len(buffer)
                 fresh = False
 
         for segment, heading in _segments(page.text):

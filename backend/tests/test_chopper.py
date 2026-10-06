@@ -53,3 +53,19 @@ def test_heading_follows_sections_across_chunks():
 def test_pages_are_chunked_separately():
     chunks = chop([Page(1, "First page."), Page(2, "Second page.")])
     assert [(c.page, c.position) for c in chunks] == [(1, 0), (2, 1)]
+
+
+def test_chunks_report_how_much_they_share_with_the_previous_chunk():
+    text = "\n\n".join(f"Paragraph {i} " + "word " * 150 for i in range(8))
+    chunks = chop([Page(None, text)])
+    assert len(chunks) > 2
+    assert chunks[0].overlap == 0
+    for previous, chunk in zip(chunks, chunks[1:]):
+        assert 0 < chunk.overlap <= OVERLAP_CHARS
+        # The shared text really is the end of the previous chunk and the start of this one.
+        assert chunk.text.startswith(previous.text[-chunk.overlap :].strip())
+
+
+def test_overlap_does_not_cross_pages():
+    chunks = chop([Page(1, "First page text."), Page(2, "Second page text.")])
+    assert [c.overlap for c in chunks] == [0, 0]

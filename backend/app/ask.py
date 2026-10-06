@@ -13,7 +13,7 @@ from app.pipeline.citations import extract_citations
 from app.pipeline.judge import Reranker, get_reranker, judge
 from app.pipeline.scout import CANDIDATES, PrivateChunk, Result, scout
 from app.pipeline.storyteller import build_prompt
-from app.pipeline.translator import DIMENSION, Embedder
+from app.pipeline.translator import DIMENSION, Embedder, translate_question
 from app.upload import get_embedder
 
 MAX_QUESTION_CHARS = 1_000
@@ -46,6 +46,16 @@ def get_connect() -> Connect:
     return lambda: psycopg.connect(os.environ["DATABASE_URL"])
 
 
+def _round(value: float | None) -> float | None:
+    return None if value is None else round(value, 4)
+
+
+def _found_by(result: Result) -> str:
+    if result.vector_rank and result.keyword_rank:
+        return "both"
+    return "vector" if result.vector_rank else "keyword"
+
+
 def describe_candidates(results: list[Result]) -> list[dict]:
     return [
         {
@@ -55,6 +65,12 @@ def describe_candidates(results: list[Result]) -> list[dict]:
             "page": r.page,
             "heading": r.heading,
             "score": round(r.score, 4),
+            "vector_rank": r.vector_rank,
+            "vector_score": _round(r.vector_score),
+            "keyword_rank": r.keyword_rank,
+            "keyword_score": _round(r.keyword_score),
+            "matched_words": None if r.matched_words is None else list(r.matched_words),
+            "found_by": _found_by(r),
         }
         for rank, r in enumerate(results, start=1)
     ]
@@ -83,8 +99,8 @@ def run_ask(
     request: AskRequest, embedder: Embedder, llm: LLM, connect: Connect, reranker: Reranker
 ) -> Iterator[StepEvent | DeltaEvent]:
     yield StepEvent(step="translator", status="start")
-    [query] = embedder.embed([request.question], input_type="query")
-    yield StepEvent(step="translator", status="done")
+    query, words = translate_question(embedder, request.question)
+    yield StepEvent(step="translator", status="done", data={"words": words})
 
     yield StepEvent(step="scout", status="start")
     private = [PrivateChunk(**chunk.model_dump()) for chunk in request.private_chunks]

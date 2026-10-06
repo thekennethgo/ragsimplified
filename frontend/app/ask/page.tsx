@@ -1,54 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { type FormEvent, Fragment, useRef, useState } from "react";
+import { type FormEvent, useState } from "react";
 
+import { AnswerBubble } from "../../components/ask/AnswerBubble";
+import { CharacterRow, type SceneState } from "../../components/ask/CharacterRow";
+import { QuestionBubble } from "../../components/ask/QuestionBubble";
+import { SourcesSidebar } from "../../components/ask/SourcesSidebar";
+import { type Citation, type StepState, type Word } from "../../lib/ask";
 import { backendUrl, readEvents } from "../../lib/backend";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
 
-const MAX_QUESTION_CHARS = 1_000;
 // The backend accepts at most this many private chunks per question.
 const MAX_PRIVATE_CHUNKS = 60;
 
-type Citation = {
-  n: number;
-  source: "library" | "private";
-  title: string;
-  page: number | null;
-  heading: string | null;
-  snippet: string;
-  document_id: number | null;
-  position: number;
-};
-
-/** Split an answer into text and [n] markers; a marker is a button only if it has a source. */
-function AnswerText({
-  answer,
-  citations,
-  onOpen,
-}: {
-  answer: string;
-  citations: Citation[];
-  onOpen: (n: number) => void;
-}) {
-  const known = new Set(citations.map((c) => c.n));
-  return (
-    <p>
-      {answer.split(/(\[\d+\])/).map((part, index) => {
-        const match = /^\[(\d+)\]$/.exec(part);
-        if (!match || !known.has(Number(match[1]))) {
-          return <Fragment key={index}>{part}</Fragment>;
-        }
-        const n = Number(match[1]);
-        return (
-          <button key={index} type="button" aria-label={`Source ${n}`} onClick={() => onOpen(n)}>
-            [{n}]
-          </button>
-        );
-      })}
-    </p>
-  );
-}
+type Steps = Partial<Record<string, StepState>>;
+type Candidate = { kept?: boolean };
 
 export default function AskPage() {
   const { texts } = usePrivateTexts();
@@ -57,8 +23,12 @@ export default function AskPage() {
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const sourceRefs = useRef<Map<number, HTMLLIElement>>(new Map());
+  const [steps, setSteps] = useState<Steps>({});
+  const [words, setWords] = useState<Word[]>([]);
+  const [scoutDetail, setScoutDetail] = useState<string | undefined>();
+  const [judgeDetail, setJudgeDetail] = useState<string | undefined>();
 
   const privateChunks = texts
     .flatMap((item) =>
@@ -84,7 +54,7 @@ export default function AskPage() {
 
   function openSource(n: number) {
     setSelected(n);
-    sourceRefs.current.get(n)?.scrollIntoView?.({ block: "nearest" });
+    setSidebarOpen(true);
   }
 
   async function onSubmit(event: FormEvent) {
@@ -94,6 +64,11 @@ export default function AskPage() {
     setAnswer("");
     setCitations([]);
     setSelected(null);
+    setSidebarOpen(false);
+    setSteps({});
+    setWords([]);
+    setScoutDetail(undefined);
+    setJudgeDetail(undefined);
     try {
       const response = await fetch(`${backendUrl()}/ask`, {
         method: "POST",
@@ -112,6 +87,27 @@ export default function AskPage() {
         setLog((lines) => [...lines, `${e.step}: ${e.status}`]);
         if (e.step === "error") {
           setLog((lines) => [...lines, String(e.data?.message ?? "Something went wrong")]);
+          // Whatever was running when it failed shows as failed.
+          setSteps((now) =>
+            Object.fromEntries(
+              Object.entries(now).map(([step, state]) => [
+                step,
+                state === "working" ? "error" : state,
+              ]),
+            ),
+          );
+          continue;
+        }
+        setSteps((now) => ({ ...now, [e.step]: e.status === "start" ? "working" : "done" }));
+        if (e.step === "translator" && e.status === "done") {
+          setWords((e.data?.words ?? []) as Word[]);
+        } else if (e.step === "scout" && e.status === "done") {
+          const found = (e.data?.results ?? []) as unknown[];
+          setScoutDetail(`${found.length} candidates`);
+        } else if (e.step === "judge" && e.status === "done") {
+          const results = (e.data?.results ?? []) as Candidate[];
+          const kept = results.filter((r) => r.kept).length;
+          setJudgeDetail(`kept ${kept} of ${results.length}${e.data?.fallback ? " (fallback)" : ""}`);
         } else if (e.step === "storyteller" && e.status === "done" && e.data) {
           // The final answer has made-up [n] markers removed.
           setAnswer(String(e.data.answer ?? ""));
@@ -124,6 +120,16 @@ export default function AskPage() {
       setBusy(false);
     }
   }
+
+  const stateOf = (step: string): StepState => steps[step] ?? "waiting";
+  const scene: SceneState = {
+    translator: stateOf("translator"),
+    scout: stateOf("scout"),
+    judge: stateOf("judge"),
+    storyteller: stateOf("storyteller"),
+    scoutDetail,
+    judgeDetail,
+  };
 
   return (
     <>
@@ -139,60 +145,42 @@ export default function AskPage() {
         </p>
       )}
 
-      <form onSubmit={onSubmit}>
-        <label>
-          Question
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            maxLength={MAX_QUESTION_CHARS}
-            rows={3}
-          />
-        </label>
-        <p aria-live="polite">
-          {question.length} / {MAX_QUESTION_CHARS}
-        </p>
-        <button type="submit" disabled={busy || !question.trim()}>
-          {busy ? "Working…" : "Ask"}
-        </button>
-      </form>
+      <CharacterRow
+        state={scene}
+        above={{
+          translator: (
+            <QuestionBubble
+              question={question}
+              onChange={setQuestion}
+              onSubmit={onSubmit}
+              busy={busy}
+              words={words}
+            />
+          ),
+          storyteller: (
+            <AnswerBubble
+              answer={answer}
+              citations={citations}
+              onOpenSource={openSource}
+              onShowSources={() => setSidebarOpen(true)}
+            />
+          ),
+        }}
+      />
 
       <section aria-label="Progress">
         <h2>Progress</h2>
         <pre>{log.join("\n")}</pre>
       </section>
 
-      <section aria-label="Answer">
-        <h2>Answer</h2>
-        <AnswerText answer={answer} citations={citations} onOpen={openSource} />
-      </section>
-
-      <section aria-label="Sources">
-        <h2>Sources</h2>
-        {citations.length === 0 ? (
-          <p>No sources cited.</p>
-        ) : (
-          <ul>
-            {citations.map((c) => (
-              <li
-                key={c.n}
-                ref={(node) => {
-                  if (node) sourceRefs.current.set(c.n, node);
-                }}
-                aria-current={selected === c.n}
-                style={selected === c.n ? { background: "#fff3bf" } : undefined}
-              >
-                <strong>[{c.n}]</strong> {c.title}
-                {c.page !== null ? `, page ${c.page}` : ""}
-                {c.heading ? ` (${c.heading})` : ""}{" "}
-                <em>{c.source === "private" ? "your pasted text" : "starter library"}</em>
-                <blockquote>{c.snippet}</blockquote>
-                {sourceHref(c) && <Link href={sourceHref(c)!}>Open source {c.n}</Link>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {sidebarOpen && (
+        <SourcesSidebar
+          citations={citations}
+          selected={selected}
+          hrefFor={sourceHref}
+          onClose={() => setSidebarOpen(false)}
+        />
+      )}
     </>
   );
 }
