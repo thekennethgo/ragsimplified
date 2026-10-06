@@ -11,6 +11,7 @@ from app.main import app
 from app.pipeline.archivist import hash_pages, save_document
 from app.pipeline.chopper import Chunk
 from app.pipeline.collector import Page
+from app.pipeline.judge import FakeReranker, get_reranker
 from app.pipeline.translator import FakeEmbedder
 from app.upload import get_embedder
 
@@ -30,6 +31,7 @@ def llm():
 def client(llm):
     app.dependency_overrides[get_embedder] = lambda: fake
     app.dependency_overrides[get_llm] = lambda: llm
+    app.dependency_overrides[get_reranker] = lambda: FakeReranker()
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -77,12 +79,16 @@ def test_streams_steps_then_answer_from_the_library(client, llm, library_chunk):
         ("translator", "done"),
         ("scout", "start"),
         ("scout", "done"),
+        ("judge", "start"),
+        ("judge", "done"),
         ("storyteller", "start"),
         ("storyteller", "done"),
     ]
-    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
-    top = scout_done["data"]["results"][0]
+    judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
+    top = judge_done["data"]["results"][0]
     assert (top["n"], top["source"], top["title"]) == (1, "library", "Ask test doc")
+    assert (top["old_rank"], top["new_rank"], top["kept"]) == (1, 1, True)
+    assert judge_done["data"]["fallback"] is False
     deltas = "".join(e["delta"] for e in got if "delta" in e)
     assert deltas == "The answer is here [1]."
     assert got[-1]["data"]["answer"] == deltas
@@ -95,9 +101,9 @@ def test_streams_steps_then_answer_from_the_library(client, llm, library_chunk):
 def test_private_chunks_are_searched_and_sent_to_the_storyteller(client, llm):
     chunk = private_chunk(QUESTION)  # identical text, so cosine similarity 1.0
     got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
-    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
-    # Fusion ranks by agreement between lists, so a library chunk matching by keyword may lead.
-    mine = [r for r in scout_done["data"]["results"] if r["source"] == "private"]
+    judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
+    # The Judge orders by relevance, so where the private chunk lands depends on the data.
+    mine = [r for r in judge_done["data"]["results"] if r["source"] == "private"]
     assert [r["title"] for r in mine] == ["My note"]
     assert 'from="your pasted text"' in llm.calls[0][1][0]["content"]
 
@@ -106,8 +112,8 @@ def test_private_chunks_are_searched_and_sent_to_the_storyteller(client, llm):
 def test_both_library_and_private_results_can_appear(client, library_chunk):
     chunk = private_chunk(QUESTION)
     got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
-    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
-    sources = {r["source"] for r in scout_done["data"]["results"]}
+    judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
+    sources = {r["source"] for r in judge_done["data"]["results"] if r["kept"]}
     assert sources == {"library", "private"}
 
 
@@ -193,3 +199,24 @@ def test_final_event_has_a_cleaned_answer_and_the_citations(client, llm, library
     )
     assert citation["snippet"] == "Library text for the ask test."
     assert citation["document_id"] == library_chunk
+
+
+@needs_db
+def test_scout_event_lists_the_candidates_before_the_judge(client, library_chunk):
+    got = events(client.post("/ask", json={"question": QUESTION}))
+    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
+    assert scout_done["data"]["results"][0]["rank"] == 1
+    assert "n" not in scout_done["data"]["results"][0]
+
+
+@needs_db
+def test_a_reranker_failure_still_answers(client, llm, library_chunk):
+    class Broken:
+        def rerank(self, query, documents):
+            raise RuntimeError("down")
+
+    app.dependency_overrides[get_reranker] = lambda: Broken()
+    got = events(client.post("/ask", json={"question": QUESTION}))
+    judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
+    assert judge_done["data"]["fallback"] is True
+    assert got[-1]["data"]["answer"] == "The answer is here [1]."

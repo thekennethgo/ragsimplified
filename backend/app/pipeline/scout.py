@@ -34,6 +34,9 @@ class Result:
     vector_score: float | None = None  # cosine similarity
     keyword_rank: int | None = None  # 1-based rank in the keyword list, if it appears there
     keyword_score: float | None = None  # ts_rank_cd
+    old_rank: int | None = None  # 1-based rank before the Judge (fused order)
+    new_rank: int | None = None  # 1-based rank after the Judge
+    rerank_score: float | None = None  # the reranker's relevance score
 
 
 def _vector_literal(vector: list[float]) -> str:

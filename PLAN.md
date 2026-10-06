@@ -165,7 +165,7 @@ Each upgrade has eval scores before and after, pasted into the PR description.
     5. Run `make eval` again for the "after" score.
   - Done when: before and after eval scores are in the PR, and tests cover a chunk found only by keyword, one found only by vector, one found by both, and private chunks outranking nothing unfairly (they compete by vector rank, not raw score).
   - Out of scope: reranking, new migrations, frontend.
-- [ ] 4.2 Judge
+- [x] 4.2 Judge
   - Do: Scout returns its top 20 (fused order) instead of 5. A new `backend/app/pipeline/judge.py` reranks them with Voyage `rerank-3-lite` (using `VOYAGE_API_KEY`, retries like the Translator's embedder) and keeps the best 5. Private chunks are part of the same 20-candidate pool and are reranked with the library chunks. Add a fake reranker for tests. Each result gets `old_rank`, `new_rank` and `rerank_score`; the Judge's `done` event lists all 20 with those fields and says which 5 were kept. If the reranker call fails after retries, the Judge falls back to the first 5 in the fused order and marks `"fallback": true` in its event; the question still gets answered. `/ask` runs Translator, Scout, Judge, Storyteller. Citations and the Storyteller only ever see the kept 5.
   - Done when: before and after eval scores are in the PR (the "before" is the 4.1 "after"), and tests cover reordering, private chunks in the pool, and the fallback.
   - Out of scope: Fact-Checker, frontend.

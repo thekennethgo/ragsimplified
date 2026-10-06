@@ -21,6 +21,7 @@ from app.ask import AskRequest, run_ask
 from app.events import DeltaEvent
 from app.llm import LLM, get_llm
 from app.migrate import migrate
+from app.pipeline.judge import Reranker, VoyageReranker
 from app.pipeline.translator import Embedder, VoyageEmbedder
 from app.seed import CORPUS_DIR, REPO_ROOT, seed
 
@@ -76,18 +77,23 @@ def is_refusal(answer: str, citations: list) -> bool:
     return not citations and bool(REFUSAL.search(answer))
 
 
-def run_question(question: dict, connect, embedder: Embedder, llm: LLM, titles: dict) -> dict:
+def run_question(
+    question: dict, connect, embedder: Embedder, llm: LLM, reranker: Reranker, titles: dict
+) -> dict:
     """Run one question through the same code as POST /ask and record what happened."""
     row = {"id": question["id"], "type": question["type"], "error": False}
     raw = ""
     final: dict = {}
     result_titles: list[str] = []
     try:
-        for event in run_ask(AskRequest(question=question["question"]), embedder, llm, connect):
+        for event in run_ask(
+            AskRequest(question=question["question"]), embedder, llm, connect, reranker
+        ):
             if isinstance(event, DeltaEvent):
                 raw += event.delta
-            elif event.step == "scout" and event.status == "done":
-                result_titles = [r["title"] for r in event.data["results"]]
+            elif event.step == "judge" and event.status == "done":
+                kept = [r for r in event.data["results"] if r["kept"]]
+                result_titles = [r["title"] for r in kept]
             elif event.step == "storyteller" and event.status == "done":
                 final = event.data
     except Exception:
@@ -162,6 +168,7 @@ def main(argv: list[str]) -> None:
     save_baseline = "--save-baseline" in argv
     embedder = VoyageEmbedder()
     llm = get_llm()
+    reranker = VoyageReranker()
     model = f"{os.environ.get('LLM_PROVIDER', 'openai_compatible')}:{os.environ['LLM_MODEL']}"
     eval_url = prepare_database(os.environ["DATABASE_URL"], embedder)
 
@@ -172,7 +179,7 @@ def main(argv: list[str]) -> None:
 
     rows = []
     for question in load_questions():
-        rows.append(run_question(question, connect, embedder, llm, titles))
+        rows.append(run_question(question, connect, embedder, llm, reranker, titles))
         status = "error" if rows[-1]["error"] else "ok"
         print(f"  {question['id']:<10} {status}", file=sys.stderr)
         time.sleep(delay)
