@@ -155,6 +155,7 @@ Eight cartoon characters each own one pipeline step, and every handoff between s
 | Character | Cartoon idea | RAG step | Implementation | Page |
 | --- | --- | --- | --- | --- |
 | Collector | Mail carrier with a bulging satchel | Ingestion | Parses PDF, Markdown and text; keeps page numbers. Runs in the seed script for the owner's files | Seed |
+| Courier | Mail carrier with a satchel | Taking in the visitor's text | Frontend only: takes the pasted text from the envelope and hands it to the Chopper; no backend step | Upload |
 | Chopper | Chef with a cleaver | Chunking | \~500-token chunks, 50-token overlap, keeps heading and page | Upload |
 | Translator | Linguist with a glowing stamp | Embedding | voyage-4, for chunks and for questions | Both |
 | Archivist | Owl librarian | Storage (the central library) | Postgres + pgvector (vectors, full text and chunk text); written only by the seed script | Ask |
@@ -163,9 +164,11 @@ Eight cartoon characters each own one pipeline step, and every handoff between s
 | Storyteller | Writer with a quill | Generation with citations | Haiku answers only from numbered chunks and cites them as \[1\], \[2\] | Ask |
 | Fact-Checker | Detective with a magnifying glass | Grounding check | Haiku checks each cited claim against its chunk | Ask |
 
+The Fact-Checker was dropped by the owner in Phase 5 and will not be built.
+
 **Upload page scenes** (a workshop that prepares a private shelf for the visitor)
 
-1. The pasted text arrives as a scroll; the Chopper catches it. (The Collector now works only on the owner's files, in the seed script.)
+1. The Courier brings in the pasted text as a scroll and hands it to the Chopper. (The Collector now works only on the owner's files, in the seed script.)
 2. The Chopper slices the pages into cards and slides them down the counter. The card count appears above the pile.
 3. The Translator stamps each card with a glowing tag (its embedding) and passes it on.
 4. The tagged cards are handed back to the visitor, who keeps them on a personal shelf; the shelf counter ticks up and the text joins "your texts". (Nothing goes to the shared library.)
