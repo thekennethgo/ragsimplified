@@ -169,7 +169,7 @@ Each upgrade has eval scores before and after, pasted into the PR description.
   - Do: Scout returns its top 20 (fused order) instead of 5. A new `backend/app/pipeline/judge.py` reranks them with Voyage `rerank-3-lite` (using `VOYAGE_API_KEY`, retries like the Translator's embedder) and keeps the best 5. Private chunks are part of the same 20-candidate pool and are reranked with the library chunks. Add a fake reranker for tests. Each result gets `old_rank`, `new_rank` and `rerank_score`; the Judge's `done` event lists all 20 with those fields and says which 5 were kept. If the reranker call fails after retries, the Judge falls back to the first 5 in the fused order and marks `"fallback": true` in its event; the question still gets answered. `/ask` runs Translator, Scout, Judge, Storyteller. Citations and the Storyteller only ever see the kept 5.
   - Done when: before and after eval scores are in the PR (the "before" is the 4.1 "after"), and tests cover reordering, private chunks in the pool, and the fallback.
   - Out of scope: Fact-Checker, frontend.
-- [~] 4.3 Fact-Checker (SKIPPED for now by the owner; not needed for v1, revisit later)
+- [~] 4.3 Fact-Checker (SKIPPED for now by the owner; not needed for v1, revisit later) (character dropped by the owner)
   - Do: one LLM call through `llm.py` checks each cited claim against its chunk and flags unsupported ones, as a reusable function; off by default, behind a toggle.
   - Done when: a planted wrong claim gets flagged.
   - Out of scope: frontend display beyond the toggle, LLM-judged evals.
@@ -206,43 +206,70 @@ Each upgrade has eval scores before and after, pasted into the PR description.
 
 Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.riv` file per character in `frontend/public/characters/`; one state machine named `main`; inputs `working` (boolean), `handoff` (trigger), `done` (trigger), `confused` (trigger).
 
+Steps 5.0a to 5.0g build both pages' layouts now, with placeholder characters, so the Figma and Rive work later swaps art into a working page. The look is bright, rounded and playful (inspired by Duolingo, without copying its name, mascot, logo or font). Every placeholder character is its own component so step 5.6 can swap in a Rive canvas.
+
+- [ ] 5.0a Look and the day/night switch
+  - Do: load Nunito with `next/font/google` and define shared design tokens in `globals.css` (ink #1E3440, teal #2F8FA3, mustard #E8A93C, brick #E0603F, skin #F2C9A0, one fresh green for success, light grounds), rounded panels (16 to 20px radius, 3px soft borders) and chunky buttons with a darker 4px bottom border that presses down on click. Replace the header's Upload and Ask links with an iPhone-style day/night pill switch: the sun side is Upload (day), the moon side is Ask (night), the knob slides to the current page and shows its icon and name. It is a `button` with `role="switch"`, `aria-checked` true on Ask, the accessible name "Switch to Ask" or "Switch to Upload", and navigates with `router.push` on click, Space or Enter. Keep the health badge. Respect `prefers-reduced-motion` for the slide.
+  - Done when: both pages use the new type and buttons, the switch moves between the pages with mouse and keyboard, and tests cover the switch's role, checked state and target.
+  - Out of scope: page layouts and characters (5.0b to 5.0e), Figma, Rive.
+- [ ] 5.0b Upload office
+  - Do: turn the Upload page into a cartoon office drawn in CSS: a back wall with a window, a clock, a plant and a blank placeholder bookcase (plain coloured spines, no titles or data; the real library lives in the panel of 5.0d); a floor with the Upload crew at desks in pipeline order, left to right: the Courier (new, a mail carrier who takes in the text), the Chopper and the Translator, then a small "Your shelf" where the visitor's texts land as chips with their chunk counts. Each placeholder is a `Desk` component: a round coloured buddy with eyes, a mouth, a prop badge, a name tag and a one-line job. Desks show waiting, working (a gentle bounce and a "working…" bubble), done (a green check) and error from the real step events. The backend has no Courier step, so the Courier is working from the moment the visitor sends, done when the Chopper's `start` event arrives, and in error if the request fails. When the Chopper's `done` event gives the chunk count, small cards and an "N cards" tag appear on its desk. The step log becomes a collapsible "What just happened" panel. At phone width the crew stacks top to bottom and the page never scrolls sideways.
+  - Done when: a real upload on localhost walks the three desks to done and the text lands on the shelf; component tests with fixed events cover every desk state, including the Courier's; existing tests still pass.
+  - Out of scope: the envelope (5.0c), the library panel (5.0d), the Ask page, the Collector (it stays in the seed script), Figma, Rive.
+- [ ] 5.0c Envelope inbox
+  - Do: restyle the paste form as an envelope being written: a stamp in the corner whose postmark is the 20,000-character counter, the title as a "To:" line, the text box as lined letter paper, and a red "Send" button (accessible name stays "Add text"). On send the flap folds shut and the Courier's desk starts working. Add "pick or drop a file" for `.md` and `.txt`: the browser reads the file with `FileReader` into the letter (title from the file name, cut at 20,000 characters with a visible note), and any other type gets a friendly error. The backend still only receives text (ADR 002). The privacy note stays visible on the envelope.
+  - Done when: pasting, picking and dropping a `.md` or `.txt` file all fill the letter and upload as before; tests cover file reading, the character cap and the wrong-type error.
+  - Out of scope: PDFs (5.0f), backend changes, the Ask page.
+- [ ] 5.0d Library panel
+  - Do: a panel outside the room, on both pages, with a two-way switch "Documents | Map" in the same chunky style. Documents lists each library document with its title, chunk count and a link to `/library/[id]`, from `GET /library`. Map shows a "coming soon" card until 5.0g.
+  - Done when: the panel shows the live library on both pages and the switch works with mouse and keyboard; tests cover both tabs.
+  - Out of scope: drawing the map (5.0g), new backend endpoints.
+- [ ] 5.0e Ask night library
+  - Do: turn the Ask page into the same building at night: a dark-blue palette, a moon in the window, warm lamps and the blank placeholder bookcase with the Archivist standing beside it; the crew at desks in pipeline order, left to right: the Translator, the Scout, the Judge and the Storyteller, reusing the `Desk` component and replacing the row from 4.8a. The question is written on a paper plane that flies to the Translator; its words are highlighted by their real influence weights as now; the Storyteller's answer appears as a scroll or chat bubble with its `[n]` markers; the citations sidebar stays as it is. The library panel from 5.0d sits below the room. Keep every existing Ask behaviour (private texts sent with each question, errors, `[n]` markers, the Scout's and Judge's details).
+  - Done when: a real question on localhost walks the crew to done, highlights the question, shows the answer and opens the sidebar; existing Ask tests pass, updated only where markup changed.
+  - Out of scope: the Courier (Upload only), the vector map, the Judge's rank-change visual, Figma, Rive.
+- [ ] 5.0f PDFs read in the browser
+  - Do: let the envelope also take a `.pdf`: load `pdfjs-dist` only when a PDF is picked, extract its text in the browser into the letter (same 20,000-character cap), and say that page numbers are not kept. The backend still only receives text (ADR 002).
+  - Done when: a small text PDF fills the letter and uploads; a scanned PDF with no text gets a clear message; tests use a fixture PDF.
+  - Out of scope: server-side parsing, page numbers for private text, OCR.
+- [ ] 5.0g Vector map (moved up from 5.7a)
+  - Do: a React component (canvas or SVG, no new charting library unless one is clearly needed) that draws the library's points from `GET /map`, coloured by document, with a legend, hover cards showing the chunk's title and heading, zoom and pan, and a text label saying the map is a flattened 2-D picture of the 1024-number vectors, so distances are approximate. It can show the visitor's own chunks as a separate coloured group, the question as a marker, and a set of highlighted points with lines from the question to them. It plays no character animation itself.
+  - Done when: component tests with fixed points cover drawing, highlighting and hover, and the map shows the live library in the Map tab of the library panel (5.0d) on both pages.
+  - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
+
 - [ ] 5.1 (You) Figma characters
-  - Do: style sheet (palette, line weight) and all 8 characters with separate layers for moving parts, plus the props from the brief's "What each character shows on screen" (cleaver, glowing stamp, lantern with a separate light cone, gavel, quill, magnifying glass, book and card shapes, the owl's shelves).
+  - Do: style sheet (palette, line weight) and all the characters, including the new Courier, with separate layers for moving parts, plus the props from the brief's "What each character shows on screen" (cleaver, glowing stamp, lantern with a separate light cone, gavel, quill, the Courier's satchel and envelope, book and card shapes, the owl's shelves).
   - Done when: they look like one cast.
 - [ ] 5.2 (You) Figma layouts
-  - Do: layouts for the Upload page (workshop) and Ask page (library), including the answer scroll and sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge.
+  - Do: art for the layouts built in 5.0a to 5.0g: the Upload page (workshop) and Ask page (night library), including the answer scroll and sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge.
   - Done when: every UI element from Phases 2 and 3, and every visual in the brief's "What each character shows on screen", has a place.
 - [ ] 5.3 (You) Figma plugin
   - Do: install the Figma plugin in Claude Code.
   - Done when: `/mcp` shows Figma connected.
 - [ ] 5.4 Static layouts
-  - Do: add the Rive convention above to `CLAUDE.md`; build both page layouts from the Figma frames with static character images, keeping all existing behaviour.
+  - Do: add the Rive convention above to `CLAUDE.md`; swap the Figma art (static character images, room and props) into the layouts from 5.0a to 5.0g, keeping all existing behaviour.
   - Done when: pages match Figma and existing tests still pass.
   - Out of scope: Rive, animations.
 - [ ] 5.5 (You) Rive: first two characters
-  - Do: import the Collector and Chopper from Figma, rig them, build the `main` state machine with the agreed inputs.
+  - Do: import the Courier and Chopper from Figma, rig them, build the `main` state machine with the agreed inputs.
   - Done when: every input plays in the Rive preview.
 - [ ] 5.6 CharacterStage
-  - Do: component playing `.riv` files with `@rive-app/react-canvas`, queueing step events, mapping them to inputs, with a minimum on-screen time per scene; wire up the Collector and Chopper on the Upload page.
+  - Do: component playing `.riv` files with `@rive-app/react-canvas`, queueing step events, mapping them to inputs, with a minimum on-screen time per scene; wire up the Courier and Chopper on the Upload page.
   - Done when: the first two scenes play in order on a real upload.
   - Out of scope: the other six characters, the Ask page.
 - [ ] 5.7 (You) Rive: other six characters
   - Do: rig the rest, plus travelling props (page stack, cards, tag, scroll).
   - Done when: every input plays in the preview.
-- [ ] 5.7a Vector map
-  - Do: a React component (canvas or SVG, no new charting library unless one is clearly needed) that draws the library's points from `GET /map`, coloured by document, with a legend, hover cards showing the chunk's title and heading, zoom and pan, and a text label saying the map is a flattened 2-D picture of the 1024-number vectors, so distances are approximate. It can show the visitor's own chunks as a separate coloured group, the question as a marker, and a set of highlighted points with lines from the question to them. It plays no character animation itself.
-  - Done when: component tests with fixed points cover drawing, highlighting and hover, and the map shows the live library on the Ask page.
-  - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
 - [ ] 5.8 Full Upload scene
   - Do: all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
   - Done when: one upload plays the whole scene.
   - Out of scope: the Ask page.
 - [ ] 5.9 Full Ask scene
-  - Do: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, Fact-Checker when enabled, and the "nothing found" scene. The Translator highlights the question's words by their real influence weights and stamps a fingerprint on the question; the question then appears as a marker on the vector map; the Scout walks into the library with the lantern, whose light spreads over the map and lights the candidates it found, with words-based finds in a different colour from meaning-based finds; the Archivist points at the shelves (documents) they belong to; the Judge reorders the candidates and fades the rejected ones, using the real old and new ranks; the Storyteller's badges fly to the cited cards.
+  - Do: Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, and the "nothing found" scene. The Translator highlights the question's words by their real influence weights and stamps a fingerprint on the question; the question then appears as a marker on the vector map; the Scout walks into the library with the lantern, whose light spreads over the map and lights the candidates it found, with words-based finds in a different colour from meaning-based finds; the Archivist points at the shelves (documents) they belong to; the Judge reorders the candidates and fades the rejected ones, using the real old and new ranks; the Storyteller's badges fly to the cited cards.
   - Done when: a good question and an unanswerable one both play correctly.
   - Out of scope: character detail panels.
 - [ ] 5.10 Character detail panels
-  - Do: click a character to see what it did: the Chopper's chunks and overlaps, the Translator's word weights, the Scout's matches with vector and keyword scores and matched words, the Judge's rank changes, the Fact-Checker's verdicts.
+  - Do: click a character to see what it did: the Chopper's chunks and overlaps, the Translator's word weights, the Scout's matches with vector and keyword scores and matched words, the Judge's rank changes.
   - Done when: each panel shows real data from that question.
   - Out of scope: accessibility work.
 - [ ] 5.11 Accessibility
@@ -286,5 +313,5 @@ Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.ri
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
-- [ ] Phase 5: all eight characters animating both pages, and a source side panel
+- [ ] Phase 5: all characters animating both pages, and a source side panel
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
