@@ -206,7 +206,7 @@ Each upgrade has eval scores before and after, pasted into the PR description.
 
 Rive convention for every character (added to `CLAUDE.md` in step 5.4): one `.riv` file per character in `frontend/public/characters/`; one state machine named `main`; inputs `working` (boolean), `handoff` (trigger), `done` (trigger), `confused` (trigger).
 
-Steps 5.0a to 5.0g build both pages' layouts now, with placeholder characters, so the Figma and Rive work later swaps art into a working page. The look is bright, rounded and playful (inspired by Duolingo, without copying its name, mascot, logo or font). Every placeholder character is its own component so step 5.6 can swap in a Rive canvas.
+Steps 5.0a to 5.0f build both pages' layouts now, with placeholder characters, so the Figma and Rive work later swaps art into a working page. The look is bright, rounded and playful (inspired by Duolingo, without copying its name, mascot, logo or font). Every placeholder character is its own component so step 5.6 can swap in a Rive canvas.
 
 - [ ] 5.0a Look and the day/night switch
   - Do: load Nunito with `next/font/google` and define shared design tokens in `globals.css` (ink #1E3440, teal #2F8FA3, mustard #E8A93C, brick #E0603F, skin #F2C9A0, one fresh green for success, light grounds), rounded panels (16 to 20px radius, 3px soft borders) and chunky buttons with a darker 4px bottom border that presses down on click. Replace the header's Upload and Ask links with an iPhone-style day/night pill switch: the sun side is Upload (day), the moon side is Ask (night), the knob slides to the current page and shows its icon and name. It is a `button` with `role="switch"`, `aria-checked` true on Ask, the accessible name "Switch to Ask" or "Switch to Upload", and navigates with `router.push` on click, Space or Enter. Keep the health badge. Respect `prefers-reduced-motion` for the slide.
@@ -219,20 +219,16 @@ Steps 5.0a to 5.0g build both pages' layouts now, with placeholder characters, s
 - [ ] 5.0c Envelope inbox
   - Do: restyle the paste form as an envelope being written: a stamp in the corner whose postmark is the 20,000-character counter, the title as a "To:" line, the text box as lined letter paper, and a red "Send" button (accessible name stays "Add text"). On send the flap folds shut and the Courier's desk starts working. Add "pick or drop a file" for `.md` and `.txt`: the browser reads the file with `FileReader` into the letter (title from the file name, cut at 20,000 characters with a visible note), and any other type gets a friendly error. The backend still only receives text (ADR 002). The privacy note stays visible on the envelope.
   - Done when: pasting, picking and dropping a `.md` or `.txt` file all fill the letter and upload as before; tests cover file reading, the character cap and the wrong-type error.
-  - Out of scope: PDFs (5.0f), backend changes, the Ask page.
+  - Out of scope: PDFs, backend changes, the Ask page.
 - [ ] 5.0d Library panel
-  - Do: a panel outside the room, on both pages, with a two-way switch "Documents | Map" in the same chunky style. Documents lists each library document with its title, chunk count and a link to `/library/[id]`, from `GET /library`. Map shows a "coming soon" card until 5.0g.
+  - Do: a panel outside the room, on both pages, with a two-way switch "Documents | Map" in the same chunky style. Documents lists each library document with its title, chunk count and a link to `/library/[id]`, from `GET /library`. Map shows a "coming soon" card until 5.0f.
   - Done when: the panel shows the live library on both pages and the switch works with mouse and keyboard; tests cover both tabs.
-  - Out of scope: drawing the map (5.0g), new backend endpoints.
+  - Out of scope: drawing the map (5.0f), new backend endpoints.
 - [ ] 5.0e Ask night library
   - Do: turn the Ask page into the same building at night: a dark-blue palette, a moon in the window, warm lamps and the blank placeholder bookcase with the Archivist standing beside it; the crew at desks in pipeline order, left to right: the Translator, the Scout, the Judge and the Storyteller, reusing the `Desk` component and replacing the row from 4.8a. The question is written on a paper plane that flies to the Translator; its words are highlighted by their real influence weights as now; the Storyteller's answer appears as a scroll or chat bubble with its `[n]` markers; the citations sidebar stays as it is. The library panel from 5.0d sits below the room. Keep every existing Ask behaviour (private texts sent with each question, errors, `[n]` markers, the Scout's and Judge's details).
   - Done when: a real question on localhost walks the crew to done, highlights the question, shows the answer and opens the sidebar; existing Ask tests pass, updated only where markup changed.
   - Out of scope: the Courier (Upload only), the vector map, the Judge's rank-change visual, Figma, Rive.
-- [ ] 5.0f PDFs read in the browser
-  - Do: let the envelope also take a `.pdf`: load `pdfjs-dist` only when a PDF is picked, extract its text in the browser into the letter (same 20,000-character cap), and say that page numbers are not kept. The backend still only receives text (ADR 002).
-  - Done when: a small text PDF fills the letter and uploads; a scanned PDF with no text gets a clear message; tests use a fixture PDF.
-  - Out of scope: server-side parsing, page numbers for private text, OCR.
-- [ ] 5.0g Vector map (moved up from 5.7a)
+- [ ] 5.0f Vector map (moved up from 5.7a)
   - Do: a React component (canvas or SVG, no new charting library unless one is clearly needed) that draws the library's points from `GET /map`, coloured by document, with a legend, hover cards showing the chunk's title and heading, zoom and pan, and a text label saying the map is a flattened 2-D picture of the 1024-number vectors, so distances are approximate. It can show the visitor's own chunks as a separate coloured group, the question as a marker, and a set of highlighted points with lines from the question to them. It plays no character animation itself.
   - Done when: component tests with fixed points cover drawing, highlighting and hover, and the map shows the live library in the Map tab of the library panel (5.0d) on both pages.
   - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
@@ -241,13 +237,13 @@ Steps 5.0a to 5.0g build both pages' layouts now, with placeholder characters, s
   - Do: style sheet (palette, line weight) and all the characters, including the new Courier, with separate layers for moving parts, plus the props from the brief's "What each character shows on screen" (cleaver, glowing stamp, lantern with a separate light cone, gavel, quill, the Courier's satchel and envelope, book and card shapes, the owl's shelves).
   - Done when: they look like one cast.
 - [ ] 5.2 (You) Figma layouts
-  - Do: art for the layouts built in 5.0a to 5.0g: the Upload page (workshop) and Ask page (night library), including the answer scroll and sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge.
+  - Do: art for the layouts built in 5.0a to 5.0f: the Upload page (workshop) and Ask page (night library), including the answer scroll and sources panel, the vector map (a large panel that works as the library's floor plan, with a legend and a hover card), the strip where the question's words are shown, and the rank lists for the Judge.
   - Done when: every UI element from Phases 2 and 3, and every visual in the brief's "What each character shows on screen", has a place.
 - [ ] 5.3 (You) Figma plugin
   - Do: install the Figma plugin in Claude Code.
   - Done when: `/mcp` shows Figma connected.
 - [ ] 5.4 Static layouts
-  - Do: add the Rive convention above to `CLAUDE.md`; swap the Figma art (static character images, room and props) into the layouts from 5.0a to 5.0g, keeping all existing behaviour.
+  - Do: add the Rive convention above to `CLAUDE.md`; swap the Figma art (static character images, room and props) into the layouts from 5.0a to 5.0f, keeping all existing behaviour.
   - Done when: pages match Figma and existing tests still pass.
   - Out of scope: Rive, animations.
 - [ ] 5.5 (You) Rive: first two characters
