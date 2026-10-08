@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Why RAG?</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#E4D8C6}
+a{color:#6B4429}a:hover{color:#4A2E1B}
+h1,h2,h3,p{margin:0}
+input,textarea,button{font:inherit;color:inherit}
+input:focus,textarea:focus,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #7A5236;outline-offset:2px}
+summary{cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+details[open] .chev{transform:rotate(90deg)}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #33261D; background: #E4D8C6; min-height: 100%;">
+<div style="max-width: 1360px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 20px;">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <nav aria-label="Pages" style="display: inline-flex; flex-wrap: wrap; padding: 4px; gap: 4px; border: 1px solid #D2C1A8; border-radius: 8px; background: #F6EFE4;">
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 20h16"></path></svg>Upload</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"></path><circle cx="12" cy="18" r="0.6"></circle><circle cx="12" cy="12" r="9"></circle></svg>Ask</a>
+      <a href="#" aria-current="page" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 6px; background: #4A3426; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"></path><path d="M8 7h6M8 11h6"></path></svg>Why RAG?</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <span style="font-weight: 700; font-size: 18px; letter-spacing: -0.01em;">ragsimplified</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 6px; background: #DCE3D6; color: #2F4F2A; font-size: 13px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4E7A46;"></span>Backend online</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="room-h" style="position: relative; border: 1px solid #C2AE92; border-radius: 12px; overflow: hidden; background: #2B1F17;">
+    <h1 id="room-h" style="position: absolute; top: 14px; left: 14px; z-index: 2; font-weight: 600; font-size: 15px; color: #33261D; background: #F6EFE4; border: 1px solid #C2AE92; border-radius: 6px; padding: 4px 12px;">The break room</h1>
+    <svg viewBox="0 0 1280 300" width="100%" role="img" aria-label="Illustration of the office break room: a corkboard titled Why RAG with pinned notes, a coffee machine on a counter, two chairs, a plant, a window, and the Clerk's empty placeholder spot pointing at the board." style="display: block;">
+      <rect x="0" y="0" width="1280" height="300" fill="#B48A62"></rect>
+      <rect x="0" y="196" width="1280" height="56" fill="#8F6747"></rect>
+      <rect x="0" y="192" width="1280" height="5" fill="#C9A47C"></rect>
+      <rect x="0" y="252" width="1280" height="48" fill="#8A5E3E"></rect>
+      <path d="M0 268H1280M0 286H1280" stroke="#7A5134" stroke-width="1.5"></path>
+      <ellipse cx="420" cy="40" rx="190" ry="60" fill="#FFCF8A" opacity="0.14"></ellipse>
+      <path d="M420 0V22" stroke="#1E1612" stroke-width="1.5"></path><path d="M404 34L412 22H428L436 34Z" fill="#C98F4A"></path><path d="M413 34A7 4 0 0 0 427 34Z" fill="#FFE2A8"></path>
+
+      <rect x="60" y="46" width="170" height="120" rx="3" fill="#E1CBA8"></rect><rect x="68" y="54" width="154" height="104" fill="#E8A866"></rect>
+      <path d="M145 54V158M68 106H222" stroke="#E1CBA8" stroke-width="4"></path>
+      <path d="M72 158V134H96V120H118V146H140V112H168V140H192V128H218V158Z" fill="#B97C4A" opacity="0.6"></path>
+
+      <rect x="300" y="40" width="320" height="150" rx="3" fill="#A87A50" stroke="#7E5638" stroke-width="6"></rect>
+      <text x="460" y="68" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="16" letter-spacing="3" fill="#F1E7D2">WHY RAG?</text>
+      <g fill="#F1E7D2"><rect x="322" y="84" width="62" height="46" transform="rotate(-3 353 107)"></rect><rect x="396" y="80" width="62" height="50" transform="rotate(2 427 105)"></rect><rect x="470" y="84" width="62" height="46" transform="rotate(-2 501 107)"></rect><rect x="544" y="82" width="56" height="48" transform="rotate(3 572 106)"></rect><rect x="350" y="138" width="80" height="40" transform="rotate(1 390 158)"></rect><rect x="452" y="140" width="90" height="38" transform="rotate(-2 497 159)"></rect></g>
+      <g fill="#B8AD98"><rect x="330" y="96" width="44" height="3"></rect><rect x="330" y="104" width="36" height="3"></rect><rect x="404" y="94" width="44" height="3"></rect><rect x="404" y="102" width="40" height="3"></rect><rect x="478" y="96" width="44" height="3"></rect><rect x="552" y="96" width="38" height="3"></rect><rect x="360" y="150" width="58" height="3"></rect><rect x="462" y="152" width="66" height="3"></rect></g>
+      <g fill="#A63A2B"><circle cx="353" cy="86" r="3"></circle><circle cx="427" cy="82" r="3"></circle><circle cx="501" cy="86" r="3"></circle><circle cx="572" cy="84" r="3"></circle><circle cx="390" cy="140" r="3"></circle><circle cx="497" cy="142" r="3"></circle></g>
+
+      <g fill="#F2C27E" fill-opacity="0.3" stroke="#F2C27E" stroke-width="2.5" stroke-dasharray="5 4"><circle cx="690" cy="168" r="17"></circle><rect x="668" y="188" width="44" height="64" rx="20"></rect></g>
+      <rect x="658" y="258" width="64" height="15" rx="2" fill="#F2C27E"></rect>
+      <text x="690" y="268" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="0.8" fill="#33261D">CLERK</text>
+
+      <rect x="820" y="186" width="250" height="14" rx="2" fill="#9C6B45"></rect><rect x="826" y="200" width="238" height="52" fill="#7E5536"></rect>
+      <path d="M906 204V248M986 204V248" stroke="#6E4A2F" stroke-width="2"></path>
+      <rect x="846" y="128" width="54" height="58" rx="4" fill="#3A332E"></rect><rect x="854" y="138" width="38" height="14" rx="2" fill="#233230"></rect><rect x="862" y="162" width="22" height="6" rx="2" fill="#5B4D42"></rect>
+      <path d="M864 186V176H882V186Z" fill="#EFE6D6"></path>
+      <rect x="930" y="166" width="14" height="20" rx="2" fill="#EFE6D6"></rect><rect x="950" y="170" width="14" height="16" rx="2" fill="#A07A6A"></rect>
+      <rect x="1000" y="150" width="40" height="36" rx="3" fill="#D9CBB4"></rect><rect x="1006" y="156" width="28" height="8" fill="#8C6D46"></rect>
+      <rect x="840" y="60" width="200" height="60" rx="3" fill="#EFE8DA"></rect>
+      <text x="940" y="86" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="11" fill="#6B5440">Please cite your sources</text>
+      <text x="940" y="104" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#8C7660">(and wash your mug)</text>
+
+      <g fill="#5E3F28"><rect x="1110" y="214" width="46" height="8" rx="2"></rect><rect x="1114" y="176" width="8" height="40"></rect><rect x="1114" y="222" width="5" height="30"></rect><rect x="1150" y="222" width="5" height="30"></rect></g>
+      <g fill="#5E3F28"><rect x="1180" y="214" width="46" height="8" rx="2"></rect><rect x="1218" y="176" width="8" height="40"></rect><rect x="1181" y="222" width="5" height="30"></rect><rect x="1217" y="222" width="5" height="30"></rect></g>
+      <path d="M244 214H274L270 252H248Z" fill="#7A4D33"></path>
+      <ellipse cx="252" cy="190" rx="9" ry="26" fill="#5D6B41" transform="rotate(-16 252 190)"></ellipse><ellipse cx="266" cy="188" rx="9" ry="28" fill="#6F7F4F" transform="rotate(14 266 188)"></ellipse>
+    </svg>
+    <div style="position: absolute; left: 57.5%; top: 9%; width: 17%; background: #F6EFE4; border: 1px solid #C2AE92; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); padding: 9px 11px; box-sizing: border-box;">
+      <p style="font-weight: 600; font-size: 13px;">Clerk</p>
+      <p style="font-size: 12px; line-height: 1.4; color: #3F3127;">New here? This board explains why the office works the way it does.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="what-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-wrap: wrap; gap: 28px;">
+    <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 12px;">
+      <h2 id="what-h" style="font-size: 26px; font-weight: 700; letter-spacing: -0.01em;">What is RAG?</h2>
+      <p style="font-size: 16px; line-height: 1.65;">RAG stands for <strong>retrieval-augmented generation</strong>. A language model on its own answers from memory: whatever it took in while it was trained, which can be out of date or simply wrong.</p>
+      <p style="font-size: 16px; line-height: 1.65;">With RAG, it <strong>looks things up first</strong>. It finds the most relevant passages in a library you trust, writes the answer using only those passages, and shows you where each part came from.</p>
+    </div>
+    <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 10px; justify-content: center;">
+      <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Translator + Scout</span>
+          <span style="font-size: 16px; font-weight: 700;">Find</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">Search the library by meaning and by words.</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Judge</span>
+          <span style="font-size: 16px; font-weight: 700;">Pick the best</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">Re-read the finds and keep the few that really answer it.</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Storyteller</span>
+          <span style="font-size: 16px; font-weight: 700;">Answer with sources</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">Write only from those passages and number each one.</span>
+        </li>
+      </ol>
+      <a href="#" style="font-size: 14px; font-weight: 600; min-height: 36px; display: inline-flex; align-items: center;">Watch it happen on the Ask page</a>
+    </div>
+  </section>
+
+  <section aria-labelledby="vs-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <h2 id="vs-h" style="font-size: 22px; font-weight: 700;">The same question, with and without RAG</h2>
+      <p style="font-size: 14px; color: #6A5848;">“How many questions can I ask on this site per day?”</p>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+      <div style="flex: 1 1 360px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h3 style="font-size: 15px; font-weight: 600;">Model on its own</h3>
+          <span style="font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #F3DCD6; color: #8A3F33;">No source</span>
+        </div>
+        <p style="font-size: 16px; line-height: 1.6;">“You can ask up to 100 questions per day.”</p>
+        <p style="font-size: 13px; line-height: 1.5; color: #6A5848;">Sounds confident, but the model never saw this site's rules. It guessed, and you can't check where the number came from.</p>
+      </div>
+      <div style="flex: 1 1 360px; background: #FFFFFF; border: 2px solid #7A5236; border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h3 style="font-size: 15px; font-weight: 600;">With RAG</h3>
+          <span style="font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #DCE3D6; color: #2F4F2A;">1 source</span>
+        </div>
+        <p style="font-size: 16px; line-height: 1.6;">“Each visitor can ask 20 questions a day. <span style="font: 600 12px 'IBM Plex Mono', monospace; padding: 1px 5px; border-radius: 4px; background: #7A5236; color: #FFFFFF;">1</span>”</p>
+        <p style="font-size: 13px; line-height: 1.5; color: #6A5848;"><span style="font-family: 'IBM Plex Mono', monospace;">[1]</span> Site rules · card 3: “…a quota of 20 questions per visitor each day…”. If the library had nothing on this, the answer would be “The library doesn't cover this.”</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="good-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px;">
+    <h2 id="good-h" style="font-size: 22px; font-weight: 700;">Why it's useful</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
+      <div style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A5236" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
+        <h3 style="font-size: 16px; font-weight: 600;">Stays up to date</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Add or change a document and the answers change straight away. No retraining the model.</p>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A5236" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4"></path><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"></path></svg>
+        <h3 style="font-size: 16px; font-weight: 600;">You can check it</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Every claim points to the passage it came from, so you can read the source yourself.</p>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A5236" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg>
+        <h3 style="font-size: 16px; font-weight: 600;">Works on your own documents</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Wikis, manuals, notes and private files the model never saw while it was trained.</p>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 6px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A5236" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"></path><circle cx="12" cy="17.5" r="0.6"></circle></svg>
+        <h3 style="font-size: 16px; font-weight: 600;">Can say “I don't know”</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">If nothing relevant is found, it says so instead of making something up.</p>
+      </div>
+    </div>
+    <p style="font-size: 13px; line-height: 1.55; color: #6A5848; padding: 10px 14px; background: #EDE2D0; border-radius: 6px;"><strong style="color: #33261D;">The catch:</strong> RAG is only as good as its library and its search. If the right passage isn't found, the answer can still be incomplete or wrong, which is why the sources are always shown.</p>
+  </section>
+
+  <section aria-labelledby="where-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <h2 id="where-h" style="font-size: 22px; font-weight: 700;">Where you've probably met it</h2>
+      <span style="font-size: 12px; color: #6A5848;">Examples checked October 2026. Products change.</span>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+      <sc-for list="{{uses}}" as="u" hint-placeholder-count="6">
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+          <h3 style="font-size: 15px; font-weight: 600;">{{u.title}}</h3>
+          <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">{{u.text}}</p>
+          <sc-if value="{{u.hasExample}}" hint-placeholder-val="{{true}}"><span style="align-self: flex-start; font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #EDE2D0; color: #4A3426;">e.g. {{u.example}}</span></sc-if>
+        </li>
+      </sc-for>
+    </ul>
+  </section>
+
+  <section aria-labelledby="me-h" style="background: #FBF6EC; border: 2px solid #7A5236; border-radius: 10px; padding: 24px 26px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <h2 id="me-h" style="font-size: 22px; font-weight: 700;">Try it: ask about the creator</h2>
+      <p style="font-size: 15px; line-height: 1.6; max-width: 760px;">This box is RAG with a library of exactly one document: the creator's own <strong>About me</strong> page. It answers only from what's written there. Anything else gets “I don't know”, even when the model could make a good guess.</p>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div style="flex: 999 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #4A3426; color: #FFFFFF;">Only source: About me</span>
+          <span style="font-size: 12px; color: #6A5848;">written by [YOUR NAME]</span>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600;">Ask about [YOUR NAME]
+          <span style="display: flex; gap: 8px;">
+            <input type="text" maxlength="300" placeholder="e.g. What is [YOUR NAME] building?" style="flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid #B5A68C; border-radius: 4px; font-weight: 400; background: #FFFFFF; box-sizing: border-box;">
+            <button type="button" style="min-width: 72px; min-height: 44px; border: 0; border-radius: 4px; background: #7A5236; color: #FFFFFF; font-weight: 600; cursor: pointer;">Ask</button>
+          </span>
+        </label>
+        <div role="group" aria-label="Example" style="display: inline-flex; align-self: flex-start; padding: 3px; gap: 3px; border: 1px solid #D2C1A8; border-radius: 6px; background: #EDE2D0;">
+          <button type="button" aria-pressed="{{exIn}}" onClick="{{showIn}}" style="min-height: 38px; padding: 0 14px; border: 0; border-radius: 4px; background: {{inBg}}; color: {{inFg}}; font-weight: 600; font-size: 13px; cursor: pointer;">In the source</button>
+          <button type="button" aria-pressed="{{exOut}}" onClick="{{showOut}}" style="min-height: 38px; padding: 0 14px; border: 0; border-radius: 4px; background: {{outBg}}; color: {{outFg}}; font-weight: 600; font-size: 13px; cursor: pointer;">Not in the source</button>
+        </div>
+        <sc-if value="{{exIn}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px;">
+            <p style="font-size: 13px; color: #6A5848;">Q: What is [YOUR NAME] building?</p>
+            <p style="font-size: 16px; line-height: 1.6;">[YOUR NAME] is building ragsimplified, a public RAG app that shows each step of an answer as an office of cartoon characters. <span style="font: 600 12px 'IBM Plex Mono', monospace; padding: 1px 5px; border-radius: 4px; background: #7A5236; color: #FFFFFF;">1</span></p>
+            <p style="font-size: 13px; line-height: 1.5; color: #6A5848;"><span style="font-family: 'IBM Plex Mono', monospace;">[1]</span> About me · card 2: “…[WHAT YOU'RE BUILDING, IN YOUR WORDS]…”</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{exOut}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px dashed #B5A68C; border-radius: 8px; padding: 14px 16px;">
+            <p style="font-size: 13px; color: #6A5848;">Q: What's [YOUR NAME]'s favourite food?</p>
+            <p style="font-size: 16px; line-height: 1.6;">The About me page doesn't say, so I can't answer that.</p>
+            <p style="font-size: 13px; color: #6A5848;"><span style="padding: 1px 8px; border-radius: 4px; background: #F3DCD6; color: #8A3F33;">No source found</span> A model on its own might happily guess “pizza”. This one won't.</p>
+          </div>
+        </sc-if>
+      </div>
+      <aside aria-label="How this works" style="flex: 1 1 280px; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #F6EFE4; border-radius: 8px; border: 1px solid #D2C1A8;">
+        <h3 style="font-size: 15px; font-weight: 600;">Why this matters</h3>
+        <p style="font-size: 14px; line-height: 1.55; color: #3F3127;">The same idea lets a company bot answer only from its own policies, or a clinic assistant only from approved guidance. The model writes; the library decides what's true.</p>
+        <p style="font-size: 13px; line-height: 1.5; color: #6A5848;">Under the hood it's the same office: the Translator, Scout, Judge and Storyteller, with a one-shelf library.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <h2 id="faq-h" style="font-size: 22px; font-weight: 700;">Frequently asked questions about the creator</h2>
+      <span style="font-size: 12px; color: #6A5848;">Every answer comes from the About me page</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{faq}}" as="f" hint-placeholder-count="5">
+        <details style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px;">
+          <summary style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; font-size: 15px; font-weight: 600;">
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M9 6l6 6-6 6"></path></svg>{{f.q}}</summary>
+          <div style="padding: 0 16px 14px 40px; display: flex; flex-direction: column; gap: 8px;">
+            <p style="font-size: 15px; line-height: 1.6;">{{f.a}}</p>
+            <span style="align-self: flex-start; font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #EDE2D0; color: #4A3426;">source: About me</span>
+          </div>
+        </details>
+      </sc-for>
+    </div>
+  </section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { ex: 'in' };
+  }
+  renderVals() {
+    const ex = this.state.ex;
+    return {
+      uses: [
+        { title: 'Search assistants that cite the web', text: 'You ask a question; it searches the web, reads the top pages and answers with links to them.', example: 'Perplexity', hasExample: true },
+        { title: 'Work assistants over your files and email', text: 'Answers about your projects using your company documents, chats and meetings, not just general knowledge.', example: 'Microsoft 365 Copilot', hasExample: true },
+        { title: 'Q&A over notes and wikis', text: 'Ask your team wiki a question and get an answer that links back to the pages it used.', example: 'Notion AI Q&A', hasExample: true },
+        { title: 'Customer support bots', text: 'Answer from the help-centre articles and product manuals, and hand over to a person when nothing fits.', example: '', hasExample: false },
+        { title: 'Coding assistants', text: 'Look up the relevant files in your codebase before suggesting a change, so the suggestion fits your code.', example: '', hasExample: false },
+        { title: 'Legal and medical research', text: 'Answer from approved case law, contracts or clinical guidance, with every claim traceable to its source.', example: '', hasExample: false }
+      ],
+      faq: [
+        { q: 'Who made this?', a: '[YOUR NAME]: [ONE OR TWO SENTENCES ABOUT YOU].' },
+        { q: 'Why build ragsimplified?', a: '[WHY YOU BUILT IT, IN YOUR WORDS].' },
+        { q: 'What is it built with?', a: 'Next.js for the pages, FastAPI for the backend, Postgres with pgvector for the library, Voyage AI for fingerprints and reranking, and Claude Haiku for writing the answers.' },
+        { q: 'Can I use it for my own documents?', a: 'Yes. The project is open source: fork it on GitHub at [REPO LINK] and follow the README.' },
+        { q: 'How can I contact you?', a: '[HOW TO REACH YOU].' }
+      ],
+      exIn: ex === 'in',
+      exOut: ex === 'out',
+      inBg: ex === 'in' ? '#4A3426' : 'transparent',
+      inFg: ex === 'in' ? '#FFFFFF' : '#33261D',
+      outBg: ex === 'out' ? '#4A3426' : 'transparent',
+      outFg: ex === 'out' ? '#FFFFFF' : '#33261D',
+      showIn: () => this.setState({ ex: 'in' }),
+      showOut: () => this.setState({ ex: 'out' })
+    };
+  }
+}
+</script>
+</body>
+</html>

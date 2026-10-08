@@ -1,0 +1,74 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Alt.dc.html": {
+      "expand": "fill",
+      "h": 1560,
+      "is_interactive": true,
+      "title": "Upload office \u00b7 3D alternative",
+      "w": 1440,
+      "x": 0,
+      "y": -43
+    },
+    "AskAlt.dc.html": {
+      "expand": "fill",
+      "h": 2000,
+      "is_interactive": true,
+      "title": "Ask office \u00b7 3D alternative",
+      "w": 1440,
+      "x": 0,
+      "y": 1847
+    },
+    "WhyRag.dc.html": {
+      "expand": "fill",
+      "h": 2700,
+      "is_interactive": true,
+      "title": "Why RAG?",
+      "w": 1440,
+      "x": 0,
+      "y": 4200
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-07T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "askTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Ask page",
+      "w": 240,
+      "x": 0,
+      "y": 1600
+    },
+    "uploadTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Upload page",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "whyTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Why RAG? page",
+      "w": 240,
+      "x": 0,
+      "y": 3900
+    }
+  },
+  "order": [
+    "Alt.dc.html",
+    "AskAlt.dc.html",
+    "WhyRag.dc.html"
+  ],
+  "pages": [],
+  "title": "Upload Page Workshop"
+}
