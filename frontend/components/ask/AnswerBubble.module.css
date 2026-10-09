@@ -1,0 +1,51 @@
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 3rem;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 18px;
+}
+
+.text {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.cite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 5px;
+  margin: 0 2px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--tab-soft);
+  font:
+    600 12px var(--font-mono),
+    monospace;
+  cursor: pointer;
+  vertical-align: 1px;
+}
+
+.cite:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.show {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}

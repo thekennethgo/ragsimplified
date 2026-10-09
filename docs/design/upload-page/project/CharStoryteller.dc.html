@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Character · Storyteller</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; line-height: 0;">
+<svg viewBox="0 0 80 120" width="100%" role="img" aria-label="{{label}}" style="display: block; overflow: visible;">
+  <defs>
+    <linearGradient id="stBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C7ABAD"></stop>
+      <stop offset="0.6" stop-color="#B3979A"></stop>
+      <stop offset="1" stop-color="#9C8184"></stop>
+    </linearGradient>
+    <linearGradient id="stHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop>
+      <stop offset="0.6" stop-color="#D3CFC7"></stop>
+      <stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+  <g transform="{{flip}}">
+    <rect x="12" y="54" width="10" height="34" rx="5" fill="#A88C8F"></rect>
+    <g opacity="{{armDown}}">
+      <rect x="58" y="54" width="10" height="34" rx="5" fill="#A88C8F"></rect>
+    </g>
+
+    <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#stBody)"></rect>
+    <path d="M40 54 L40 108" stroke="#9C8184" stroke-width="1"></path>
+    <path d="M26 48 Q40 56 54 48 L54 54 Q40 62 26 54 Z" fill="#C9B07A"></path>
+    <path d="M44 56 L47 84 L41 84 L39 57 Z" fill="#C9B07A"></path>
+    <path d="M41 84 V88 M43 84 V88 M45 84 V88 M47 84 V88" stroke="#B39A62" stroke-width="1"></path>
+    <circle cx="41" cy="28" r="17" fill="url(#stHead)"></circle>
+    <ellipse cx="44" cy="13" rx="19" ry="7" fill="#5B4D5A" transform="rotate(-8 44 13)"></ellipse>
+    <path d="M44 6 L45 2" stroke="#5B4D5A" stroke-width="2.5" stroke-linecap="round"></path>
+    <g opacity="{{armUp}}">
+      <rect x="58" y="30" width="10" height="30" rx="5" fill="#A88C8F"></rect>
+      <rect x="55" y="10" width="16" height="21" rx="1" fill="#F2EBDD"></rect>
+      <path d="M58 15 H68 M58 19 H68 M58 23 H65" stroke="#B8AD98" stroke-width="1"></path>
+    </g>
+    <g opacity="{{toolDown}}">
+      <path d="M63 86 L66 104" stroke="#D9B65E" stroke-width="2.5" stroke-linecap="round"></path>
+      <path d="M66 104 L66.5 107" stroke="#4A4541" stroke-width="2" stroke-linecap="round"></path>
+    </g>
+
+  </g>
+  <g opacity="{{doneMark}}">
+    <circle cx="{{checkX}}" cy="50" r="7" fill="#6E8F66"></circle>
+    <path d="{{checkPath}}" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+  <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.3" fill="#EADAC0">STORYTELLER</text>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","working","done"],"default":"working"},"facing":{"editor":"enum","options":["right","left"],"default":"right"},"$preview":{"width":160,"height":280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'working';
+    const left = (this.props.facing ?? 'right') === 'left';
+    const working = state === 'working';
+    const done = state === 'done';
+    const cx = left ? 18 : 62;
+    return {
+      flip: left ? 'translate(80 0) scale(-1 1)' : '',
+      armUp: working ? 1 : 0,
+      armDown: working ? 0 : 1,
+      toolDown: working ? 0 : 1,
+      doneMark: done ? 1 : 0,
+      checkX: cx,
+      checkPath: 'M' + (cx - 3.5) + ' 50 L' + (cx - 1) + ' 52.8 L' + (cx + 3.8) + ' 47.2',
+      label: 'The Storyteller: a dusty rose bean-shaped figure with a light grey head, a beret and a mustard scarf trailing down the back, seen from behind, ' + (working ? 'holding up a fresh page from the typewriter.' : done ? 'finished writing, pencil in hand.' : 'waiting at the typewriter, pencil in hand.')
+    };
+  }
+}
+</script>
+</body>
+</html>

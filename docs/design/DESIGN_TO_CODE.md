@@ -1,7 +1,7 @@
 # Design to code: the office pages
 
 ## Context
-The Upload, Ask and "Why RAG?" pages were designed on the Claude Design canvas
+The home page and the Upload and Ask pages were designed on the Claude Design canvas
 "Upload Page Workshop" (https://claude.ai/artifact/XkNNxKuaj5gfEvSfFhR15F), on branch
 `design/upload-page`, files in `docs/design/upload-page/project/`. The 3D isometric
 office was chosen. On the canvas the art is kept apart from the page UI:
@@ -16,11 +16,12 @@ office was chosen. On the canvas the art is kept apart from the page UI:
 This plan takes the art into the Next.js frontend as SVG, animates the rooms in code with
 GSAP, and wires them to the existing step events. The decision behind it is ADR 004
 (`docs/adr/004-office-rooms-animated-with-gsap.md`), based on the spike in
-`docs/design/gsap-spike/`. The steps below are PLAN.md steps 5.0 to 5.4.
+`docs/design/gsap-spike/`; the Ask office and Query room scenes were tested the same way in
+`docs/design/gsap-ask-spike/`. The steps below are PLAN.md steps 5.0 and 5.1.
 
 ## Decisions
 - **Ownership.** The canvas owns all page UI (header toggle, envelope form, Query panel,
-  library panel, speech bubbles, sources sidebar, the Why RAG page) and the art. The scene
+  library panel, speech bubbles, sources sidebar, the home page) and the art. The scene
   modules in `frontend/lib/office/scenes/` own the animation. React owns all real data.
   No part is edited in two places.
 - **Rooms.** One SVG per room in `frontend/public/office/` (`upload-room.svg`,
@@ -33,102 +34,75 @@ GSAP, and wires them to the existing step events. The decision behind it is ADR 
   card per chunk, fingerprints) may be added to the room SVG by the scene code; they are
   `aria-hidden` and the same information is in the DOM.
 - **Reduced motion.** Each scene jumps to its end state, at least 1 second apart. The rooms
-  are the same SVGs on the pages before animation is added (5.0c to 5.0h).
+  are the same SVGs either way.
 - **Archivist.** No backend event. The frontend sends `archivist_start` and
   `archivist_done` around `usePrivateTexts().add()`.
-- **Remove.** Browser-only (deletes from `usePrivateTexts`). Part of the library panel, 5.0e.
-- **Why RAG? page.** Short and snappy (5.0h): the break room, at most four short sections
-  and a collapsible FAQ. The canvas version is a content source, not a layout to copy.
+- **Remove.** Browser-only (deletes from `usePrivateTexts`). Part of the library panel.
+- **Home page.** `/` is the canvas's `WhyRag.dc.html`: a hero, the break room,
+  "What is RAG?", "Why not just ask the model?", "How this one is built" and "About the
+  creator", with nothing said twice. The header tabs are "Home | Upload | Ask".
 - **No Figma, no Rive.** The art goes straight from the canvas to SVG in the frontend.
-  The old Figma steps and the Rive steps are replaced by steps 2, 3, 6 and 7.
+  The old Figma steps and the Rive steps are replaced by step 5.1.
 
 ## Steps
 
-1. **(You) 5.0 Final design and save it in git.**
-   - Finish the pages, rooms and characters on the canvas.
-   - Pull every canvas file into `docs/design/upload-page/project/` and commit it on
-     `design/upload-page`; open a PR for review.
+1. **(You) 5.0 Final design and save it in git.** Pull every canvas file into
+   `docs/design/upload-page/project/` and commit it with the two spikes.
 
-2. **5.0b Office art files** (one PR).
-   - Render each room from its canvas file into a flat, static SVG (the geometry is
-     computed by the file's script, so write a small Node script in the scratch area that
-     runs it and fills in the values; do not commit the script).
-   - Write them to `docs/design/office-svg/` and copy them to `frontend/public/office/`:
-     `upload-room.svg`, `ask-room.svg`, `query-room.svg`, `break-room.svg`.
-   - Start the Upload room from `docs/design/gsap-spike/`: `upload-room.svg` plus the
-     drawer and character fragments that its `build.py` puts in.
-   - Put each room's characters in its SVG at their spots, with the props they carry,
-     following the id rules in ADR 004, for example:
-     - Upload room: `in-card`, `envelope`, `cutter-blade`, `cut-cards`, `crt-lines`,
-       `crt-progress`, `printer`, `printout`, `stamp-mark`, `cabinet-drawer`; characters
-       `chopper`, `translator`, `archivist` with `ch-*`, `tr-*`, `ar-*` parts.
-     - Ask room: `lantern-beam`, `lit-drawers`, `kept-papers`, `answer-dots`, `printout`,
-       `crt-lines`.
-     - Query room: `query-door-shut`, `query-door-open`, `back-soon-card`.
-   - Mark each home spot with `spot-<name>` and every walk target or waypoint with
-     `spot-<name>-<place>`, and write the home spots as percentages of the room's width
-     and height into `frontend/lib/office-spots.ts`:
+2. **5.1 Office pages and animation** (one PR). In this order inside the branch:
+   1. **Room art.** `docs/design/office-svg/` and `frontend/public/office/`:
+      `upload-room.svg` from `docs/design/gsap-spike/` (`upload-room.svg` plus the drawer and
+      character fragments its `build.py` puts in), `ask-room.svg` and `query-room.svg` from
+      `docs/design/gsap-ask-spike/` (its `build.py` output, without the page), and
+      `break-room.svg` from `OfficeBreakRoom.dc.html` (render it with a small Node script in
+      the scratch area that runs the file's script and fills in the values, like the spikes'
+      `export-room.js`; do not commit the script). Keep every id the spikes' scenes use and
+      add the `spot-*` markers. Home spots go into `frontend/lib/office-spots.ts`:
 
-     export const UPLOAD_SPOTS = {
-       chopper: { left: 32.5, top: 72.3 },
-       translator: { left: 51.9, top: 59.7 },
-       archivist: { left: 81.3, top: 78.3 },
-     } as const;
+          export const UPLOAD_SPOTS = {
+            chopper: { left: 25.1, top: 72.3 },
+            translator: { left: 48.5, top: 59.7 },
+            archivist: { left: 84, top: 78.3 },
+          } as const;
 
-3. **Done: the GSAP spike.** `docs/design/gsap-spike/` plays the whole Upload cycle on
-   `upload-room.svg` from buttons. It replaced the Rive spike (old step 5.1).
+      The rooms are drawn on a 1280 x 600 grid but shown through `viewBox="150 0 1060 600"`
+      (the canvas's zoom), so `left = (x - 150) / 10.6` and `top = y / 6`.
+   2. **Look and tabs.** Fonts, tokens and the "Home | Upload | Ask" header tabs.
+   3. **Player.** Add the office animation convention from PLAN.md to `CLAUDE.md`; add
+      `gsap` and `@gsap/react` at the exact versions in ADR 004;
+      `frontend/lib/office/sceneQueue.ts` (one scene at a time; next at the `handoff` label
+      or 1 second after the end; per-character "still working" loops; `error` clears it;
+      reduced motion jumps to end states) with tests using fake timelines;
+      `frontend/components/office/OfficeRoom.tsx` (loads a room SVG from `/office/`, hides
+      the `spot-*` markers, scopes GSAP with `useGSAP`); one reducer in
+      `frontend/lib/sceneState.ts` that turns the step events into scene events and bubble
+      states:
 
-4. **5.0c to 5.0e Static port: Upload page** (one PR per step: office scene, envelope,
-   library panel).
-   - Add `frontend/components/office/OfficeScene.tsx`. It renders a room's static SVG
-     from 5.0b and takes
-     `props: { states: Record<string, "waiting" | "working" | "done" | "error">, data }`.
-   - Add `frontend/components/office/SpeechBubble.tsx`, positioned by `office-spots.ts`.
-   - Add `frontend/components/upload/EnvelopeForm.tsx` and
-     `frontend/components/LibraryPanel.tsx` (Documents / Vector map toggle; the map part
-     uses the 5.0g component when it exists, otherwise a placeholder).
-   - Rewrite `frontend/app/upload/page.tsx` to use these components. Keep the existing
-     fetch to `/upload`, `readEvents()` from `frontend/lib/backend.ts`, `usePrivateTexts`
-     and the `GET /library` call.
-   - Map events to state in one reducer, `frontend/lib/sceneState.ts`:
+          type Phase = "waiting" | "working" | "done" | "error";
+          export function sceneReducer(s: Record<string, Phase>, e: StepEvent) {
+            if (e.step === "error") return { ...s, error: "done" };
+            return { ...s, [e.step]: e.status === "start" ? "working" : "done" };
+          }
 
-     type Phase = "waiting" | "working" | "done" | "error";
-     export function sceneReducer(s: Record<string, Phase>, e: StepEvent) {
-       if (e.step === "error") return { ...s, error: "done" };
-       return { ...s, [e.step]: e.status === "start" ? "working" : "done" };
-     }
+   4. **Scenes.** Port `template.html` of each spike to `frontend/lib/office/scenes/`:
+      `upload.ts`, `ask.ts`, `query.ts` (the Query scenes `clerk_back` and `clerk_shrug` are
+      one scene in the spike, split by its `nothingFound` flag). Walk targets come from the
+      spot markers. A test checks every id a scene file uses exists in its room SVG.
+   5. **Upload page.** `frontend/components/office/SpeechBubble.tsx` (placed with
+      `office-spots.ts`), `frontend/components/upload/EnvelopeForm.tsx` and
+      `frontend/components/LibraryPanel.tsx` (Documents / Map; Map is a placeholder until
+      5.0g). Rewrite `frontend/app/upload/page.tsx` with them and `OfficeRoom`, keeping the
+      fetch to `/upload`, `readEvents()` from `frontend/lib/backend.ts`, `usePrivateTexts`
+      and the `GET /library` call.
+   6. **Ask page.** Re-skin `frontend/components/ask/` (`QuestionBubble`, `AnswerBubble`,
+      `SourcesSidebar`) with `AskAlt.dc.html`; the Query panel with `query-room.svg` and the
+      Clerk's bubble, and the Ask office with `OfficeRoom` replacing `CharacterRow`. Send the
+      Clerk's events around the question (`clerk_away` + `clerk_start` on send; `clerk_done`
+      then `clerk_back` or `clerk_shrug` on the answer). Keep all existing Ask behaviour.
+   7. **Home page.** `frontend/app/page.tsx` from `WhyRag.dc.html` with `break-room.svg`.
 
-   - Port styles into CSS modules next to each component (the frontend has no Tailwind).
-     Copy colours and spacing from `Alt.dc.html`.
-   - Out of scope: animation.
-
-5. **5.0f Static port: Ask page** (one PR). Re-skin the
-   components in `frontend/components/ask/` (`CharacterRow`, `QuestionBubble`,
-   `AnswerBubble`, `SourcesSidebar`) with `AskAlt.dc.html`: the Query panel with
-   `query-room.svg` and the Clerk's speech bubble, and `OfficeScene` with `ask-room.svg`.
-   Keep all existing Ask behaviour and tests.
-
-6. **5.1 Room player and Upload scenes** (one PR).
-   - Add the office animation convention from PLAN.md to `CLAUDE.md`.
-   - Add `gsap` and `@gsap/react` to `frontend/package.json` at the exact versions in
-     ADR 004.
-   - Create `frontend/lib/office/sceneQueue.ts` (plays one scene at a time; next scene at
-     the `handoff` label or 1 second after the end; per-character "still working" loops;
-     `error` clears it; reduced motion jumps to end states) with tests using fake
-     timelines.
-   - Create `frontend/components/office/OfficeRoom.tsx`: loads a room SVG from `/office/`,
-     hides the `spot-*` markers, scopes GSAP with `useGSAP`, feeds the queue from
-     `sceneReducer`'s events.
-   - Port the spike's scenes to `frontend/lib/office/scenes/upload.ts` and show
-     `upload-room.svg` on the Upload page; the overlays from step 4 stay on top.
-
-7. **5.2 and 5.3 Ask and Query room scenes** (one PR each). `scenes/ask.ts` and
-   `scenes/query.ts` with every scene key in ADR 004, played from buttons on the dev-only
-   page `frontend/app/dev/office/page.tsx`.
-
-8. **5.4 Animation on the Ask page** (one PR). Show `query-room.svg` and `ask-room.svg`
-   with `OfficeRoom`, both driven by the same reducer, so the Clerk leaves the Query room
-   as it enters the office and comes back with the answer.
+   Port styles into CSS modules next to each component (the frontend has no Tailwind);
+   copy colours and spacing from `Alt.dc.html` and `AskAlt.dc.html`.
 
 ## Coming back in a new session
 - Say "update my Upload Page Workshop design" or paste the artifact link. Claude reads the
@@ -140,18 +114,17 @@ GSAP, and wires them to the existing step events. The decision behind it is ADR 
   Translator and the Clerk are each copied into two rooms.
 
 ## Verification
-- After each code step: `make lint` and `make test` pass.
-- Step 2: each SVG in `docs/design/office-svg/` opens in a browser and matches its canvas
-  artboard; the ids listed above exist (`grep 'id="printer"'` and so on).
-- Step 4: paste a text on the Vercel preview URL. The Chopper and Translator bubbles go
-  Waiting → Working → Done in order; the card pile shows the real chunk count; the text
-  appears under "Your books"; `curl` against `/upload` shows the same events.
-- Step 5: a question on the preview URL shows the Clerk's greeting, the question words
-  highlighted, the character states, the answer and the sources sidebar. Existing Ask
-  tests still pass.
-- Step 6: one real upload plays the mail arriving, the Chopper, the Translator and the
-  Archivist in order, with the handoffs; with reduced motion on, each scene jumps to its
-  end state; with network throttling on, no scene is skipped.
-- Step 7: the dev page plays every Ask and Query scene key, including "nothing found".
-- Step 8: a good question and an unanswerable one both play correctly, and the Clerk is
-  never in both rooms at once.
+- `make lint` and `make test` pass.
+- Room art: each SVG in `docs/design/office-svg/` opens in a browser and matches its canvas
+  artboard; the scene-id test passes.
+- Upload: paste a text on localhost and the Vercel preview URL. The mail arrives, then the
+  Chopper, the Translator (starting as the card lands) and the Archivist play in order;
+  the bubbles go Waiting, Working, Done; the card pile shows the real chunk count; the text
+  appears under "Your books"; `curl` against `/upload` shows the same events. With reduced
+  motion on, each scene jumps to its end state; with network throttling on, no scene is
+  skipped.
+- Ask: a good question plays the Clerk leaving the Query room and writing on the board, the
+  crew in order, the answer and the sources sidebar; an unanswerable one plays the "nothing
+  found" ending and the Clerk shrugging; the Clerk is never in both rooms at once. Existing
+  Ask tests still pass.
+- Home: `/` shows the page; the hero, "Ask the office about me" and FAQ work.

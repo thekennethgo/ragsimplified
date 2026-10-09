@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Character · Translator</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; line-height: 0;">
+<svg viewBox="0 0 80 120" width="100%" ref="{{syncClock}}" role="img" aria-label="{{label}}" style="display: block; overflow: visible;">
+  <defs>
+    <linearGradient id="trBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#93ABAE"></stop>
+      <stop offset="0.6" stop-color="#7F989C"></stop>
+      <stop offset="1" stop-color="#6C8589"></stop>
+    </linearGradient>
+    <linearGradient id="trHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop>
+      <stop offset="0.6" stop-color="#D3CFC7"></stop>
+      <stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="{{walkValues}}" keyTimes="0;0.58;0.63;0.90;0.95;1" dur="8s" repeatCount="indefinite"></animateTransform>
+    <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+    <g transform="{{flip}}">
+      <rect x="12" y="54" width="10" height="34" rx="5" fill="#71898D"></rect>
+      <rect x="58" y="54" width="10" height="34" rx="5" fill="#71898D">
+        <animate attributeName="opacity" values="{{rightArmVals}}" keyTimes="0;0.63;0.90" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate>
+      </rect>
+
+      <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#trBody)"></rect>
+      <path d="M32 47 Q40 51 48 47 L48 50 Q40 54 32 50 Z" fill="#EFE8DC"></path>
+      <path d="M40 54 L40 108" stroke="#6C8589" stroke-width="1"></path>
+      <path d="M21 102 Q40 107 59 102" stroke="#6C8589" stroke-width="1.5" fill="none"></path>
+
+      <circle cx="41" cy="28" r="17" fill="url(#trHead)"></circle>
+      <path d="M22.5 27 A19 19 0 0 1 59.5 27" stroke="#4A4541" stroke-width="3" fill="none" stroke-linecap="round"></path>
+      <rect x="18" y="21" width="7" height="13" rx="3.5" fill="#4A4541"></rect>
+      <rect x="57" y="21" width="6" height="13" rx="3" fill="#4A4541"></rect>
+      <path d="M58 33 Q61 39 64 40" stroke="#4A4541" stroke-width="2" fill="none" stroke-linecap="round"></path>
+
+      <g opacity="{{working}}">
+        <animate attributeName="opacity" values="0;1;0" keyTimes="0;0.63;0.90" calcMode="discrete" dur="8s" repeatCount="indefinite"></animate>
+        <g>
+          <animateTransform attributeName="transform" type="translate" values="0 0; 0 0; 0 14; 0 0; 0 14; 0 0; 0 14; 0 0; 0 0" keyTimes="0;0.65;0.70;0.735;0.77;0.805;0.84;0.875;1" dur="8s" repeatCount="indefinite"></animateTransform>
+          <rect x="58" y="30" width="10" height="30" rx="5" fill="#71898D"></rect>
+          <rect x="56" y="22" width="14" height="5" rx="1" fill="#4A4541"></rect>
+          <rect x="56" y="26" width="14" height="2" fill="#8A7896"></rect>
+          <rect x="61" y="14" width="4" height="9" fill="#7A5E46"></rect>
+          <circle cx="63" cy="12" r="4.5" fill="#C2A27E"></circle>
+        </g>
+      </g>
+
+      <g opacity="{{doneMark}}">
+        <rect x="57" y="90" width="14" height="5" rx="1" fill="#4A4541"></rect>
+        <rect x="61" y="82" width="4" height="9" fill="#7A5E46"></rect>
+        <circle cx="63" cy="80" r="4.5" fill="#C2A27E"></circle>
+      </g>
+    </g>
+    <g opacity="{{doneMark}}">
+      <circle cx="{{checkX}}" cy="50" r="7" fill="#6E8F66"></circle>
+      <path d="{{checkPath}}" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+    <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+    <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.4" fill="#EADAC0">TRANSLATOR</text>
+  </g>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","working","done"],"default":"working"},"facing":{"editor":"enum","options":["right","left"],"default":"right"},"walk":{"editor":"text","default":"0 0"},"$preview":{"width":160,"height":280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'working';
+    const left = (this.props.facing ?? 'right') === 'left';
+    const working = state === 'working';
+    const done = state === 'done';
+    const walk = working ? (this.props.walk ?? '0 0') : '0 0';
+    const cx = left ? 18 : 62;
+    return {
+      syncClock: this._sync || (this._sync = (el) => { if (el && el.setCurrentTime) el.setCurrentTime((Date.now() / 1000) % 8); }),
+      flip: left ? 'translate(80 0) scale(-1 1)' : '',
+      walkValues: '0 0;0 0;' + walk + ';' + walk + ';0 0;0 0',
+      rightArmVals: working ? '1;0;1' : '1;1;1',
+      working: working ? 1 : 0,
+      doneMark: done ? 1 : 0,
+      checkX: cx,
+      checkPath: 'M' + (cx - 3.5) + ' 50 L' + (cx - 1) + ' 52.8 L' + (cx + 3.8) + ' 47.2',
+      label: 'The Translator, seen from behind: a muted teal bean-shaped figure with a light grey head, a cardigan and a headset, ' + (working ? 'typing the card into the computer, waiting for the printout, then carrying it to the stamping table and stamping it.' : done ? 'finished, holding a rubber stamp at their side.' : 'waiting at their desk.')
+    };
+  }
+}
+</script>
+</body>
+</html>

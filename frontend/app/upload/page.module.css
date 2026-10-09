@@ -1,0 +1,72 @@
+.office {
+  position: relative;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--room);
+}
+
+.title {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 4px 12px;
+}
+
+.stage {
+  position: relative;
+  container-type: inline-size;
+  min-height: 120px;
+}
+
+/* The documents-on-file number, beside the plaque above the file cabinets. */
+.count {
+  position: absolute;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  font-size: 1.5cqw;
+  line-height: 1;
+  color: #f2c27e;
+  transform: skewY(26.57deg);
+  transform-origin: left bottom;
+  pointer-events: none;
+}
+
+.bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.error {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--chip-error-bg);
+  color: var(--chip-error-fg);
+  font-size: 14px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+@media (max-width: 760px) {
+  .bubbles {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: #3a2a20;
+  }
+}

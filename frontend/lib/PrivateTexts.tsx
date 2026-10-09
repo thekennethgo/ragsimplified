@@ -12,6 +12,7 @@ export type PrivateText = {
 type PrivateTexts = {
   texts: PrivateText[];
   add: (text: PrivateText) => void;
+  remove: (index: number) => void;
 };
 
 const PrivateTextsContext = createContext<PrivateTexts | null>(null);
@@ -23,7 +24,12 @@ const PrivateTextsContext = createContext<PrivateTexts | null>(null);
 export function PrivateTextsProvider({ children }: { children: ReactNode }) {
   const [texts, setTexts] = useState<PrivateText[]>([]);
   const add = (text: PrivateText) => setTexts((items) => [...items, text]);
-  return <PrivateTextsContext.Provider value={{ texts, add }}>{children}</PrivateTextsContext.Provider>;
+  const remove = (index: number) => setTexts((items) => items.filter((_, i) => i !== index));
+  return (
+    <PrivateTextsContext.Provider value={{ texts, add, remove }}>
+      {children}
+    </PrivateTextsContext.Provider>
+  );
 }
 
 export function usePrivateTexts(): PrivateTexts {

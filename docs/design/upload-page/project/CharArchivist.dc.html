@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Character · Archivist</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; line-height: 0;">
+<svg viewBox="0 0 80 120" width="100%" role="img" aria-label="{{label}}" style="display: block; overflow: visible;">
+  <defs>
+    <linearGradient id="arBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A898A6"></stop>
+      <stop offset="0.6" stop-color="#958494"></stop>
+      <stop offset="1" stop-color="#7E6E7D"></stop>
+    </linearGradient>
+    <linearGradient id="arHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop>
+      <stop offset="0.6" stop-color="#D3CFC7"></stop>
+      <stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+  <g transform="{{flip}}">
+    <rect x="12" y="54" width="10" height="34" rx="5" fill="#8A7A89"></rect>
+    <g opacity="{{armDown}}">
+      <rect x="58" y="54" width="10" height="34" rx="5" fill="#8A7A89"></rect>
+      <path d="M58 66 H68" stroke="#B89A5E" stroke-width="3"></path>
+    </g>
+    <g transform="rotate(-8 16 78)">
+      <rect x="4" y="70" width="18" height="14" rx="1" fill="#D9BE86"></rect>
+      <rect x="6" y="67" width="7" height="4" rx="1" fill="#D9BE86"></rect>
+      <rect x="3" y="73" width="18" height="14" rx="1" fill="#C7A86C"></rect>
+    </g>
+    <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#arBody)"></rect>
+    <path d="M40 54 L40 108" stroke="#7E6E7D" stroke-width="1"></path>
+    <path d="M12 66 H22" stroke="#B89A5E" stroke-width="3"></path>
+    <path d="M19 98 H61" stroke="#5E4E5C" stroke-width="3"></path>
+    <circle cx="24" cy="102" r="4" fill="none" stroke="#C2A27E" stroke-width="1.8"></circle>
+    <path d="M22 105 L21 112 M25 106 L26 113 M27 104 L30 110" stroke="#C2A27E" stroke-width="1.8" stroke-linecap="round"></path>
+    <circle cx="41" cy="28" r="17" fill="url(#arHead)"></circle>
+    <path d="M26 20 Q41 10 56 20" stroke="#4A4541" stroke-width="1.5" fill="none"></path>
+    <ellipse cx="34" cy="13" rx="6" ry="3.5" fill="#CFE0EE" fill-opacity="0.7" stroke="#4A4541" stroke-width="1.5"></ellipse>
+    <ellipse cx="48" cy="13" rx="6" ry="3.5" fill="#CFE0EE" fill-opacity="0.7" stroke="#4A4541" stroke-width="1.5"></ellipse>
+    <path d="M40 13 H42" stroke="#4A4541" stroke-width="1.5"></path>
+    <g opacity="{{armUp}}">
+      <rect x="58" y="30" width="10" height="30" rx="5" fill="#8A7A89"></rect>
+      <path d="M58 64 H68" stroke="#B89A5E" stroke-width="3"></path>
+      <rect x="56" y="12" width="16" height="20" rx="1" fill="#D9BE86"></rect>
+      <rect x="58" y="9" width="7" height="4" rx="1" fill="#D9BE86"></rect>
+    </g>
+    <g opacity="{{toolDown}}">
+
+    </g>
+
+  </g>
+  <g opacity="{{doneMark}}">
+    <circle cx="{{checkX}}" cy="50" r="7" fill="#6E8F66"></circle>
+    <path d="{{checkPath}}" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+  <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.6" fill="#EADAC0">ARCHIVIST</text>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","working","done"],"default":"working"},"facing":{"editor":"enum","options":["right","left"],"default":"right"},"$preview":{"width":160,"height":280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'working';
+    const left = (this.props.facing ?? 'right') === 'left';
+    const working = state === 'working';
+    const done = state === 'done';
+    const cx = left ? 18 : 62;
+    return {
+      flip: left ? 'translate(80 0) scale(-1 1)' : '',
+      armUp: working ? 1 : 0,
+      armDown: working ? 0 : 1,
+      toolDown: working ? 0 : 1,
+      doneMark: done ? 1 : 0,
+      checkX: cx,
+      checkPath: 'M' + (cx - 3.5) + ' 50 L' + (cx - 1) + ' 52.8 L' + (cx + 3.8) + ' 47.2',
+      label: 'The Archivist: a muted plum bean-shaped figure with a light grey head, reading glasses pushed up on top, sleeve garters, a key ring on the belt and an armful of folders, seen from behind, ' + (working ? 'reaching up to file a folder in the cabinet.' : done ? 'finished, the folders filed.' : 'waiting by the file cabinets with an armful of folders.')
+    };
+  }
+}
+</script>
+</body>
+</html>

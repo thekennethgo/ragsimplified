@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GSAP Ask Test</title>
+<style>
+  :root { --bg:#1E1611; --panel:#2B1F17; --ink:#EADAC0; --muted:#B8A48A; --accent:#C98F4A; --line:#4A3324; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.4 system-ui, sans-serif; }
+  main { max-width:1280px; margin:0 auto; padding:12px 16px; }
+  h2 { font-size:13px; font-weight:600; color:var(--muted); margin:10px 0 6px; letter-spacing:.04em; text-transform:uppercase; }
+  #query { max-width:480px; }
+  #query svg, #office svg { width:100%; height:auto; display:block; border-radius:6px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+  button { background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.evt { border-color:var(--accent); }
+  label { color:var(--muted); display:flex; gap:4px; align-items:center; }
+  #status { font-family:ui-monospace, monospace; color:var(--muted); }
+  #log { font:12px/1.5 ui-monospace, monospace; color:var(--muted); background:var(--panel); border-radius:6px; padding:8px 10px; height:140px; overflow:auto; white-space:pre; }
+</style>
+</head>
+<body>
+<main>
+  <h2>Query room</h2>
+  <div id="query">{{QUERY}}</div>
+  <h2>Ask office</h2>
+  <div id="office">{{OFFICE}}</div>
+  <div class="bar">
+    <button class="evt" data-evts="clerk_away clerk_start">question sent</button>
+    <button class="evt" data-evts="translator_start">translator start</button>
+    <button class="evt" data-evts="translator_done">translator done</button>
+    <button class="evt" data-evts="scout_start">scout start</button>
+    <button class="evt" data-evts="scout_done">scout done</button>
+    <button class="evt" data-evts="judge_start">judge start</button>
+    <button class="evt" data-evts="judge_done">judge done</button>
+    <button class="evt" data-evts="judge_done:nothing">judge done: nothing found</button>
+    <button class="evt" data-evts="storyteller_start">storyteller start</button>
+    <button class="evt" data-evts="storyteller_done">storyteller done</button>
+    <button class="evt" data-evts="clerk_done clerk_back">answer done</button>
+  </div>
+  <div class="bar">
+    <button id="burst">fire everything at once</button>
+    <button id="burst-nothing">fire everything: nothing found</button>
+    <button id="reset">reset</button>
+    <label><input type="checkbox" id="rm"> reduced motion</label>
+    <span id="status"></span>
+  </div>
+  <div id="log"></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => gsap.utils.toArray(s);
+const MIN_HOLD = 1.0;   // seconds each scene's end state stays on screen
+const SPEED = { clerk: 170, crew: 110 };   // room units per second; the Clerk is a brisk courier
+const ALL_EVENTS = ['clerk_away', 'clerk_start', 'translator_start', 'translator_done', 'scout_start', 'scout_done',
+  'judge_start', 'judge_done', 'storyteller_start', 'storyteller_done', 'clerk_done', 'clerk_back'];
+
+// The canvas room's projection: room (x, y, z) to SVG (from OfficeAsk.dc.html's geometry()).
+const iso = (x, y, z = 0) => ({ x: 640 + 0.8 * (x - y), y: 210 + 0.4 * (x + y) - 0.8 * z });
+const poly = (pts) => 'M' + pts.map(([x, y, z]) => { const p = iso(x, y, z); return `${p.x.toFixed(1)} ${p.y.toFixed(1)}`; }).join('L') + 'Z';
+const box = (x, y, z, w, d, h) => ({
+  top: poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]]),
+  fy: poly([[x, y + d, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x, y + d, z]]),
+  fx: poly([[x + w, y, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x + w, y, z]]),
+});
+
+// Feet positions (SVG coordinates). Room coordinates in comments where a spot was chosen in the room.
+const P = {
+  doorway: { x: 212, y: 428 },          // inside the QUERY door
+  door: { x: 240, y: 442 },             // on the door mat
+  clAtBoard: { x: 636, y: 564 },        // room 440,445: beside the whiteboard's right end, his writing hand in view; he waits here too
+  clAtStoryteller: { x: 840, y: 546 },  // on the Storyteller's left (room 545,295), room above for a speech bubble
+  trSpot: { x: 400, y: 410 },
+  trAtScout: { x: 660, y: 334 },        // room 167,142: behind the Scout's right shoulder
+  scSpot: { x: 608, y: 314 },
+  scAtJudge: { x: 752, y: 346 },        // room 240,100: beside the Judge, left of the desk
+  jdSpot: { x: 812, y: 396 },
+  jdAcrossDesk: { x: 1003.2, y: 507.2 }, // room 595,148: across the Storyteller's desk from her
+  jdPastDesk: { x: 856, y: 462 },       // room 450,180: clear of the Storyteller's desk, on the way back
+  jdAtClerk: { x: 692, y: 572 },        // room 485,420: on the Clerk's right by the whiteboard, to tell them nothing was found
+  jdAtFiles: { x: 512, y: 330 },        // room 70,230: in front of the file cabinets
+  stSpot: { x: 920, y: 546 },
+};
+const at = (p) => ({ x: p.x - 40, y: p.y - 116 });
+const GROUP = { cl: '#clerk', tr: '#translator', sc: '#scout', jd: '#judge', st: '#storyteller' };
+const HOME_FACING_LEFT = { cl: false, tr: true, sc: true, jd: false, st: false };
+const HOME = { tr: P.trSpot, sc: P.scSpot, jd: P.jdSpot, st: P.stSpot };
+
+const ANSWER_TO = { x: -92, y: 18 };          // typewriter to the Clerk's clipboard
+const HANDOVER_FROM = { x: 19, y: -61 };      // the papers in the Judge's hand, across the desk
+const HANDOVER_TO = { x: -68, y: -84 };       // the Storyteller's raised hand
+const KEPT_FROM = { x: -57, y: -35 };         // Storyteller's raised hand down onto the desk
+
+// "Nothing found": set when the Judge keeps no results; the Storyteller then has nothing to type
+// and the Clerk comes back shrugging. In the app this comes from the Judge's done event.
+let nothingFound = false;
+const Q_DOOR = '90 172';                      // Query room: where the Clerk shrinks toward in the doorway
+
+const osReduced = matchMedia('(prefers-reduced-motion: reduce)');
+$('#rm').checked = osReduced.matches;
+const reduced = () => $('#rm').checked;
+
+function log(msg) {
+  const el = $('#log');
+  el.textContent += `${(performance.now() / 1000).toFixed(2).padStart(7)}s  ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---------- props drawn from the room's own projection ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(parent, tag, attrs) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  parent.appendChild(e);
+  return e;
+}
+function boxGroup(parent, id, b, colors, extra) {
+  const g = el(parent, 'g', { id, opacity: 0 });
+  el(g, 'path', { d: b.fy, fill: colors[0] });
+  el(g, 'path', { d: b.fx, fill: colors[1] });
+  el(g, 'path', { d: b.top, fill: colors[2] });
+  if (extra) el(g, 'path', { d: extra, fill: 'none', stroke: '#B8AD98', 'stroke-width': 0.8 });
+  return g;
+}
+(function buildProps() {
+  const props = $('#a-props');
+  const PAPER = ['#E6DDCB', '#D8CCB7', '#F7F2E8'];
+  // the Translator's slip, lying on the desk where the printer feeds out
+  const slip = el(props, 'g', { id: 'a-slip', opacity: 0 });
+  el(slip, 'path', { d: poly([[56, 438, 61], [72, 438, 61], [72, 447, 61], [56, 447, 61]]), fill: '#F7F2E8', stroke: '#B8AD98', 'stroke-width': 0.6 });
+  el(slip, 'path', { d: poly([[59, 441, 61.1], [69, 441, 61.1], [69, 442.4, 61.1], [59, 442.4, 61.1]]), fill: '#6F8FA3' });
+  // the big pile on the Judge's desk; after judging it becomes the canvas's kept stack plus the rejects
+  const lines = [64, 68, 72].map((z) => poly([[296, 60, z], [320, 60, z], [320, 60.1, z + 0.6], [296, 60.1, z + 0.6]])).join(' ');
+  boxGroup(props, 'j-pile', box(296, 40, 60, 24, 20, 16), PAPER, lines);
+  boxGroup(props, 'j-rejects', box(296, 60, 60, 22, 16, 8), PAPER);
+  // the kept documents on the Storyteller's desk (back right, beside the question copy)
+  boxGroup(props, 'st-kept', box(618, 172, 58, 22, 14, 5), PAPER);
+  // sheets that fly out of the lit drawers into the Scout's arms
+  [[560, 200], [536, 222], [604, 196], [528, 252], [575, 240], [590, 222]].forEach(([x, y], i) =>
+    el(props, 'rect', { class: 'a-sheet', x: x - 6, y: y - 4, width: 12, height: 8, rx: 0.8, fill: '#F7F2E8', stroke: '#B8AD98', 'stroke-width': 0.6, opacity: 0 }));
+  // the Storyteller's typed lines, one per beat (like the canvas's paperLines)
+  [16, 13, 17, 11, 15].forEach((w, k) =>
+    el($('#typed-lines'), 'path', { class: 'typed-line', d: poly([[581, 180.3, 94 - k * 5.5], [581 + w, 180.3, 94 - k * 5.5], [581 + w, 180.3, 95.6 - k * 5.5], [581, 180.3, 95.6 - k * 5.5]]), fill: '#8C7660', opacity: 0 }));
+})();
+const SHEETS_TO = { x: 634, y: 280 };   // the Scout's arms, at the Scout's spot
+
+// Depth: reset puts the Judge back in the crew's depth order.
+const judgeEl = $('#judge');
+const judgeTo = (before) => () => before.parentNode.insertBefore(judgeEl, before);
+const inCrew = judgeTo($('#translator'));   // the Judge's usual place in the crew's depth order
+const behindDesk = judgeTo($('#sdesk'));     // across the Storyteller's desk the desk hides his legs
+
+// ---------- walking ----------
+const pos = {};   // where each character's feet are, for walk directions and durations
+function walk(tl, who, to, position) {
+  const from = pos[who];
+  pos[who] = to;
+  const d = Math.hypot(to.x - from.x, to.y - from.y);
+  return tl.set(`#${who}-flip`, { scaleX: to.x < from.x ? -1 : 1 }, position)
+    .to(GROUP[who], { ...at(to), duration: Math.max(0.4, d / SPEED[who === 'cl' ? 'clerk' : 'crew']), ease: 'power1.inOut' });
+}
+const face = (tl, who, left, position) => tl.set(`#${who}-flip`, { scaleX: left ? -1 : 1 }, position);
+const faceHome = (tl, who) => face(tl, who, HOME_FACING_LEFT[who]);
+const clerkPose = (tl, give, position) => tl
+  .set('#cl-give', { opacity: give ? 1 : 0 }, position)
+  .set(['#cl-wait', '#cl-clip-side'], { opacity: give ? 0 : 1 }, '<');
+// arm up (working pose) or down for the Scout, Judge and Storyteller
+const armUp = (tl, who, up, position) => tl
+  .set(`#${who}-arm-up`, { opacity: up ? 1 : 0 }, position)
+  .set([`#${who}-arm-down`, `#${who}-tool-down`], { opacity: up ? 0 : 1 }, '<');
+const popCheck = (tl, who) => tl.fromTo(`#${who}-check`, { opacity: 0, scale: 0.4, transformOrigin: '50% 50%' },
+  { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(2)' });
+
+function reset() {
+  Object.keys(holds).forEach(stopHold);
+  // Query room: the Clerk at the counter, waving, door shut
+  gsap.set('#q-clerk', { opacity: 1, y: 0, scale: 1, svgOrigin: Q_DOOR });
+  gsap.set(['#q-front', '#q-wave-arms', '#q-wave-clip', '#q-door-shut'], { opacity: 1 });
+  gsap.set(['#q-back', '#q-present-arms', '#q-present-page', '#q-door-open', '#q-back-soon'], { opacity: 0 });
+  // Ask office: no Clerk, door shut
+  pos.cl = P.doorway;
+  gsap.set('#clerk', { ...at(P.doorway), opacity: 0 });
+  gsap.set(['#cl-wait', '#cl-clip-side'], { opacity: 1 });
+  gsap.set(['#cl-give', '#cl-write', '#a-door-open', '#a-answer'], { opacity: 0, x: 0, y: 0 });
+  // the crew at their desks, facing their work
+  inCrew();
+  nothingFound = false;
+  gsap.set(['#jd-puzzled', '#jd-says', '#a-handover', '#q-shrug-arms'], { opacity: 0, x: 0, y: 0 });
+  gsap.set('#jd-flip', { rotation: 0 });
+  for (const who of Object.keys(HOME)) { pos[who] = HOME[who]; gsap.set(GROUP[who], at(HOME[who])); }
+  for (const who of Object.keys(GROUP)) gsap.set(`#${who}-flip`, { svgOrigin: '40 0', scaleX: HOME_FACING_LEFT[who] ? -1 : 1 });
+  gsap.set(['#sc-arm-up', '#jd-arm-up', '#st-arm-up'], { opacity: 0, x: 0, y: 0 });
+  gsap.set(['#sc-arm-down', '#sc-tool-down', '#jd-arm-down', '#jd-tool-down', '#st-arm-down', '#st-tool-down', '#tr-arm-r'], { opacity: 1 });
+  gsap.set(['#tr-check', '#sc-check', '#jd-check', '#st-check'], { opacity: 0 });
+  gsap.set(['#tr-held-slip', '#sc-held-slip', '#sc-held-stack', '#jd-held-kept', '#jd-held-rejects'], { opacity: 0 });
+  // Translator's desk
+  gsap.set(['#crt-text-idle', '#tr-work'], { opacity: 1 });
+  gsap.set(['#tr-in-card', '#crt-cursor', '.crt-line', '.crt-bar', '#a-slip'], { opacity: 0, x: 0, y: 0 });
+  gsap.set('#printer', { x: 0 });
+  gsap.set('#printer-led', { opacity: 0.3 });
+  // Scout's cabinets, Judge's desk and board, Storyteller's typewriter
+  gsap.set(['#lantern-beam', '#lantern-glow', '.a-sheet', '#j-pile', '#j-rejects', '#kept-stack', '#d-kept', '#st-kept', '#answer-dots', '.typed-line', '#typer-lines-static'], { opacity: 0, x: 0, y: 0 });
+  gsap.set($$('#d-kept > *'), { opacity: 1 });
+  gsap.set(['#desk-mag-lens', '#desk-mag-handle'], { opacity: 1 });
+  gsap.set('#typewriter', { x: 0 });
+}
+
+// ---------- per-character "still working" loops ----------
+const holds = {};
+const who = (evt) => evt.split('_')[0];
+function stopHold(k) { if (holds[k]) { holds[k].kill(); delete holds[k]; } }
+const startHold = (tl, k, make) => tl.eventCallback('onComplete', () => { if (!reduced()) holds[k] = make(); });
+
+// Judge, nothing kept: puzzled at the pile, tells the Clerk, then files the whole pile back.
+function judgeNothing() {
+  nothingFound = true;
+  const tl = gsap.timeline({ paused: true });
+  tl.to('#jd-arm-up', { x: 0, duration: 0.2 })
+    .fromTo('#jd-puzzled', { opacity: 0, scale: 0.4, transformOrigin: '50% 100%' }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(2)' })
+    .to('#jd-flip', { rotation: -5, svgOrigin: '40 116', duration: 0.25, ease: 'sine.inOut' })   // head tilt, twice
+    .to('#jd-flip', { rotation: 5, duration: 0.4, ease: 'sine.inOut' })
+    .to('#jd-flip', { rotation: -5, duration: 0.4, ease: 'sine.inOut' })
+    .to('#jd-flip', { rotation: 0, duration: 0.25, ease: 'sine.inOut' })
+    .to('#j-pile', { opacity: 0, duration: 0.25 })   // nothing kept: it all becomes rejects
+    .to('#j-rejects', { opacity: 1, duration: 0.25 }, '<');
+  armUp(tl, 'jd', false);
+  tl.set(['#desk-mag-lens', '#desk-mag-handle'], { opacity: 1 }, '<')
+    .to('#jd-puzzled', { opacity: 0, duration: 0.2 }, '<')
+    .set('#j-rejects', { opacity: 0 }, '+=0.2')
+    .set('#jd-held-rejects', { opacity: 1 }, '<');
+  walk(tl, 'jd', P.jdAtClerk, '+=0.1');
+  face(tl, 'jd', true);                       // turn to the Clerk
+  face(tl, 'cl', false, '<');                 // and the Clerk turns to the Judge
+  tl.fromTo('#jd-says', { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }, '+=0.1')
+    .to('#jd-says', { opacity: 0, duration: 0.3 }, '+=1.8')
+    .addLabel('handoff');                     // the Clerk knows: they can head back
+  walk(tl, 'jd', P.jdAtFiles, '+=0.1');
+  tl.to('#jd-held-rejects', { x: -8, opacity: 0, duration: 0.35 }, '+=0.1')   // all back into the cabinets
+    .set('#jd-held-rejects', { x: 0 });
+  walk(tl, 'jd', P.jdSpot, '+=0.2');
+  faceHome(tl, 'jd');
+  popCheck(tl, 'jd');
+  return tl;
+}
+const nothingToDo = () => gsap.timeline({ paused: true }).to({}, { duration: 0.01 });
+
+// ---------- scenes: each returns a paused timeline ----------
+const scenes = {
+  // Query room: the Clerk takes the question, turns round and goes through the office door.
+  clerk_away() {
+    const tl = gsap.timeline({ paused: true });
+    tl.add(reset)
+      .set('#q-front', { opacity: 0 })
+      .set('#q-back', { opacity: 1 })
+      .to('#q-door-shut', { opacity: 0, duration: 0.25 }, '+=0.15')
+      .to('#q-door-open', { opacity: 1, duration: 0.25 }, '<')
+      .to('#q-clerk', { y: -6, scale: 0.86, duration: 0.6, ease: 'power1.in' })
+      .to('#q-clerk', { opacity: 0, duration: 0.3 }, '-=0.3')
+      .addLabel('handoff')   // gone through the door: he appears in the office straight away
+      .to('#q-back-soon', { opacity: 1, duration: 0.3 });
+    return tl;
+  },
+
+  // Ask office: in through the QUERY door, behind the whiteboard, writes the question on it for the crew,
+  // then waits on the Storyteller's left.
+  clerk_start() {
+    const tl = gsap.timeline({ paused: true });
+    pos.cl = P.doorway;
+    tl.set('#clerk', at(P.doorway))
+      .set('#cl-flip', { scaleX: 1 })
+      .to('#a-door-open', { opacity: 1, duration: 0.2 })
+      .to('#clerk', { opacity: 1, duration: 0.3 });
+    walk(tl, 'cl', P.door);
+    tl.to('#a-door-open', { opacity: 0, duration: 0.25 });
+    walk(tl, 'cl', P.clAtBoard, '<');             // straight along behind the whiteboard to its right end
+    face(tl, 'cl', true);                        // facing the board; his arm goes round its edge
+    tl.set(['#cl-wait', '#cl-clip-side'], { opacity: 0 }, '+=0.1')
+      .set('#cl-write', { opacity: 1, x: 0, y: 0 }, '<');
+    [[3, -6], [-2, 1], [4, -4], [-1, 3], [3, -2], [0, 4]].forEach(([x, y]) =>   // six strokes of the marker, in view at the board's edge
+      tl.to('#cl-write', { x, y, duration: 0.24, ease: 'sine.inOut' }));
+    tl.to('#cl-write', { x: 0, y: 0, duration: 0.15 })
+      .set('#cl-write', { opacity: 0 })
+      .set(['#cl-wait', '#cl-clip-side'], { opacity: 1 }, '<')
+      .addLabel('handoff');   // the question is on the board: the Translator can start
+    face(tl, 'cl', false, '+=0.2');               // then waits beside the board, facing the room
+    return tl;
+  },
+
+  // Translator: reads the question off the whiteboard and types it into the computer.
+  translator_start() {
+    const tl = gsap.timeline({ paused: true });
+    face(tl, 'tr', false);                      // looks over at the board
+    face(tl, 'tr', true, '+=0.6');              // and back to the keyboard
+    tl.to('#crt-text-idle', { opacity: 0, duration: 0.2 })
+      .set('#crt-cursor', { opacity: 1 });
+    $$('.crt-line').forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, '+=0.3'));
+    tl.to(['.crt-line', '#crt-cursor'], { opacity: 0, duration: 0.2 }, '+=0.3')
+      .to($$('.crt-bar').slice(0, 3), { opacity: 1, duration: 0.05, stagger: 0.3 });
+    startHold(tl, 'translator', () => gsap.fromTo($$('.crt-bar')[3], { opacity: 0.15 },
+      { opacity: 0.8, duration: 0.45, repeat: -1, yoyo: true, ease: 'sine.inOut' }));
+    return tl;
+  },
+
+  // Translator: the printer gives a small slip, which goes over to the Scout.
+  translator_done() {
+    const tl = gsap.timeline({ paused: true });
+    tl.to($$('.crt-bar')[3], { opacity: 1, duration: 0.1 })
+      .addLabel('print')
+      .to('#printer-led', { opacity: 1, duration: 0.08, repeat: 5, yoyo: true }, 'print')
+      .fromTo('#printer', { x: -0.6 }, { x: 0.6, duration: 0.06, repeat: 7, yoyo: true, ease: 'none' }, 'print')
+      .set('#printer', { x: 0 })
+      .fromTo('#a-slip', { x: -11, y: -6, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.5, ease: 'power1.out' }, 'print+=0.1')
+      .set('#printer-led', { opacity: 0.3 })
+      .to('#a-slip', { opacity: 0, duration: 0.15 }, '+=0.2')   // picks it up
+      .set('#tr-held-slip', { opacity: 1 }, '<');
+    walk(tl, 'tr', P.trAtScout, '+=0.1');
+    face(tl, 'tr', true);
+    tl.set('#tr-held-slip', { opacity: 0 }, '+=0.15')
+      .set('#sc-held-slip', { opacity: 1 }, '<')
+      .addLabel('handoff');   // the Scout has the slip
+    walk(tl, 'tr', P.trSpot, '+=0.2');
+    faceHome(tl, 'tr');
+    tl.to(['.crt-bar'], { opacity: 0, duration: 0.2 })
+      .to('#crt-text-idle', { opacity: 1, duration: 0.2 }, '<');
+    popCheck(tl, 'tr');
+    return tl;
+  },
+
+  // Scout: holds up the lantern; its light finds the drawers that match.
+  scout_start() {
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#sc-held-slip', { opacity: 0 });
+    armUp(tl, 'sc', true);
+    tl.to('#lantern-glow', { opacity: 1, duration: 0.3 })
+      .to('#lantern-beam', { opacity: 1, duration: 0.6 }, '<0.1')
+      .to(['#sc-arm-up', '#lantern-glow'], { x: -6, y: 3, duration: 0.8, ease: 'sine.inOut' })   // searching: the lantern sweeps along the drawers
+      .to(['#sc-arm-up', '#lantern-glow'], { x: 4, y: -2, duration: 1.1, ease: 'sine.inOut' })
+      .to(['#sc-arm-up', '#lantern-glow'], { x: -3, y: 2, duration: 0.9, ease: 'sine.inOut' })
+      .to(['#sc-arm-up', '#lantern-glow'], { x: 0, y: 0, duration: 0.6, ease: 'sine.inOut' });
+    startHold(tl, 'scout', () => gsap.to('#lantern-beam', { opacity: 0.55, duration: 0.6, repeat: -1, yoyo: true, ease: 'sine.inOut' }));
+    return tl;
+  },
+
+  // Scout: pulls a big stack of documents and carries it to the Judge's desk.
+  scout_done() {
+    const tl = gsap.timeline({ paused: true });
+    tl.to('#lantern-beam', { opacity: 1, duration: 0.2 });
+    $$('.a-sheet').forEach((s, i) => {
+      const b = { x: +s.getAttribute('x') + 6, y: +s.getAttribute('y') + 4 };
+      tl.fromTo(s, { x: 0, y: 0, opacity: 0 }, { opacity: 1, duration: 0.1 }, 0.25 + i * 0.12)
+        .to(s, { x: SHEETS_TO.x - b.x, y: SHEETS_TO.y - b.y, duration: 0.45, ease: 'power2.in' }, '>')
+        .set(s, { opacity: 0 });
+    });
+    tl.set('#sc-held-stack', { opacity: 1 }, '-=0.3')
+      .to(['#lantern-beam', '#lantern-glow'], { opacity: 0, duration: 0.3 });
+    armUp(tl, 'sc', false, '<');
+    walk(tl, 'sc', P.scAtJudge, '+=0.1');
+    tl.set('#sc-held-stack', { opacity: 0 }, '+=0.1')   // onto the Judge's desk
+      .fromTo('#j-pile', { x: -120, y: 15, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, '<')
+      .addLabel('handoff');   // the pile is on the Judge's desk
+    walk(tl, 'sc', P.scSpot, '+=0.2');
+    faceHome(tl, 'sc');
+    popCheck(tl, 'sc');
+    return tl;
+  },
+
+  // Judge: goes over the pile with the magnifying glass.
+  judge_start() {
+    const tl = gsap.timeline({ paused: true });
+    tl.set(['#desk-mag-lens', '#desk-mag-handle'], { opacity: 0 });
+    armUp(tl, 'jd', true);
+    tl.to('#jd-arm-up', { x: -3, duration: 0.4, ease: 'sine.inOut' });
+    startHold(tl, 'judge', () => gsap.fromTo('#jd-arm-up', { x: -3 }, { x: 3, duration: 0.7, repeat: -1, yoyo: true, ease: 'sine.inOut' }));
+    return tl;
+  },
+
+  // Judge: ranks the best, hands them to the Storyteller, then files the rest back.
+  // With nothing kept: puzzled, tells the Clerk no file was found, files everything back.
+  judge_done(data = {}) {
+    if (data.nothing) return judgeNothing();
+    const tl = gsap.timeline({ paused: true });
+    tl.to('#jd-arm-up', { x: 0, duration: 0.2 })
+      .set('#d-kept', { opacity: 1 })
+      .fromTo($$('#d-kept > *'), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.12 })   // ranks on the board
+      .to('#j-pile', { opacity: 0, duration: 0.25 })
+      .to(['#kept-stack', '#j-rejects'], { opacity: 1, duration: 0.25 }, '<');
+    armUp(tl, 'jd', false);
+    tl.set(['#desk-mag-lens', '#desk-mag-handle'], { opacity: 1 }, '<')
+      .set(['#kept-stack', '#j-rejects'], { opacity: 0 }, '+=0.2')
+      .set(['#jd-held-kept', '#jd-held-rejects'], { opacity: 1 }, '<');
+    // straight over to the far side of the Storyteller's desk, across from her
+    tl.call(behindDesk, null, '+=0.1');
+    walk(tl, 'jd', P.jdAcrossDesk);
+    face(tl, 'jd', true);   // facing the Storyteller
+    // hand to hand: the papers go into the Storyteller's raised hand, then onto the desk
+    tl.set('#jd-held-kept', { opacity: 0 }, '+=0.1')
+      .set('#a-handover', { ...HANDOVER_FROM, opacity: 1 }, '<')   // (a set, not a fromTo: a fromTo would show it from the start)
+      .to('#a-handover', { ...HANDOVER_TO, duration: 0.45, ease: 'power2.inOut' }, '<');
+    armUp(tl, 'st', true);
+    tl.set('#a-handover', { opacity: 0 }, '<');
+    armUp(tl, 'st', false, '+=0.5');
+    tl.fromTo('#st-kept', { ...KEPT_FROM, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }, '<')
+      .addLabel('handoff');   // the documents are on the Storyteller's desk
+    walk(tl, 'jd', P.jdPastDesk, '+=0.2');
+    tl.call(inCrew);
+    walk(tl, 'jd', P.jdAtFiles);
+    tl.to('#jd-held-rejects', { x: -8, opacity: 0, duration: 0.35 }, '+=0.1')   // back into the cabinet
+      .set('#jd-held-rejects', { x: 0 });
+    walk(tl, 'jd', P.jdSpot, '+=0.2');
+    faceHome(tl, 'jd');
+    popCheck(tl, 'jd');
+    return tl;
+  },
+
+  // Storyteller: reads the documents and starts typing.
+  storyteller_start() {
+    if (nothingFound) return nothingToDo();
+    const tl = gsap.timeline({ paused: true });
+    $$('.typed-line').slice(0, 2).forEach((line) => {
+      tl.to('#typewriter', { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, '+=0.15')
+        .to(line, { opacity: 1, duration: 0.05 });
+    });
+    startHold(tl, 'storyteller', () => gsap.timeline({ repeat: -1 })
+      .to('#typewriter', { x: 0.8, duration: 0.05, repeat: 7, yoyo: true })
+      .to('#key-dots', { opacity: 0.6, duration: 0.08, repeat: 3, yoyo: true }, '<')
+      .to({}, { duration: 0.3 }));
+    return tl;
+  },
+
+  // Storyteller: finishes the page; the answer waits on the typewriter for the Clerk.
+  storyteller_done() {
+    if (nothingFound) return nothingToDo();
+    const tl = gsap.timeline({ paused: true });
+    tl.set('#key-dots', { opacity: 1 });
+    $$('.typed-line').slice(2).forEach((line) => {
+      tl.to('#typewriter', { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, '+=0.1')
+        .to(line, { opacity: 1, duration: 0.05 });
+    });
+    tl.to('#answer-dots', { opacity: 1, duration: 0.2 }, '+=0.1');   // the citation marks
+    armUp(tl, 'st', true, '+=0.2');   // holds up the finished page
+    armUp(tl, 'st', false, '+=0.8');
+    tl.fromTo('#a-answer', { opacity: 0 }, { opacity: 1, duration: 0.25 }, '<');
+    popCheck(tl, 'st');
+    return tl;
+  },
+
+  // Ask office: take the answer from the Storyteller and leave by the QUERY door.
+  clerk_done() {
+    const tl = gsap.timeline({ paused: true });
+    if (!nothingFound) {
+      walk(tl, 'cl', P.clAtStoryteller);   // over from the board; walking right, so facing the Storyteller
+      clerkPose(tl, true);
+      tl.fromTo('#a-answer', { x: 0, y: 0, opacity: 1 }, { ...ANSWER_TO, duration: 0.45, ease: 'power2.inOut' }, '+=0.15')
+        .to('#a-answer', { opacity: 0, duration: 0.15 });
+      clerkPose(tl, false);
+    }
+    walk(tl, 'cl', P.door, '+=0.1');
+    tl.to('#a-door-open', { opacity: 1, duration: 0.2 });
+    walk(tl, 'cl', P.doorway);
+    tl.to('#clerk', { opacity: 0, duration: 0.3 }, '-=0.2')
+      .addLabel('handoff')   // gone through the door: he is back in the Query room straight away
+      .to('#a-door-open', { opacity: 0, duration: 0.25 });
+    return tl;
+  },
+
+  // Query room: back through the door, turn round and show the answer (or shrug: nothing found).
+  clerk_back() {
+    const tl = gsap.timeline({ paused: true });
+    tl.set(['#q-door-shut'], { opacity: 0 })
+      .set(['#q-door-open', '#q-back'], { opacity: 1 })
+      .set('#q-front', { opacity: 0 })
+      .fromTo('#q-clerk', { y: -6, scale: 0.86, opacity: 0 }, { opacity: 1, duration: 0.3 })
+      .to('#q-clerk', { y: 0, scale: 1, duration: 0.6, ease: 'power1.out' })
+      .set('#q-back', { opacity: 0 })
+      .set('#q-front', { opacity: 1 })
+      .set(['#q-wave-arms', '#q-wave-clip'], { opacity: 0 })
+      .set(nothingFound ? ['#q-shrug-arms'] : ['#q-present-arms', '#q-present-page'], { opacity: 1 })   // shrug when nothing was found
+      .to('#q-door-open', { opacity: 0, duration: 0.25 })
+      .to('#q-door-shut', { opacity: 1, duration: 0.25 }, '<')
+      .to('#q-back-soon', { opacity: 0, duration: 0.25 }, '<');
+    return tl;
+  },
+};
+
+// ---------- event queue: one scene at a time; next at the handoff label, else end + MIN_HOLD ----------
+const queue = [];
+let running = false;
+let cancelScene = null;
+
+function status() {
+  $('#status').textContent = `queue: [${queue.map((q) => q.evt).join(', ')}]${running ? ' · playing' : ''}`;
+}
+
+function emit(evt, data = {}) {
+  queue.push({ evt, data });
+  log(`event  ${evt}${data.nothing ? ' (nothing kept)' : ''} (queued: ${queue.length})`);
+  status();
+  if (!running) drain();
+}
+
+async function drain() {
+  running = true;
+  while (queue.length) {
+    const { evt, data } = queue.shift();
+    status();
+    stopHold(who(evt));   // this character's next event ends its "still working" loop
+    const tl = scenes[evt](data);
+    log(`scene  ${evt} ${reduced() ? '(reduced: jump to end)' : `(${tl.duration().toFixed(2)}s)`}`);
+    const handoff = tl.labels.handoff;
+    await new Promise((resolve) => {
+      cancelScene = resolve;
+      if (handoff !== undefined) tl.call(resolve, null, handoff);
+      const done = tl.eventCallback('onComplete');
+      tl.eventCallback('onComplete', () => { if (done) done(); resolve(); });
+      if (reduced()) tl.progress(1); else tl.play();
+    });
+    if (handoff === undefined || reduced()) await new Promise((r) => setTimeout(r, MIN_HOLD * 1000));
+  }
+  running = false;
+  status();
+}
+
+// a button token "judge_done:nothing" sends judge_done with { nothing: true }
+const send = (token) => { const [evt, flag] = token.split(':'); emit(evt, flag === 'nothing' ? { nothing: true } : {}); };
+document.querySelectorAll('button.evt').forEach((b) =>
+  b.addEventListener('click', () => b.dataset.evts.split(' ').forEach(send)));
+$('#burst').addEventListener('click', () => ALL_EVENTS.forEach((e) => emit(e)));
+$('#burst-nothing').addEventListener('click', () =>
+  ALL_EVENTS.forEach((e) => emit(e, e === 'judge_done' ? { nothing: true } : {})));
+$('#reset').addEventListener('click', () => {
+  queue.length = 0;
+  gsap.globalTimeline.getChildren().forEach((t) => t.kill());
+  reset();
+  if (cancelScene) cancelScene();
+  log('reset');
+  status();
+});
+osReduced.addEventListener('change', (e) => { $('#rm').checked = e.matches; });
+
+reset();
+status();
+window.__room = { emit, scenes, reset };   // for screenshot scrubbing
+// ?play: loop the whole cycle on its own (the Ask office alternates a normal run and a "nothing found" run)
+if (new URLSearchParams(location.search).has('play')) {
+  const runs = ['#burst', '#burst-nothing'];
+  let n = 0;
+  const go = () => { $('#reset').click(); $(runs[n++ % runs.length]).click(); };
+  let idle = 0;   // seconds the office has been idle; start the next run after 3
+  setInterval(() => { idle = running || queue.length ? 0 : idle + 1; if (idle >= 3) { idle = 0; go(); } }, 1000);
+  go();
+}
+</script>
+</body>
+</html>

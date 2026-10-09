@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Office art · Upload</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#2B1F17}
+</style>
+</helmet>
+<div style="position: relative; width: 100%; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #33261D; background: #2B1F17;">
+    <svg viewBox="150 0 1060 600" width="100%" ref="{{syncClock}}" role="img" aria-label="A cut-away isometric office in warm light: an inbox cabinet with an interoffice envelope at the front, a modern fax on a small stand beside it, with a document feeder and a touchscreen, turned to face into the room, a wire mail trolley out on the open floor to the right, with a push handle and two tiers of baskets holding hanging files, a carton and a mail tote, the Chopper's paper-cutting workbench on the left with a cutting mat, a steel ruler, scissors and a guillotine paper cutter mid-cut, the Translator's desk at the back under a whiteboard that explains embedding, with a 1990s beige computer, a printer and an index-card box, a side table with in and out trays, and a stamping table with an ink pad and a stamp carousel, and at the back a bank of filing cabinets with the Archivist in front, holding folders, plus a framed picture, a wall calendar, a counter above the file cabinets showing how many documents are on file, a label maker and a step ladder at the cabinets, a desk lamp, a waste bin, a plant, window blinds striping the floor with light. The Chopper, Translator and Archivist are drawn from behind as faceless bean-shaped figures facing their work." style="display: block;">
+      <rect x="0" y="0" width="1280" height="600" fill="#2B1F17"></rect>
+      <path d="{{geo.slab.fx}}" fill="#4A3324"></path><path d="{{geo.slab.fy}}" fill="#3D2A1E"></path>
+      <path d="{{geo.floor}}" fill="#8A5E3E"></path>
+      <path d="{{geo.planks}}" stroke="#7A5134" stroke-width="1.5" fill="none"></path>
+      <path d="{{geo.light}}" fill="#F2C27E" opacity="0.18"></path>
+      <path d="{{geo.lightBands}}" fill="#5E3F28" opacity="0.28"></path>
+
+      <path d="{{geo.wallL}}" fill="#B48A62"></path><path d="{{geo.wallR}}" fill="#A27852"></path>
+      <path d="{{geo.wainL}}" fill="#8F6747"></path><path d="{{geo.wainR}}" fill="#835C3E"></path>
+      <path d="{{geo.rails}}" stroke="#C9A47C" stroke-width="3" fill="none"></path>
+
+      <path d="{{geo.winFrame}}" fill="#E1CBA8"></path><path d="{{geo.winGlass}}" fill="#E8A866"></path>
+      <path d="{{geo.winBars}}" stroke="#E1CBA8" stroke-width="3" fill="none"></path>
+      <path d="{{geo.blinds}}" fill="#EFE3CC"></path>
+      <path d="{{geo.blindCords}}" stroke="#8C7660" stroke-width="1" fill="none"></path>
+      <path d="{{geo.cork}}" fill="#A87A50"></path><path d="{{geo.notes}}" fill="#F1E7D2"></path>
+      <path d="{{geo.wbFrame}}" fill="#CDBFA8"></path><path d="{{geo.wbSurf}}" fill="#EFE8DA"></path>
+      <text transform="{{geo.wbT1}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="1" fill="#5B4D42">EMBEDDING</text>
+      <text transform="{{geo.wbT2}}" font-family="IBM Plex Mono, monospace" font-size="6.5" fill="#4A6F8A">card → [0.12, −0.48, 0.91, …]</text>
+      <text transform="{{geo.wbT3}}" font-family="IBM Plex Sans, sans-serif" font-size="6" fill="#7A6A5A">1,024 numbers per card</text>
+      <text transform="{{geo.wbT4}}" font-family="IBM Plex Sans, sans-serif" font-size="5.5" fill="#7A6A5A">similar meaning = close together</text>
+      <path d="{{geo.wbDots}}" fill="#8C7E6E"></path>
+      <path d="{{geo.wbPair}}" fill="#4A6F8A"></path>
+      <ellipse cx="{{geo.wbRing.x}}" cy="{{geo.wbRing.y}}" rx="9" ry="7" fill="none" stroke="#C0803A" stroke-width="1.2"></ellipse>
+      <ellipse cx="{{geo.clock.x}}" cy="{{geo.clock.y}}" rx="15" ry="17" fill="#EFE6D6" stroke="#6B5440" stroke-width="2"></ellipse>
+      <path d="{{geo.clockHands}}" stroke="#4A3426" stroke-width="2" stroke-linecap="round" fill="none"></path>
+
+      <path d="{{geo.pot.fy}}" fill="#7A4D33"></path><path d="{{geo.pot.fx}}" fill="#6B432C"></path><path d="{{geo.pot.top}}" fill="#4A3324"></path>
+      <ellipse cx="{{geo.plant.x}}" cy="{{geo.plant.y}}" rx="12" ry="34" fill="#5D6B41" transform="rotate(-18 {{geo.plant.x}} {{geo.plant.y}})"></ellipse>
+      <ellipse cx="{{geo.plant.x}}" cy="{{geo.plant.y}}" rx="12" ry="36" fill="#6F7F4F" transform="rotate(16 {{geo.plant.x}} {{geo.plant.y}})"></ellipse>
+      <path d="{{geo.cooler.fy}}" fill="#CDBEA6"></path><path d="{{geo.cooler.fx}}" fill="#C2B39A"></path><path d="{{geo.cooler.top}}" fill="#D9CBB4"></path>
+      <path d="{{geo.bottle.fy}}" fill="#94B2B1"></path><path d="{{geo.bottle.fx}}" fill="#86A3A2"></path><path d="{{geo.bottle.top}}" fill="#A8C3C2"></path>
+
+      <path d="{{geo.picFrame}}" fill="#7E5638"></path><path d="{{geo.picInner}}" fill="#C9D6C2"></path>
+      <path d="{{geo.picHills}}" fill="#6F8A6E"></path><circle cx="{{geo.picSun.x}}" cy="{{geo.picSun.y}}" r="5" fill="#E8A866"></circle>
+      <path d="{{geo.cal}}" fill="#F1E7D2"></path><path d="{{geo.calTop}}" fill="#A63A2B"></path>
+      <path d="{{geo.calGrid}}" stroke="#B8AD98" stroke-width="1" fill="none"></path>
+      <path d="{{geo.plaque}}" fill="#3A2A20"></path>
+      <path d="{{geo.plaqueFrame}}" stroke="#C9A47C" stroke-width="2" fill="none"></path>
+      <text transform="{{geo.plaqueNum}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="16" fill="#F2C27E">{{docs}}</text>
+      <text transform="{{geo.plaqueT}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="{{plaqueSize}}" letter-spacing="1" fill="#EADAC0">DOCUMENTS ON FILE</text>
+      <path d="{{geo.files.fy}}" fill="#B8AD95"></path><path d="{{geo.files.fx}}" fill="#A39880"></path><path d="{{geo.files.top}}" fill="#C9BFA8"></path>
+      <path d="{{geo.fileLines}}" stroke="#8C826E" stroke-width="1.2" fill="none"></path>
+      <path d="{{geo.fileLabels}}" fill="#F1E7D2"></path>
+      <path d="{{geo.fileHandles}}" fill="#6B6255"></path>
+      <path d="{{geo.paperA.fy}}" fill="#E6DDCB"></path><path d="{{geo.paperA.fx}}" fill="#D8CCB7"></path><path d="{{geo.paperA.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.paperB.fy}}" fill="#E6DDCB"></path><path d="{{geo.paperB.fx}}" fill="#D8CCB7"></path><path d="{{geo.paperB.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.binder.fy}}" fill="#56677A"></path><path d="{{geo.binder.fx}}" fill="#4A596A"></path><path d="{{geo.binder.top}}" fill="#6F7F96"></path>
+      <path d="{{geo.labeler.fy}}" fill="#8A3F33"></path><path d="{{geo.labeler.fx}}" fill="#76352B"></path><path d="{{geo.labeler.top}}" fill="#A44C3E"></path>
+      <path d="{{geo.labelScreen}}" fill="#C9D6C2"></path>
+      <path d="{{geo.labelTape}}" fill="#F7F2E8"></path>
+      <path d="{{geo.ladderRails}}" stroke="#7E5536" stroke-width="4" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.ladderRungs}}" stroke="#9C6B45" stroke-width="3" stroke-linecap="round" fill="none"></path>
+
+      <path d="{{geo.cart.fy}}" fill="#6E4A2F"></path><path d="{{geo.cart.fx}}" fill="#5E3F28"></path><path d="{{geo.cart.top}}" fill="#7E5638"></path>
+      <path d="{{geo.cartBooks.fy}}" fill="#56677A"></path><path d="{{geo.cartBooks.fx}}" fill="#4A596A"></path><path d="{{geo.cartBooks.top}}" fill="#EFE6D6"></path>
+
+      <path d="{{geo.sideT.fy}}" fill="#6E4A2F"></path><path d="{{geo.sideT.fx}}" fill="#5E3F28"></path><path d="{{geo.sideT.top}}" fill="#8C5E3C"></path>
+      <path d="{{geo.inTray.fy}}" fill="#4A3F36"></path><path d="{{geo.inTray.fx}}" fill="#3A302A"></path><path d="{{geo.inTray.top}}" fill="#5B4D42"></path>
+      <path d="{{geo.outTray.fy}}" fill="#4A3F36"></path><path d="{{geo.outTray.fx}}" fill="#3A302A"></path><path d="{{geo.outTray.top}}" fill="#5B4D42"></path>
+      <path d="{{geo.inStack.fy}}" fill="#E6DDCB"></path><path d="{{geo.inStack.fx}}" fill="#D8CCB7"></path><path d="{{geo.inStack.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.outStack.fy}}" fill="#E6DDCB"></path><path d="{{geo.outStack.fx}}" fill="#D8CCB7"></path><path d="{{geo.outStack.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.outMark}}" fill="#8A7896" opacity="0.9"></path>
+      <path d="{{geo.desk.fy}}" fill="#6E4A2F"></path><path d="{{geo.desk.fx}}" fill="#7E5536"></path><path d="{{geo.desk.top}}" fill="#9C6B45"></path>
+      <path d="{{geo.lampBase.fy}}" fill="#3A302A"></path><path d="{{geo.lampBase.top}}" fill="#4A3F36"></path>
+      <path d="{{geo.lampArm2}}" stroke="#3A302A" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+      <ellipse cx="{{geo.lampHead2.x}}" cy="{{geo.lampHead2.y}}" rx="9" ry="6" fill="#2F6B4F"></ellipse>
+      <path d="{{geo.pcCase.fy}}" fill="#CFC5AE"></path><path d="{{geo.pcCase.fx}}" fill="#BDB39B"></path><path d="{{geo.pcCase.top}}" fill="#E3DAC6"></path>
+      <path d="{{geo.floppy}}" fill="#6B6255"></path><path d="{{geo.powerLed}}" fill="#9FD9A0"></path>
+      <path d="{{geo.crt.fy}}" fill="#D9CFB8"></path><path d="{{geo.crt.fx}}" fill="#BDB39B"></path><path d="{{geo.crt.top}}" fill="#E3DAC6"></path>
+      <path d="{{geo.crtScreen}}" fill="#24302A"></path>
+      <path d="{{geo.crtText}}" fill="#8FD0A0" opacity="{{crtStatic}}"></path>
+      <path d="{{geo.keyboard}}" fill="#CFC5AE"></path><path d="{{geo.keyLines}}" stroke="#A89E86" stroke-width="1" fill="none"></path>
+      <path d="{{geo.mouse}}" fill="#E3DAC6"></path>
+      <path d="{{geo.cardBox.top}}" fill="#3A2A20"></path>
+      <path d="{{geo.cards}}" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.6"></path>
+      <path d="{{geo.cardBox.fy}}" fill="#6F8A6E"></path><path d="{{geo.cardBox.fx}}" fill="#5D7560"></path>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="{{trShake}}" keyTimes="{{trShakeKeys}}" dur="8s" repeatCount="indefinite"></animateTransform>
+        <path d="{{geo.printerFeed}}" fill="#F7F2E8"></path>
+        <path d="{{geo.printer.fy}}" fill="#CFC5AE"></path><path d="{{geo.printer.fx}}" fill="#BDB39B"></path><path d="{{geo.printer.top}}" fill="#E3DAC6"></path>
+        <path d="{{geo.printerSlot}}" fill="#6B6255"></path>
+      </g>
+      <path d="{{geo.wasteBin.fy}}" fill="#7A746A"></path><path d="{{geo.wasteBin.fx}}" fill="#6B655B"></path><path d="{{geo.wasteBin.top}}" fill="#3A332E"></path>
+      <circle cx="{{geo.wasteBalls.0.x}}" cy="{{geo.wasteBalls.0.y}}" r="4" fill="#F1E7D2"></circle><circle cx="{{geo.wasteBalls.1.x}}" cy="{{geo.wasteBalls.1.y}}" r="4" fill="#E6DDCB"></circle>
+      <path d="{{geo.stampT.fy}}" fill="#6E4A2F"></path><path d="{{geo.stampT.fx}}" fill="#5E3F28"></path><path d="{{geo.stampT.top}}" fill="#8C5E3C"></path>
+      <path d="{{geo.blotter}}" fill="#5F6E52"></path>
+      <path d="{{geo.inkPad.fy}}" fill="#3A332E"></path><path d="{{geo.inkPad.fx}}" fill="#2B2622"></path><path d="{{geo.inkPad.top}}" fill="#4A3F36"></path>
+      <path d="{{geo.inkFelt}}" fill="#6B4F7A"></path>
+      <ellipse cx="{{geo.carBase.x}}" cy="{{geo.carBase.y}}" rx="9" ry="4.5" fill="#5E3F28"></ellipse>
+      <path d="{{geo.carPost}}" stroke="#3A302A" stroke-width="2" fill="none"></path>
+      <ellipse cx="{{geo.carTop.x}}" cy="{{geo.carTop.y}}" rx="8" ry="4" fill="#7E5536"></ellipse>
+      <path d="{{geo.stamps}}" fill="#2F2A26"></path>
+      <path d="{{geo.stampKnobs}}" fill="#C98F4A"></path>
+      <g opacity="{{stampedOpacity}}" transform="translate({{geo.stampMove}})"><path d="{{geo.printout}}" fill="#F7F2E8"></path><path d="{{geo.printBars}}" fill="#6F8FA3"></path><path d="{{geo.stampMark}}" fill="#8A7896" opacity="0.9"></path></g>
+      <g opacity="{{trWorkOpacity}}">
+        <path d="{{geo.inCard}}" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.6">
+          <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.02;0.14;0.16;1" dur="8s" repeatCount="indefinite"></animate>
+          <animateTransform attributeName="transform" type="translate" values="{{geo.cardFrom}}; 0 0; 0 0" keyTimes="0;0.08;1" dur="8s" repeatCount="indefinite"></animateTransform>
+        </path>
+        <path d="{{geo.cursor}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0;1;0;1;0;1;0;1;0;0" keyTimes="0;0.14;0.18;0.22;0.26;0.30;0.34;0.38;0.42;0.44;0.45;1" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.0}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.16;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.1}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.22;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.2}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.28;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.3}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.34;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.4}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.40;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.0}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.47;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.1}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.51;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.2}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.55;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.3}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.59;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.led}}" fill="#9FD9A0"><animate attributeName="opacity" values="0;1;0;1;0;1;0;1;0;1;0" keyTimes="0;0.45;0.47;0.49;0.51;0.53;0.55;0.57;0.59;0.61;1" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <g opacity="0">
+          <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.47;0.48;0.92;0.95" dur="8s" repeatCount="indefinite"></animate>
+          <animateTransform attributeName="transform" type="translate" values="{{geo.feedFrom}}; {{geo.feedFrom}}; 0 0; {{geo.stampMove}}; {{geo.stampMove}}" keyTimes="0;0.47;0.58;0.63;1" dur="8s" repeatCount="indefinite"></animateTransform>
+          <path d="{{geo.printout}}" fill="#F7F2E8"></path><path d="{{geo.printBars}}" fill="#6F8FA3"></path>
+          <path d="{{geo.stampMark}}" fill="#8A7896"><animate attributeName="opacity" values="0;0.9;0" keyTimes="0;0.70;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        </g>
+      </g>
+
+
+      <path d="{{geo.bin.fy}}" fill="#5B4636"></path><path d="{{geo.bin.fx}}" fill="#4E3B2E"></path><path d="{{geo.bin.top}}" fill="#2B1F17"></path>
+      <path d="{{geo.scraps}}" fill="#EFE6D6"></path>
+      <path d="{{geo.bench.fy}}" fill="#6E4A2F"></path><path d="{{geo.bench.fx}}" fill="#5E3F28"></path><path d="{{geo.bench.top}}" fill="#8C5E3C"></path>
+      <path d="{{geo.benchDrawers}}" stroke="#4E3B2E" stroke-width="1.5" fill="none"></path>
+      <path d="{{geo.benchKnobs}}" fill="#C9A47C"></path>
+      <path d="{{geo.mat}}" fill="#4F6B57"></path>
+      <path d="{{geo.matGrid}}" stroke="#7E9A84" stroke-width="0.8" fill="none"></path>
+      <path d="{{geo.ruler}}" fill="#C9C2B5"></path><path d="{{geo.rulerTicks}}" stroke="#5B5248" stroke-width="0.8" fill="none"></path>
+      <path d="{{geo.cutter.fy}}" fill="#CFC5AE"></path><path d="{{geo.cutter.fx}}" fill="#BDB39B"></path><path d="{{geo.cutter.top}}" fill="#EFE8DA"></path>
+      <path d="{{geo.cutterGrid}}" stroke="#B8AD98" stroke-width="0.8" fill="none"></path>
+      <path d="{{geo.sheet}}" fill="#F7F2E8"></path><path d="{{geo.sheetLines}}" fill="#B8AD98"></path>
+      <path d="{{geo.blade}}" stroke="#8E949A" stroke-width="4" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.blade}}" stroke="#D5DADF" stroke-width="1.5" stroke-linecap="round" fill="none"></path>
+      <circle cx="{{geo.bladeKnob.x}}" cy="{{geo.bladeKnob.y}}" r="5" fill="#8A3F33"></circle>
+      <circle cx="{{geo.hinge.x}}" cy="{{geo.hinge.y}}" r="3" fill="#3A332E"></circle>
+      <path d="{{geo.cut1.fy}}" fill="#E6DDCB"></path><path d="{{geo.cut1.fx}}" fill="#D8CCB7"></path><path d="{{geo.cut1.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.cut2.fy}}" fill="#E6DDCB"></path><path d="{{geo.cut2.fx}}" fill="#D8CCB7"></path><path d="{{geo.cut2.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.scissorBlades}}" stroke="#8E949A" stroke-width="2" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.scissorRings}}" fill="none" stroke="#2F6B4F" stroke-width="2"></path>
+      <path d="{{geo.lampArm}}" stroke="#3A302A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+      <ellipse cx="{{geo.lampHead.x}}" cy="{{geo.lampHead.y}}" rx="11" ry="7" fill="#C98F4A"></ellipse>
+
+
+      
+      <g opacity="{{pileOpacity}}">
+        <path d="{{geo.pile.fy}}" fill="#D8CCB7"></path><path d="{{geo.pile.fx}}" fill="#CBBEA7"></path><path d="{{geo.pile.top}}" fill="#EFE6D6"></path>
+        <rect x="{{geo.badgeX}}" y="{{geo.badgeY}}" width="20" height="14" rx="3" fill="#3A2A20"></rect>
+        <text x="{{geo.badge.x}}" y="{{geo.badgeTextY}}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#F6EFE4">{{pile}}</text>
+      </g>
+
+      <path d="{{geo.cab.fy}}" fill="#9A8A6B"></path><path d="{{geo.cab.fx}}" fill="#8F7F61"></path><path d="{{geo.cab.top}}" fill="#A99878"></path>
+      <path d="{{geo.drawers}}" stroke="#7A6B50" stroke-width="1.5" fill="none"></path>
+      <path d="{{geo.handles}}" fill="#5B4D38"></path>
+      <path d="{{geo.envelope}}" fill="#D9BE86"></path><path d="{{geo.flap}}" fill="#C7A86C"></path>
+      <circle cx="{{geo.clasp.x}}" cy="{{geo.clasp.y}}" r="3" fill="#7A5236"></circle>
+      <g transform="{{geo.troXform}}">
+      <path d="{{geo.troWheelBack.tyre}}" fill="#2B2622"></path><path d="{{geo.troWheelBack.hub}}" fill="#8C857A"></path>
+      <path d="{{geo.troCastorBack.plate}}" fill="#5E574F"></path><path d="{{geo.troCastorBack.tyre}}" fill="#2B2622"></path>
+      <path d="{{geo.troTubeBack}}" stroke="#5E574F" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troTubeBack}}" stroke="#8C857A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troLow.floor}}" fill="#4A443D" opacity="0.35"></path>
+      <path d="{{geo.troLow.back}}" stroke="#5A534A" stroke-width="1.2" fill="none"></path>
+      <path d="{{geo.troBox.fy}}" fill="#B08A54"></path><path d="{{geo.troBox.fx}}" fill="#9C7A48"></path><path d="{{geo.troBox.top}}" fill="#C9A06A"></path>
+      <path d="{{geo.troTote.fy}}" fill="#7E8A70"></path><path d="{{geo.troTote.fx}}" fill="#6E7A62"></path><path d="{{geo.troTote.top}}" fill="#8E9A7E"></path>
+      <path d="{{geo.troLow.front}}" stroke="#6E665C" stroke-width="1.4" fill="none"></path>
+      <path d="{{geo.troLow.rim}}" stroke="#6E665C" stroke-width="2.6" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troTag}}" fill="#F1E7D2" stroke="#8C7660" stroke-width="1"></path>
+      <text transform="{{geo.troT}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="10" letter-spacing="2" fill="#4A3426">MAIL</text>
+      <path d="{{geo.troTop.floor}}" fill="#4A443D" opacity="0.35"></path>
+      <path d="{{geo.troTop.back}}" stroke="#5A534A" stroke-width="1.2" fill="none"></path>
+      <path d="{{geo.troFiles.0.d}}" fill="{{geo.troFiles.0.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.1.d}}" fill="{{geo.troFiles.1.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.2.d}}" fill="{{geo.troFiles.2.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.3.d}}" fill="{{geo.troFiles.3.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.4.d}}" fill="{{geo.troFiles.4.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.5.d}}" fill="{{geo.troFiles.5.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.6.d}}" fill="{{geo.troFiles.6.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.7.d}}" fill="{{geo.troFiles.7.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troFiles.8.d}}" fill="{{geo.troFiles.8.c}}" stroke="#8C6D46" stroke-width="0.6"></path>
+      <path d="{{geo.troTop.front}}" stroke="#6E665C" stroke-width="1.4" fill="none"></path>
+      <path d="{{geo.troTop.rim}}" stroke="#6E665C" stroke-width="2.6" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troTubeFront}}" stroke="#5E574F" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troTubeFront}}" stroke="#8C857A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+      <path d="{{geo.troGrip}}" stroke="#2B2622" stroke-width="5.5" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.troCastorFront.plate}}" fill="#5E574F"></path><path d="{{geo.troCastorFront.tyre}}" fill="#2B2622"></path>
+      <path d="{{geo.troWheelFront.tyre}}" fill="#2B2622"></path><path d="{{geo.troWheelFront.hub}}" fill="#8C857A"></path>
+      </g>
+      <text transform="{{geo.inboxT}}" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="10" letter-spacing="1.5" fill="#3A2A20">INBOX</text>
+
+      <path d="{{geo.faxStand.fy}}" fill="#6E4A2F"></path><path d="{{geo.faxStand.fx}}" fill="#5E3F28"></path><path d="{{geo.faxStand.top}}" fill="#8C5E3C"></path>
+      <path d="{{geo.faxCord}}" stroke="#2B2622" stroke-width="1.5" fill="none" stroke-linecap="round"></path>
+      <path d="{{geo.fax.fy}}" fill="#D6D3CC"></path><path d="{{geo.fax.fx}}" fill="#C2BFB8"></path><path d="{{geo.fax.top}}" fill="#E4E2DC"></path>
+      <path d="{{geo.faxSlot}}" fill="#3A3836"></path>
+      <path d="{{geo.faxLid.fy}}" fill="#3A3836"></path><path d="{{geo.faxLid.fx}}" fill="#2F2D2B"></path><path d="{{geo.faxLid.top}}" fill="#4A4744"></path>
+      <path d="{{geo.faxScreen}}" fill="#5E8C8A"></path><path d="{{geo.faxScreenLines}}" stroke="#A9CBC6" stroke-width="0.8" fill="none"></path>
+      <path d="{{geo.faxFeeder.fy}}" fill="#2F2D2B"></path><path d="{{geo.faxFeeder.fx}}" fill="#262422"></path><path d="{{geo.faxFeeder.top}}" fill="#55524E"></path>
+      <path d="{{geo.faxTray}}" fill="#6B6863"></path>
+      <path d="{{geo.faxPaper}}" fill="#F7F2E8" stroke="#C9BFA8" stroke-width="0.6"></path><path d="{{geo.faxPaperLines}}" stroke="#8C7660" stroke-width="0.8" fill="none"></path>
+      <text transform="{{geo.faxT}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="1.5" fill="#6B6863">FAX</text>
+    </svg>
+    <div style="position: absolute; left: {{geo.chBox.left}}%; top: {{geo.chBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharChopper" state="{{chState}}" facing="left" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{geo.arBox.left}}%; top: {{geo.arBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharArchivist" state="{{arState}}" facing="right" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{geo.trBox.left}}%; top: {{geo.trBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharTranslator" state="{{trState}}" facing="right" walk="100.8 18.4" hint-size="100%,120px"></dc-import>
+    </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"phase":{"editor":"enum","options":["idle","chopping","stamping","done"],"default":"done"},"docs":{"editor":"text","default":"18"},"$preview":{"width":1060,"height":600}}'>
+class Component extends DCLogic {
+  geometry() {
+    if (this._geo) return this._geo;
+    const P = (x, y, z) => [640 + 0.8 * (x - y), 210 + 0.4 * (x + y) - 0.8 * z];
+    const r1 = (n) => Math.round(n * 10) / 10;
+    const pts = (a) => a.map((q) => { const p = P(q[0], q[1], q[2]); return r1(p[0]) + ' ' + r1(p[1]); });
+    const poly = (a) => 'M' + pts(a).join('L') + 'Z';
+    const line = (a) => 'M' + pts(a).join('L');
+    const xy = (x, y, z) => { const p = P(x, y, z); return { x: r1(p[0]), y: r1(p[1]) }; };
+    const box = (x, y, z, w, d, h) => ({
+      top: poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]]),
+      fy: poly([[x, y + d, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x, y + d, z]]),
+      fx: poly([[x + w, y, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x + w, y, z]])
+    });
+    const all = (b) => b.top + ' ' + b.fy + ' ' + b.fx;
+    const qy = (y, x0, x1, z0, z1) => poly([[x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1]]);
+    const qx = (x, y0, y1, z0, z1) => poly([[x, y0, z0], [x, y1, z0], [x, y1, z1], [x, y0, z1]]);
+    const qz = (z, x0, x1, y0, y1) => poly([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]]);
+    let gs = 11;
+    const gr = () => { gs = (gs * 9301 + 49297) % 233280; return gs / 233280; };
+    const person = (g, key, x, y) => {
+      const b = xy(x, y, 0);
+      g[key] = b;
+      g[key + 'Head'] = r1(b.y - 88);
+      g[key + 'BodyX'] = r1(b.x - 22);
+      g[key + 'BodyY'] = r1(b.y - 70);
+      g[key + 'TagX'] = r1(b.x - 32);
+      g[key + 'TagY'] = r1(b.y + 6);
+      g[key + 'TextY'] = r1(b.y + 16);
+    };
+    const g = {};
+    g.floor = qz(0, 0, 700, 0, 600);
+    g.slab = box(0, 0, -24, 700, 600, 24);
+    let pl = '';
+    for (let y = 40; y < 600; y += 40) pl += line([[0, y, 0], [700, y, 0]]);
+    g.planks = pl;
+    // Window: wall x=0, y 140-320, z 100-210. Sun rays move (220, 80) across the floor per 210 down, so the
+    // light lands from where the window's bottom edge projects (t=0) to where its top edge projects (t=1).
+    const sun = (t, y) => [104.8 + 115.2 * t, y + 38.1 + 41.9 * t, 0.1];
+    g.light = poly([sun(0, 140), sun(0, 320), sun(1, 320), sun(1, 140)]);
+    // a wire mail trolley out in the open floor on the right, away from the crew: steel frame, push handle at the back end (x = TX),
+    // two tiers of wire baskets (hanging files on top, cartons and a tote below), big wheels at the handle end, castors at the front.
+    // TX, TY = the handle's back corner; the trolley is drawn 104 x 54 (handle at z 104) and shown at 85% (troXform).
+    // It stays clear of the Chopper's walk (x about 120) and the Archivist's walk (y below 170).
+    const TX = 470, TY = 300, TL = 104, TD = 54, TY1 = TY + TD;
+    const troAt = xy(TX, TY, 0);
+    g.troXform = 'translate(' + troAt.x + ' ' + troAt.y + ') scale(0.85) translate(' + (-troAt.x) + ' ' + (-troAt.y) + ')';
+    const ring = (x, y, z, r) => { const a = []; for (let k = 0; k < 20; k++) { const t = (k / 20) * 2 * Math.PI; a.push([x + r * Math.cos(t), y, z + r * Math.sin(t)]); } return poly(a); };
+    const bigWheel = (y) => ({ tyre: ring(TX + 10, y, 14, 14), hub: ring(TX + 10, y + 1, 14, 4) });
+    g.troWheelBack = bigWheel(TY - 5);
+    g.troWheelFront = bigWheel(TY1 + 3);
+    const castor = (y) => ({ tyre: ring(TX + TL - 6, y, 7, 7), plate: qy(y - 0.5, TX + TL - 9, TX + TL - 2, 7, 18) });
+    g.troCastorBack = castor(TY + 4);
+    g.troCastorFront = castor(TY1 - 4);
+    // tubes: everything at y = TY or behind the baskets goes in "back", the rest in "front"
+    const side = (y) => line([[TX + 6, y, 18], [TX + TL, y, 18]]) + line([[TX + TL, y, 18], [TX + TL, y, 86]]);
+    const upright = (y) => line([[TX + 6, y, 18], [TX + 6, y, 92], [TX, y, 104]]);
+    const across = (x, z) => line([[x, TY, z], [x, TY1, z]]);
+    g.troTubeBack = side(TY) + upright(TY) + across(TX + 6, 18);
+    g.troTubeFront = side(TY1) + upright(TY1) + across(TX + TL, 18);
+    g.troGrip = line([[TX, TY + 5, 104], [TX, TY1 - 5, 104]]);
+    // a wire basket: back faces and floor (seen through the front), and the front faces, as a coarse wire mesh
+    const basket = (x0, x1, y0, y1, z0, z1, s) => {
+      let back = '', front = '';
+      const nx = Math.round((x1 - x0) / s), ny = Math.round((y1 - y0) / s);
+      for (let i = 1; i < nx; i++) { const x = x0 + ((x1 - x0) * i) / nx; back += line([[x, y0, z1], [x, y0, z0]]); front += line([[x, y1, z0], [x, y1, z1]]); }
+      for (let j = 1; j < ny; j++) { const y = y0 + ((y1 - y0) * j) / ny; back += line([[x0, y, z1], [x0, y, z0]]); front += line([[x1, y, z0], [x1, y, z1]]); }
+      const zm = (z0 + z1) / 2;
+      back += line([[x0, y1, zm], [x0, y0, zm], [x1, y0, zm]]);
+      front += line([[x0, y1, zm], [x1, y1, zm], [x1, y0, zm]]);
+      return {
+        back, front,
+        floor: qz(z0, x0, x1, y0, y1),
+        rim: line([[x0, y1, z1], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) + line([[x0, y1, z0], [x1, y1, z0], [x1, y0, z0]])
+      };
+    };
+    g.troLow = basket(TX + 8, TX + TL, TY, TY1, 20, 50, 13);
+    g.troTop = basket(TX + 8, TX + TL, TY, TY1, 56, 86, 13);
+    // top basket: hanging files with paper showing
+    g.troFiles = [];
+    for (let i = 0; i < 9; i++) {
+      const x = TX + 16 + i * 9.5;
+      g.troFiles.push({ d: qx(x, TY + 4, TY1 - 4, 60, 88 + (i % 3) * 2), c: ['#C9A06A', '#B08A54', '#D9BE86'][i % 3] });
+    }
+    // bottom basket: a carton and a mail tote
+    g.troBox = box(TX + 14, TY + 6, 20, 38, 34, 32);
+    g.troTote = box(TX + 58, TY + 6, 20, 40, 42, 26);
+    // a MAIL tag on the outside of the bottom basket
+    g.troTag = qy(TY1 + 0.5, TX + 56, TX + 98, 26, 40);
+    const tag = xy(TX + 60, TY1 + 0.6, 29);
+    g.troT = 'matrix(1 0.5 0 1 ' + tag.x + ' ' + tag.y + ')';
+    // a modern fax near the inbox at the front of the room, facing into the room: we see its back (+y) and right (+x) sides.
+    // Light grey body, a charcoal scanner lid with a document feeder, a touchscreen at the front edge, the input tray with sheets at the back.
+    g.faxStand = box(300, 545, 0, 56, 40, 44);
+    g.fax = box(304, 551, 44, 48, 32, 13);
+    g.faxSlot = qx(352.2, 555, 579, 47, 49.5);
+    g.faxLid = box(304, 551, 57, 48, 32, 5);
+    g.faxScreen = qz(62.1, 308, 330, 552.5, 557.5);
+    g.faxScreenLines = line([[311, 554.2, 62.2], [322, 554.2, 62.2]]) + line([[311, 556, 62.2], [318, 556, 62.2]]);
+    g.faxFeeder = box(310, 559, 62, 36, 20, 4);
+    g.faxTray = poly([[312, 568, 66.5], [344, 568, 66.5], [344, 595, 70.5], [312, 595, 70.5]]);
+    g.faxPaper = poly([[315, 571, 67.5], [341, 571, 67.5], [341, 592, 71], [315, 592, 71]]);
+    g.faxPaperLines = line([[319, 575, 68.4], [335, 575, 68.4]]) + line([[319, 579, 69], [331, 579, 69]]) + line([[319, 583, 69.6], [337, 583, 69.6]]);
+    g.faxCord = line([[306, 583, 48], [302, 588, 44], [298, 590, 0]]);
+    const faxAt = xy(316, 583.3, 47);
+    g.faxT = 'matrix(1 0.5 0 1 ' + faxAt.x + ' ' + faxAt.y + ')';
+    g.wallL = qx(0, 0, 600, 0, 260);
+    g.wallR = qy(0, 0, 700, 0, 260);
+    g.wainL = qx(0.2, 0, 600, 0, 70);
+    g.wainR = qy(0.2, 0, 700, 0, 70);
+    g.rails = line([[0.3, 600, 70], [0.3, 0.3, 70], [700, 0.3, 70]]);
+    g.winFrame = qx(0.5, 140, 320, 100, 210);
+    g.winGlass = qx(0.6, 150, 310, 108, 202);
+    g.winBars = line([[0.7, 230, 108], [0.7, 230, 202]]) + line([[0.7, 150, 155], [0.7, 310, 155]]);
+    let bld = qx(0.8, 148, 312, 196, 204) + ' ';
+    for (let z = 190; z >= 140; z -= 7) bld += qx(0.8, 150, 310, z, z + 3) + ' ';
+    g.blinds = bld;
+    g.blindCords = line([[0.9, 190, 196], [0.9, 190, 140]]) + line([[0.9, 270, 196], [0.9, 270, 140]]) + line([[0.9, 296, 140], [0.9, 296, 112]]);
+    let lb = '';
+    for (let k = 0; k < 7; k++) { const t0 = 0.08 + k * 0.13; const t1 = t0 + 0.055; lb += poly([sun(t0, 140), sun(t0, 320), sun(t1, 320), sun(t1, 140)]) + ' '; }
+    g.lightBands = lb;
+    g.cork = qx(0.5, 500, 590, 95, 165);
+    g.notes = qx(0.6, 508, 530, 128, 156) + ' ' + qx(0.6, 538, 560, 108, 140) + ' ' + qx(0.6, 566, 584, 132, 158);
+    g.wbFrame = qy(0.5, 110, 290, 105, 190);
+    g.wbSurf = qy(0.6, 116, 284, 111, 184);
+    const rectY = (x0, x1, z0, z1) => line([[x0, 0.7, z0], [x1, 0.7, z0], [x1, 0.7, z1], [x0, 0.7, z1], [x0, 0.7, z0]]);
+    const onWb = (x, z) => { const p = xy(x, 0.7, z); return 'matrix(1 0.5 0 1 ' + p.x + ' ' + p.y + ')'; };
+    g.wbT1 = onWb(124, 172);
+    g.wbT2 = onWb(124, 160);
+    g.wbT3 = onWb(124, 150);
+    g.wbT4 = onWb(124, 120);
+    const dot = (x, z, r) => { const p = xy(x, 0.7, z); return 'M' + r1(p.x - r) + ' ' + p.y + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0'; };
+    g.wbDots = [[214, 138], [232, 146], [258, 130], [270, 144], [244, 124], [222, 126]].map((d) => dot(d[0], d[1], 1.8)).join('');
+    g.wbPair = dot(250, 140, 2) + dot(256, 137, 2);
+    g.wbRing = xy(253, 0.7, 138.5);
+    g.clock = xy(330, 0.5, 205);
+    g.clockHands = 'M' + g.clock.x + ' ' + g.clock.y + 'L' + g.clock.x + ' ' + r1(g.clock.y - 11) + 'M' + g.clock.x + ' ' + g.clock.y + 'L' + r1(g.clock.x + 7) + ' ' + r1(g.clock.y + 4);
+    g.sign = qy(0.5, 470, 700, 228, 252);
+    const so = xy(520, 0.6, 235);
+    g.signT = 'matrix(1 0.5 0 1 ' + so.x + ' ' + so.y + ')';
+    g.pot = box(330, 8, 0, 24, 24, 26);
+    g.plant = xy(342, 20, 62);
+    g.cooler = box(20, 60, 0, 30, 30, 72);
+    g.bottle = box(24, 64, 72, 22, 22, 36);
+    g.files = box(444, 0, 0, 255, 40, 140);
+    let fl = '';
+    let fh = '';
+    let ft = '';
+    for (let i = 0; i < 5; i++) {
+      const x0 = 444 + i * 51;
+      if (i > 0) fl += line([[x0, 40.3, 0], [x0, 40.3, 140]]);
+      [[4, 36], [38, 70], [72, 104], [106, 138]].forEach((d) => {
+        fl += line([[x0 + 4, 40.3, d[0]], [x0 + 47, 40.3, d[0]], [x0 + 47, 40.3, d[1]], [x0 + 4, 40.3, d[1]], [x0 + 4, 40.3, d[0]]]);
+        fh += qy(40.5, x0 + 19, x0 + 32, d[0] + 12, d[0] + 15) + ' ';
+        ft += qy(40.5, x0 + 20, x0 + 31, d[1] - 10, d[1] - 4) + ' ';
+      });
+    }
+    g.fileLines = fl;
+    g.fileHandles = fh;
+    g.fileLabels = ft;
+    person(g, 'lb', 575, 75);
+    g.cart = box(515, 95, 0, 40, 24, 40);
+    g.cartBooks = box(520, 99, 40, 28, 16, 10);
+    g.desk = box(140, 60, 0, 120, 80, 60);
+    g.pcCase = box(166, 68, 60, 62, 46, 12);
+    g.crt = box(174, 72, 72, 48, 40, 40);
+    g.crtScreen = qy(112.4, 181, 215, 79, 105);
+    let ct = '';
+    for (let i = 0; i < 5; i++) ct += qy(112.5, 184, 184 + 10 + gr() * 16, 100 - i * 4.5, 101.4 - i * 4.5) + ' ';
+    g.crtText = ct;
+    g.floppy = qy(114.3, 200, 224, 64, 66);
+    g.powerLed = qy(114.3, 172, 175, 64, 66);
+    g.keyboard = qz(60.6, 172, 226, 120, 134);
+    g.keyLines = line([[174, 124, 60.7], [224, 124, 60.7]]) + line([[174, 128, 60.7], [224, 128, 60.7]]) + line([[174, 132, 60.7], [224, 132, 60.7]]);
+    g.mouse = qz(60.7, 232, 240, 122, 132);
+    g.printer = box(230, 76, 60, 30, 36, 16);
+    g.printerFeed = poly([[234, 78, 76], [254, 78, 76], [254, 70, 94], [234, 70, 94]]);
+    g.printerSlot = qy(112.3, 234, 256, 64, 68);
+    g.printout = qz(60.9, 235, 255, 112, 134);
+    let pb = '';
+    for (let i = 0; i < 8; i++) pb += qz(61, 237 + i * 2.3, 238.5 + i * 2.3, 116, 119 + gr() * 13) + ' ';
+    g.printBars = pb;
+    person(g, 'tr', 200, 170);
+    person(g, 'ch', 140, 420);
+    g.side = box(170, 470, 0, 40, 30, 55);
+    g.pile = box(176, 476, 55, 26, 18, 7);
+    g.badge = xy(189, 485, 74);
+    g.badgeX = r1(g.badge.x - 10);
+    g.badgeY = r1(g.badge.y - 10);
+    g.badgeTextY = r1(g.badge.y + 1);
+    g.bench = box(16, 396, 0, 88, 90, 56);
+    g.benchDrawers = line([[104.3, 404, 46], [104.3, 478, 46]]) + line([[104.3, 441, 46], [104.3, 441, 6]]) + line([[104.3, 404, 6], [104.3, 478, 6]]);
+    g.benchKnobs = qx(104.4, 418, 426, 25, 28) + ' ' + qx(104.4, 456, 464, 25, 28) + ' ' + qx(104.4, 437, 445, 49, 52);
+    g.mat = qz(56.3, 20, 100, 400, 482);
+    let mg = '';
+    for (let k = 1; k < 8; k++) mg += line([[20 + k * 10, 400, 56.4], [20 + k * 10, 482, 56.4]]);
+    for (let k = 1; k < 8; k++) mg += line([[20, 400 + k * 10.25, 56.4], [100, 400 + k * 10.25, 56.4]]);
+    g.matGrid = mg;
+    g.ruler = qz(56.6, 22, 28, 402, 480);
+    let rt = '';
+    for (let k = 0; k < 16; k++) rt += line([[22, 404 + k * 5, 56.7], [k % 2 ? 24 : 26, 404 + k * 5, 56.7]]);
+    g.rulerTicks = rt;
+    g.cutter = box(32, 408, 56.5, 44, 44, 4);
+    let cg = '';
+    for (let k = 1; k < 4; k++) cg += line([[32 + k * 11, 408, 60.6], [32 + k * 11, 452, 60.6]]);
+    g.cutterGrid = cg;
+    g.sheet = qz(60.8, 38, 70, 414, 446);
+    let sl = '';
+    for (let k = 0; k < 5; k++) sl += qz(60.9, 42, 42 + 14 + gr() * 10, 420 + k * 5, 421.4 + k * 5) + ' ';
+    g.sheetLines = sl;
+    g.hinge = xy(76, 410, 62);
+    g.blade = line([[76, 410, 62], [76, 432, 84], [76, 446, 104]]);
+    g.bladeKnob = xy(76, 448, 106);
+    g.cut1 = box(80, 460, 56.5, 14, 10, 4);
+    g.cut2 = box(82, 466, 60.5, 14, 10, 3);
+    const sc = xy(44, 470, 56.8);
+    g.scissorBlades = 'M' + sc.x + ' ' + sc.y + 'L' + r1(sc.x + 18) + ' ' + r1(sc.y - 6) + 'M' + sc.x + ' ' + sc.y + 'L' + r1(sc.x + 17) + ' ' + r1(sc.y + 2);
+    g.scissorRings = 'M' + r1(sc.x - 9) + ' ' + r1(sc.y - 2) + 'a4 2.6 0 1 0 8 0a4 2.6 0 1 0 -8 0M' + r1(sc.x - 8) + ' ' + r1(sc.y + 4) + 'a4 2.6 0 1 0 8 0a4 2.6 0 1 0 -8 0';
+    g.lampArm = line([[18, 398, 56], [14, 406, 112], [42, 428, 130]]);
+    g.lampHead = xy(46, 431, 126);
+    g.bin = box(22, 360, 0, 26, 26, 30);
+    g.scraps = all(box(27, 366, 30, 3, 12, 10)) + ' ' + all(box(36, 370, 30, 12, 3, 8)) + ' ' + all(box(31, 376, 30, 3, 10, 12));
+    g.cab = box(20, 520, 0, 50, 60, 70);
+    g.drawers = line([[70.3, 520, 24], [70.3, 580, 24]]) + line([[70.3, 520, 47], [70.3, 580, 47]]);
+    g.handles = qx(70.4, 545, 556, 33, 36) + ' ' + qx(70.4, 545, 556, 56, 59);
+    g.envelope = qz(70.5, 26, 64, 527, 574);
+    g.flap = poly([[26, 527, 70.6], [64, 527, 70.6], [45, 548, 70.6]]);
+    g.clasp = xy(45, 546, 70.7);
+    const io = xy(26, 580.5, 30);
+    g.inboxT = 'matrix(1 0.5 0 1 ' + io.x + ' ' + io.y + ')';
+    g.picFrame = qy(0.5, 350, 420, 118, 180);
+    g.picInner = qy(0.6, 356, 414, 124, 174);
+    g.picHills = poly([[356, 0.7, 124], [376, 0.7, 152], [392, 0.7, 136], [414, 0.7, 160], [414, 0.7, 124]]);
+    g.picSun = xy(400, 0.7, 164);
+    g.cal = qx(0.5, 336, 380, 118, 176);
+    g.calTop = qx(0.6, 336, 380, 162, 176);
+    g.calGrid = line([[0.7, 340, 150], [0.7, 376, 150]]) + line([[0.7, 340, 138], [0.7, 376, 138]]) + line([[0.7, 340, 126], [0.7, 376, 126]]) + line([[0.7, 352, 122], [0.7, 352, 158]]) + line([[0.7, 364, 122], [0.7, 364, 158]]);
+    g.paperA = box(452, 8, 140, 22, 16, 10);
+    g.paperB = box(500, 10, 140, 24, 18, 6);
+    g.binder = box(548, 8, 140, 10, 26, 30);
+    const onWall = (p) => 'matrix(1 0.5 0 1 ' + p.x + ' ' + p.y + ')';
+    g.plaque = qy(0.5, 470, 690, 186, 226);
+    g.plaqueFrame = line([[470, 0.55, 186], [690, 0.55, 186], [690, 0.55, 226], [470, 0.55, 226], [470, 0.55, 186]]);
+    g.plaqueNum = onWall(xy(480, 0.7, 199));
+    g.plaqueT = onWall(xy(512, 0.7, 201));
+    g.labeler = box(596, 12, 140, 20, 12, 7);
+    g.labelScreen = qz(147.2, 600, 610, 15, 21);
+    g.labelTape = qy(24.3, 612, 626, 141, 144);
+    g.ladderRails = line([[664, 84, 0], [664, 44, 138]]) + line([[688, 84, 0], [688, 44, 138]]);
+    let lr = '';
+    for (let k = 1; k < 6; k++) { const t = k / 6; lr += line([[664, 84 - 40 * t, 138 * t], [688, 84 - 40 * t, 138 * t]]); }
+    g.ladderRungs = lr;
+    g.lampBase = box(146, 64, 60, 10, 10, 3);
+    g.lampArm2 = line([[151, 69, 63], [149, 67, 92], [164, 76, 100]]);
+    g.lampHead2 = xy(166, 78, 97);
+    g.wasteBin = box(312, 70, 0, 18, 18, 24);
+    g.wasteBalls = [xy(317, 76, 26), xy(324, 81, 27)];
+    g.cardBox = box(142, 98, 60, 20, 30, 12);
+    g.stampT = box(266, 60, 0, 40, 44, 56);
+    g.blotter = qz(56.2, 272, 300, 60, 86);
+    g.stampMove = '72.8 -0.4';
+    g.inkPad = box(270, 88, 56, 16, 12, 2);
+    g.inkFelt = qz(58.2, 272, 284, 90, 98);
+    g.carBase = xy(298, 94, 56.5);
+    g.carTop = xy(298, 94, 74);
+    g.carPost = 'M' + g.carBase.x + ' ' + g.carBase.y + 'L' + g.carTop.x + ' ' + g.carTop.y;
+    const stampAt = (dx, dy) => { const p = xy(298 + dx, 94 + dy, 74); return { p: 'M' + r1(p.x - 2) + ' ' + p.y + 'L' + r1(p.x + 2) + ' ' + p.y + 'L' + r1(p.x + 2) + ' ' + r1(p.y + 9) + 'L' + r1(p.x - 2) + ' ' + r1(p.y + 9) + 'Z', k: 'M' + r1(p.x - 2.5) + ' ' + r1(p.y - 1) + 'a2.5 2 0 1 0 5 0a2.5 2 0 1 0 -5 0' }; };
+    const st4 = [stampAt(-7, 0), stampAt(0, -7), stampAt(7, 0), stampAt(0, 7)];
+    g.stamps = st4.map((q) => q.p).join('');
+    g.stampKnobs = st4.map((q) => q.k).join('');
+    let cds = '';
+    for (let i = 0; i < 6; i++) cds += qy(102 + i * 4.5, 144, 160, 66, 76 + (i % 2) * 2) + ' ';
+    g.cards = cds;
+    g.stampMark = qz(61.3, 239, 247, 126, 132);
+    const tw = [22, 14, 26, 18, 10];
+    g.crtLines = tw.map((w, i) => qy(112.6, 184, 184 + w, [101, 97, 93, 89, 85][i], [101, 97, 93, 89, 85][i] + 1.4));
+    g.bar = [0, 1, 2, 3].map((k) => qy(112.6, 184 + k * 7, 190 + k * 7, 80.5, 83));
+    g.cursor = qy(112.7, 184, 187, 80.5, 83);
+    g.led = qy(112.4, 252, 255, 70.5, 72.5);
+    g.feedFrom = '8 -4';
+    g.sideT = box(98, 66, 0, 36, 48, 50);
+    g.inTray = box(102, 72, 50, 28, 18, 3);
+    g.outTray = box(102, 94, 50, 28, 18, 3);
+    g.inStack = box(106, 75, 53, 20, 12, 4);
+    g.outStack = box(106, 97, 53, 20, 12, 3);
+    g.outMark = qz(56.2, 110, 116, 99, 104);
+    g.inCard = qz(57.5, 106, 126, 75, 87);
+    g.cardFrom = '-16 8';
+    const boxOf = (p) => ({ left: r1((p.x - 40 - 150) / 10.6), top: r1((p.y - 116) / 6) });   // % of the 150 0 1060 600 view
+    g.chBox = boxOf(g.ch);
+    g.arBox = boxOf(g.lb);
+    g.trBox = boxOf(g.tr);
+    this._geo = g;
+    return g;
+  }
+  renderVals() {
+    const phase = this.props.phase ?? 'done';
+    const busy = phase === 'chopping' || phase === 'stamping';
+    return {
+      geo: this.geometry(),
+      chState: { idle: 'waiting', chopping: 'working', stamping: 'done', done: 'done' }[phase] || 'waiting',
+      arState: phase === 'done' ? 'done' : 'waiting',
+      trState: { idle: 'waiting', chopping: 'waiting', stamping: 'working', done: 'done' }[phase] || 'waiting',
+      docs: String(this.props.docs ?? '18'),
+      plaqueSize: 9,
+      pile: '6',
+      pileOpacity: busy ? 1 : 0,
+      stampedOpacity: phase === 'done' ? 1 : 0,
+      syncClock: this._sync || (this._sync = (el) => { if (el && el.setCurrentTime) el.setCurrentTime((Date.now() / 1000) % 8); }),
+      trShakeKeys: '0;0.45;' + [0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.60, 0.61].map((k) => k.toFixed(2)).join(';') + ';0.62;1',
+      trShake: (phase === 'stamping') ? '0 0;0 0;' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((k) => (k % 2 ? '0 0' : '0.5 -0.3')).join(';') + ';0 0;0 0' : '0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0',
+      crtStatic: (phase === 'stamping') ? 0 : 1,
+      trWorkOpacity: phase === 'stamping' ? 1 : 0
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Office art · Ask</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#2B1F17}
+</style>
+</helmet>
+<div style="position: relative; width: 100%; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #33261D; background: #2B1F17;">
+    
+    <div style="position: absolute; left: {{geo.scBox.left}}%; top: {{geo.scBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharScout" state="{{scState}}" facing="left" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{geo.jdBox.left}}%; top: {{geo.jdBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharJudge" state="{{jdState}}" facing="right" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{geo.stBox.left}}%; top: {{geo.stBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharStoryteller" state="{{stState}}" facing="right" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{clerkBox.left}}%; top: {{clerkBox.top}}%; width: 7.55%; pointer-events: none; opacity: {{clerkInRoom}};">
+      <dc-import name="CharClerk" pose="{{clerkPose}}" facing="{{clerkFacing}}" hint-size="100%,120px"></dc-import>
+    </div>
+    <div style="position: absolute; left: {{geo.trBox.left}}%; top: {{geo.trBox.top}}%; width: 7.55%; pointer-events: none;">
+      <dc-import name="CharTranslator" state="{{trState}}" facing="left" walk="0 0" hint-size="100%,120px"></dc-import>
+    </div>
+<svg viewBox="150 0 1060 600" width="100%" ref="{{syncClock}}" role="img" aria-label="A cut-away isometric office in warm light. Along the left wall: the door to the Query room, the Translator at a beige 1990s computer with a printer, and a bank of filing cabinets with the Scout shining a lantern on them. Along the right wall: the Judge at a desk facing a detective board of pinned papers and red string, a window with blinds striping the floor with light, and the Storyteller in front of a desk with a classic typewriter, surrounded by crumpled drafts. A counter above the file cabinets shows how many documents are on file, and on the empty wall to the left of the Judge hangs a “Days since last hallucination: 0” sign. The Translator has an index-card box, and a side table with in and out trays; the Judge's desk has a magnifying glass and a red pen. The Translator, Scout, Judge and Storyteller are drawn from behind as faceless bean-shaped figures facing their work, and once you ask a question the Clerk comes in, writes it on a big mobile whiteboard at the front left of the room, turned to face the crew so we only see its back, then waits beside the board until the answer is written." style="display: block;">
+      <rect x="0" y="0" width="1280" height="600" fill="#2B1F17"></rect>
+      <path d="{{geo.slab.fx}}" fill="#4A3324"></path><path d="{{geo.slab.fy}}" fill="#3D2A1E"></path>
+      <path d="{{geo.floor}}" fill="#8A5E3E"></path>
+      <path d="{{geo.planks}}" stroke="#7A5134" stroke-width="1.5" fill="none"></path>
+      <path d="{{geo.light}}" fill="#F2C27E" opacity="0.16"></path>
+      <path d="{{geo.lightBands}}" fill="#5E3F28" opacity="0.28"></path>
+      <path d="{{geo.mat}}" fill="#5B4636"></path>
+
+      <path d="{{geo.wallL}}" fill="#B48A62"></path><path d="{{geo.wallR}}" fill="#A27852"></path>
+      <path d="{{geo.wainL}}" fill="#8F6747"></path><path d="{{geo.wainR}}" fill="#835C3E"></path>
+      <path d="{{geo.rails}}" stroke="#C9A47C" stroke-width="3" fill="none"></path>
+
+      <path d="{{geo.doorFrame}}" fill="#5E3F28"></path>
+      <path d="{{geo.door}}" fill="#8C5E3C"></path>
+      <path d="{{geo.doorPanels}}" fill="none" stroke="#6E4A2F" stroke-width="2"></path>
+      <circle cx="{{geo.knob.x}}" cy="{{geo.knob.y}}" r="3.5" fill="#E1C27A"></circle>
+      <path d="{{geo.doorSign}}" fill="#F1E7D2"></path>
+      <text transform="{{geo.doorSignT}}" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="1" fill="#4A3426">QUERY</text>
+
+      <path d="{{geo.winFrame}}" fill="#E1CBA8"></path><path d="{{geo.winGlass}}" fill="#E8A866"></path>
+      <path d="{{geo.winBars}}" stroke="#E1CBA8" stroke-width="3" fill="none"></path>
+      <path d="{{geo.blinds}}" fill="#EFE3CC"></path>
+      <path d="{{geo.blindCords}}" stroke="#8C7660" stroke-width="1" fill="none"></path>
+      <path d="{{geo.dBoard}}" fill="#A87A50"></path>
+      <path d="{{geo.dFrame}}" stroke="#6E4A2F" stroke-width="4" fill="none"></path>
+      <path d="{{geo.dPapers}}" fill="#F1E7D2"></path>
+      <path d="{{geo.dNotes}}" fill="#F2D27E"></path>
+      <path d="{{geo.dLines}}" fill="#B8AD98"></path>
+      <g opacity="{{rankOpacity}}">
+        <path d="{{geo.dKept}}" fill="#FFF7DA" stroke="#7A5236" stroke-width="1.5"></path>
+        <text transform="{{geo.r1T}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="9" fill="#7A5236">1</text>
+        <text transform="{{geo.r2T}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="9" fill="#7A5236">2</text>
+        <text transform="{{geo.r3T}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="9" fill="#7A5236">3</text>
+        <text transform="{{geo.r4T}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="9" fill="#7A5236">4</text>
+        <text transform="{{geo.r5T}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="9" fill="#7A5236">5</text>
+      </g>
+      <path d="{{geo.dString}}" stroke="#A63A2B" stroke-width="1.5" fill="none"></path>
+      <path d="{{geo.dPins}}" fill="#A63A2B"></path>
+      <ellipse cx="{{geo.clock.x}}" cy="{{geo.clock.y}}" rx="15" ry="17" fill="#EFE6D6" stroke="#6B5440" stroke-width="2"></ellipse>
+      <path d="{{geo.clockHands}}" stroke="#4A3426" stroke-width="2" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.sign}}" fill="#F1E7D2"></path>
+      <path d="{{geo.signFrame}}" stroke="#4A3426" stroke-width="3" fill="none"></path>
+      <text transform="{{geo.signT1}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="0.6" fill="#4A3426">DAYS SINCE LAST</text>
+      <text transform="{{geo.signT2}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="0.6" fill="#4A3426">HALLUCINATION</text>
+      <text transform="{{geo.signNum}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="20" fill="#A63A2B">0</text>
+
+      <path d="{{geo.plaque}}" fill="#3A2A20"></path>
+      <path d="{{geo.plaqueFrame}}" stroke="#C9A47C" stroke-width="2" fill="none"></path>
+      <text transform="{{geo.plaqueNum}}" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="16" fill="#F2C27E">{{docs}}</text>
+      <text transform="{{geo.plaqueT}}" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="{{plaqueSize}}" letter-spacing="1" fill="#EADAC0">DOCUMENTS ON FILE</text>
+      <path d="{{geo.files.fy}}" fill="#B8AD95"></path><path d="{{geo.files.fx}}" fill="#A39880"></path><path d="{{geo.files.top}}" fill="#C9BFA8"></path>
+      <path d="{{geo.fileLines}}" stroke="#8C826E" stroke-width="1.2" fill="none"></path>
+      <path d="{{geo.fileLabels}}" fill="#F1E7D2"></path>
+      <path d="{{geo.fileHandles}}" fill="#6B6255"></path>
+      <path d="{{geo.paperA.fy}}" fill="#E6DDCB"></path><path d="{{geo.paperA.fx}}" fill="#D8CCB7"></path><path d="{{geo.paperA.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.binder.fy}}" fill="#56677A"></path><path d="{{geo.binder.fx}}" fill="#4A596A"></path><path d="{{geo.binder.top}}" fill="#6F7F96"></path>
+      <path d="{{geo.miniPot.fy}}" fill="#7A4D33"></path><path d="{{geo.miniPot.fx}}" fill="#6B432C"></path><path d="{{geo.miniPot.top}}" fill="#4A3324"></path>
+      <ellipse cx="{{geo.miniPlant.x}}" cy="{{geo.miniPlant.y}}" rx="7" ry="14" fill="#6F7F4F"></ellipse>
+
+
+      <g opacity="{{beamOpacity}}">
+        <path d="{{geo.beam}}" fill="#FFD98A" opacity="0.28"></path>
+        <path d="{{geo.litMeaning}}" fill="none" stroke="#9FC4D9" stroke-width="2.5"></path>
+        <path d="{{geo.litWords}}" fill="none" stroke="#F2B25E" stroke-width="2.5"></path>
+      </g>
+
+      <path d="{{geo.pot.fy}}" fill="#7A4D33"></path><path d="{{geo.pot.fx}}" fill="#6B432C"></path><path d="{{geo.pot.top}}" fill="#4A3324"></path>
+      <ellipse cx="{{geo.plant.x}}" cy="{{geo.plant.y}}" rx="11" ry="30" fill="#5D6B41" transform="rotate(-18 {{geo.plant.x}} {{geo.plant.y}})"></ellipse>
+      <ellipse cx="{{geo.plant.x}}" cy="{{geo.plant.y}}" rx="11" ry="32" fill="#6F7F4F" transform="rotate(16 {{geo.plant.x}} {{geo.plant.y}})"></ellipse>
+      <path d="{{geo.cooler.fy}}" fill="#CDBEA6"></path><path d="{{geo.cooler.fx}}" fill="#C2B39A"></path><path d="{{geo.cooler.top}}" fill="#D9CBB4"></path>
+      <path d="{{geo.bottle.fy}}" fill="#94B2B1"></path><path d="{{geo.bottle.fx}}" fill="#86A3A2"></path><path d="{{geo.bottle.top}}" fill="#A8C3C2"></path>
+
+      <circle cx="{{geo.lantern.x}}" cy="{{geo.lantern.y}}" r="16" fill="#FFD98A" opacity="{{beamOpacity}}"></circle>
+      <path d="{{geo.lanternBox.fy}}" fill="#A88458"></path><path d="{{geo.lanternBox.fx}}" fill="#8C6D46"></path><path d="{{geo.lanternBox.top}}" fill="#5B4636"></path>
+
+      <path d="{{geo.sideT.fy}}" fill="#6E4A2F"></path><path d="{{geo.sideT.fx}}" fill="#5E3F28"></path><path d="{{geo.sideT.top}}" fill="#8C5E3C"></path>
+      <path d="{{geo.inTray.fy}}" fill="#4A3F36"></path><path d="{{geo.inTray.fx}}" fill="#3A302A"></path><path d="{{geo.inTray.top}}" fill="#5B4D42"></path>
+      <path d="{{geo.outTray.fy}}" fill="#4A3F36"></path><path d="{{geo.outTray.fx}}" fill="#3A302A"></path><path d="{{geo.outTray.top}}" fill="#5B4D42"></path>
+      <path d="{{geo.inStack.fy}}" fill="#E6DDCB"></path><path d="{{geo.inStack.fx}}" fill="#D8CCB7"></path><path d="{{geo.inStack.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.outStack.fy}}" fill="#E6DDCB"></path><path d="{{geo.outStack.fx}}" fill="#D8CCB7"></path><path d="{{geo.outStack.top}}" fill="#F7F2E8"></path>
+      <path d="{{geo.outMark}}" fill="#8A7896" opacity="0.9"></path>
+      <path d="{{geo.tdesk.fy}}" fill="#6E4A2F"></path><path d="{{geo.tdesk.fx}}" fill="#7E5536"></path><path d="{{geo.tdesk.top}}" fill="#9C6B45"></path>
+      <path d="{{geo.pcCase.fy}}" fill="#BDB39B"></path><path d="{{geo.pcCase.fx}}" fill="#CFC5AE"></path><path d="{{geo.pcCase.top}}" fill="#E3DAC6"></path>
+      <path d="{{geo.floppy}}" fill="#6B6255"></path><path d="{{geo.powerLed}}" fill="#9FD9A0"></path>
+      <path d="{{geo.crt.fy}}" fill="#BDB39B"></path><path d="{{geo.crt.fx}}" fill="#D9CFB8"></path><path d="{{geo.crt.top}}" fill="#E3DAC6"></path>
+      <path d="{{geo.crtScreen}}" fill="#24302A"></path>
+      <path d="{{geo.crtText}}" fill="#8FD0A0" opacity="{{crtStatic}}"></path>
+      <path d="{{geo.keyboard}}" fill="#CFC5AE"></path><path d="{{geo.keyLines}}" stroke="#A89E86" stroke-width="1" fill="none"></path>
+      <path d="{{geo.mouse}}" fill="#E3DAC6"></path>
+      <path d="{{geo.cardBox.top}}" fill="#3A2A20"></path>
+      <path d="{{geo.cards}}" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.6"></path>
+      <path d="{{geo.cardBox.fy}}" fill="#6F8A6E"></path><path d="{{geo.cardBox.fx}}" fill="#5D7560"></path>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="{{trShake}}" keyTimes="{{trShakeKeys}}" dur="8s" repeatCount="indefinite"></animateTransform>
+        <path d="{{geo.printerFeed}}" fill="#F7F2E8"></path>
+        <path d="{{geo.printer.fy}}" fill="#CFC5AE"></path><path d="{{geo.printer.fx}}" fill="#BDB39B"></path><path d="{{geo.printer.top}}" fill="#E3DAC6"></path>
+        <path d="{{geo.printerSlot}}" fill="#6B6255"></path>
+      </g>
+      <g opacity="{{trWorkOpacity}}">
+        <path d="{{geo.inCard}}" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.6">
+          <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;0.02;0.14;0.16;1" dur="8s" repeatCount="indefinite"></animate>
+          <animateTransform attributeName="transform" type="translate" values="{{geo.cardFrom}}; 0 0; 0 0" keyTimes="0;0.08;1" dur="8s" repeatCount="indefinite"></animateTransform>
+        </path>
+        <path d="{{geo.cursor}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0;1;0;1;0;1;0;1;0;0" keyTimes="0;0.14;0.18;0.22;0.26;0.30;0.34;0.38;0.42;0.44;0.45;1" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.0}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.16;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.1}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.22;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.2}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.28;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.3}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.34;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.crtLines.4}}" fill="#8FD0A0"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.40;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.0}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.47;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.1}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.51;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.2}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.55;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.bar.3}}" fill="#BFE6C8"><animate attributeName="opacity" values="0;1;0" keyTimes="0;0.59;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <path d="{{geo.led}}" fill="#9FD9A0"><animate attributeName="opacity" values="0;1;0;1;0;1;0;1;0;1;0" keyTimes="0;0.45;0.47;0.49;0.51;0.53;0.55;0.57;0.59;0.61;1" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        <g opacity="0">
+          <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.47;0.48;0.92;0.95" dur="8s" repeatCount="indefinite"></animate>
+          <animateTransform attributeName="transform" type="translate" values="{{geo.feedFrom}}; {{geo.feedFrom}}; 0 0; {{geo.stampMove}}; {{geo.stampMove}}" keyTimes="0;0.47;0.58;0.63;1" dur="8s" repeatCount="indefinite"></animateTransform>
+          <path d="{{geo.printout}}" fill="#F7F2E8"></path><path d="{{geo.printBars}}" fill="#6F8FA3"></path>
+          <path d="{{geo.stampMark}}" fill="#8A7896"><animate attributeName="opacity" values="0;0.9;0" keyTimes="0;0.70;0.97" dur="8s" repeatCount="indefinite" calcMode="discrete"></animate></path>
+        </g>
+      </g>
+
+      <path d="{{geo.jdesk.fy}}" fill="#6E4A2F"></path><path d="{{geo.jdesk.fx}}" fill="#7E5536"></path><path d="{{geo.jdesk.top}}" fill="#9C6B45"></path>
+      <path d="{{geo.gavel}}" fill="#3E2A1E"></path>
+      <g opacity="{{rankOpacity}}"><path d="{{geo.keptStack.fy}}" fill="#D8CCB7"></path><path d="{{geo.keptStack.fx}}" fill="#CBBEA7"></path><path d="{{geo.keptStack.top}}" fill="#EFE6D6"></path></g>
+      <path d="{{geo.plate}}" fill="#3A2A20"></path>
+      <text transform="{{geo.plateT}}" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="9" letter-spacing="1.5" fill="#EADAC0">JUDGE</text>
+      <path d="{{geo.pen}}" stroke="#A63A2B" stroke-width="3" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.penTip}}" stroke="#2B1F17" stroke-width="3" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.magHandle}}" stroke="#3E2A1E" stroke-width="3.5" stroke-linecap="round" fill="none"></path>
+      <ellipse cx="{{geo.magLens.x}}" cy="{{geo.magLens.y}}" rx="9" ry="5" fill="#CFE0EE" fill-opacity="0.75" stroke="#B98F57" stroke-width="2.5"></ellipse>
+
+      <path d="{{geo.sdesk.fy}}" fill="#6E4A2F"></path><path d="{{geo.sdesk.fx}}" fill="#7E5536"></path><path d="{{geo.sdesk.top}}" fill="#9C6B45"></path>
+      <path d="{{geo.paper}}" fill="#F2EBDD"></path>
+      <path d="{{geo.paperLines}}" fill="#B8AD98"></path>
+      <path d="{{geo.typer.fy}}" fill="#2C2622"></path><path d="{{geo.typer.fx}}" fill="#24201C"></path><path d="{{geo.typer.top}}" fill="#3A332E"></path>
+      <path d="{{geo.roller.fy}}" fill="#1E1A17"></path><path d="{{geo.roller.fx}}" fill="#16120F"></path><path d="{{geo.roller.top}}" fill="#2C2622"></path>
+      <ellipse cx="{{geo.knobL.x}}" cy="{{geo.knobL.y}}" rx="4" ry="5" fill="#3A332E"></ellipse><ellipse cx="{{geo.knobR.x}}" cy="{{geo.knobR.y}}" rx="4" ry="5" fill="#3A332E"></ellipse>
+      <path d="{{geo.lever}}" stroke="#C9C2B5" stroke-width="2.5" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.keyDots}}" fill="#EFE6D6" stroke="#1E1A17" stroke-width="0.8"></path>
+      <g opacity="{{answerOpacity}}" fill="#7A5236"><circle cx="{{geo.b1.x}}" cy="{{geo.b1.y}}" r="3"></circle><circle cx="{{geo.b2.x}}" cy="{{geo.b2.y}}" r="3"></circle><circle cx="{{geo.b3.x}}" cy="{{geo.b3.y}}" r="3"></circle></g>
+      <path d="{{geo.drafts}}" fill="#F2EBDD" stroke="#A89E86" stroke-width="1"></path>
+      <path d="{{geo.draftCreases}}" stroke="#A89E86" stroke-width="0.8" fill="none"></path>
+
+
+      <path d="{{geo.bFeet}}" stroke="#5E646A" stroke-width="5" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.bCasters}}" fill="#2B2622"></path>
+      <path d="{{geo.bLegs}}" stroke="#5E646A" stroke-width="5" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.bLegs}}" stroke="#A9AFB4" stroke-width="2" stroke-linecap="round" fill="none"></path>
+      <path d="{{geo.bPanel.fy}}" fill="#C9CDD1"></path><path d="{{geo.bPanel.fx}}" fill="#9AA0A6"></path><path d="{{geo.bPanel.top}}" fill="#E3E6E8"></path>
+      <path d="{{geo.bBack}}" fill="#A8A399"></path>
+      <path d="{{geo.bKnobs}}" fill="#1E1A17"></path>
+    </svg></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"phase":{"editor":"enum","options":["idle","desk","translator","scout","judge","storyteller","done","nothing"],"default":"done"},"docs":{"editor":"text","default":"18"},"$preview":{"width":1060,"height":600}}'>
+class Component extends DCLogic {
+  geometry() {
+    if (this._geo) return this._geo;
+    const P = (x, y, z) => [640 + 0.8 * (x - y), 210 + 0.4 * (x + y) - 0.8 * z];
+    const r1 = (n) => Math.round(n * 10) / 10;
+    const pts = (a) => a.map((q) => { const p = P(q[0], q[1], q[2]); return r1(p[0]) + ' ' + r1(p[1]); });
+    const poly = (a) => 'M' + pts(a).join('L') + 'Z';
+    const line = (a) => 'M' + pts(a).join('L');
+    const xy = (x, y, z) => { const p = P(x, y, z); return { x: r1(p[0]), y: r1(p[1]) }; };
+    const box = (x, y, z, w, d, h) => ({
+      top: poly([[x, y, z + h], [x + w, y, z + h], [x + w, y + d, z + h], [x, y + d, z + h]]),
+      fy: poly([[x, y + d, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x, y + d, z]]),
+      fx: poly([[x + w, y, z + h], [x + w, y + d, z + h], [x + w, y + d, z], [x + w, y, z]])
+    });
+    const all = (b) => b.top + ' ' + b.fy + ' ' + b.fx;
+    const qy = (y, x0, x1, z0, z1) => poly([[x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1]]);
+    const qx = (x, y0, y1, z0, z1) => poly([[x, y0, z0], [x, y1, z0], [x, y1, z1], [x, y0, z1]]);
+    const qz = (z, x0, x1, y0, y1) => poly([[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]]);
+    const onX = (p) => 'matrix(1 0.5 0 1 ' + p.x + ' ' + p.y + ')';
+    const onY = (p) => 'matrix(1 -0.5 0 1 ' + p.x + ' ' + p.y + ')';
+    let gs = 23;
+    const gr = () => { gs = (gs * 9301 + 49297) % 233280; return gs / 233280; };
+    const g = {};
+    const spot = (x, y) => {
+      const b = xy(x, y, 0);
+      return { x: b.x, y: b.y, head: r1(b.y - 88), bodyX: r1(b.x - 22), bodyY: r1(b.y - 70), tagX: r1(b.x - 32), tagY: r1(b.y + 6), textY: r1(b.y + 16) };
+    };
+    const person = (key, x, y) => {
+      const s = spot(x, y);
+      g[key] = { x: s.x, y: s.y };
+      g[key + 'Head'] = s.head;
+      g[key + 'BodyX'] = s.bodyX;
+      g[key + 'BodyY'] = s.bodyY;
+      g[key + 'TagX'] = s.tagX;
+      g[key + 'TagY'] = s.tagY;
+      g[key + 'TextY'] = s.textY;
+    };
+
+    g.floor = qz(0, 0, 700, 0, 600);
+    g.slab = box(0, 0, -24, 700, 600, 24);
+    let pl = '';
+    for (let y = 40; y < 600; y += 40) pl += line([[0, y, 0], [700, y, 0]]);
+    g.planks = pl;
+    // Window: wall y=0, x 430-560, z 110-210. Sun rays move (60, 200) across the floor per 210 down, so the
+    // light lands from where the window's bottom edge projects (t=0) to where its top edge projects (t=1).
+    const sun = (t, x) => [x + 31.4 + 28.6 * t, 104.8 + 95.2 * t, 0.1];
+    g.light = poly([sun(0, 430), sun(0, 560), sun(1, 560), sun(1, 430)]);
+    // the question board at the front left: a mobile whiteboard turned to face the crew, so we only see its grey back.
+    // The Clerk writes the question on the far side from just beside its right end (spots.board), where we can see him, and
+    // waits there; he walks there from the door in one straight line behind the board.
+    const BX0 = 270, BX1 = 440, BY = 500;
+    const leg = (x) => line([[x, BY, 6], [x, BY, 176]]);
+    g.bLegs = leg(BX0) + leg(BX1);
+    g.bFeet = line([[BX0, BY - 12, 6], [BX0, BY + 12, 6]]) + line([[BX1, BY - 12, 6], [BX1, BY + 12, 6]]);
+    const caster = (x, y) => { const p = xy(x, y, 3); return 'M' + r1(p.x - 3.5) + ' ' + p.y + 'a3.5 3 0 1 0 7 0a3.5 3 0 1 0 -7 0'; };
+    g.bCasters = caster(BX0, BY - 10) + caster(BX0, BY + 10) + caster(BX1, BY - 10) + caster(BX1, BY + 10);
+    g.bPanel = box(BX0 + 3, BY - 2, 62, BX1 - BX0 - 6, 4, 106);
+    g.bBack = qy(BY + 2.1, BX0 + 9, BX1 - 9, 68, 162);
+    g.bKnobs = [BX0, BX1].map((x) => { const p = xy(x, BY + 2, 115); return 'M' + r1(p.x - 3.5) + ' ' + p.y + 'a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0'; }).join('');
+    g.mat = qz(0.5, 0, 46, 500, 580);
+    g.wallL = qx(0, 0, 600, 0, 260);
+    g.wallR = qy(0, 0, 700, 0, 260);
+    g.wainL = qx(0.2, 0, 600, 0, 70);
+    g.wainR = qy(0.2, 0, 700, 0, 70);
+    g.rails = line([[0.3, 600, 70], [0.3, 0.3, 70], [700, 0.3, 70]]);
+
+    g.doorFrame = qx(0.4, 494, 586, 0, 152);
+    g.door = qx(0.6, 502, 578, 0, 144);
+    g.doorPanels = qx(0.7, 510, 570, 82, 134) + ' ' + qx(0.7, 510, 570, 12, 72);
+    g.knob = xy(0.9, 566, 70);
+    g.doorSign = qx(0.5, 516, 564, 160, 176);
+    g.doorSignT = onY(xy(0.6, 558, 164));
+
+    g.winFrame = qy(0.5, 430, 560, 110, 210);
+    g.winGlass = qy(0.6, 438, 552, 116, 204);
+    g.winBars = line([[495, 0.7, 116], [495, 0.7, 204]]) + line([[438, 0.7, 160], [552, 0.7, 160]]);
+    let bld = qy(0.8, 436, 554, 198, 206) + ' ';
+    for (let z = 192; z >= 146; z -= 7) bld += qy(0.8, 438, 552, z, z + 3) + ' ';
+    g.blinds = bld;
+    g.blindCords = line([[470, 0.9, 198], [470, 0.9, 146]]) + line([[520, 0.9, 198], [520, 0.9, 146]]) + line([[540, 0.9, 146], [540, 0.9, 120]]);
+    let lb = '';
+    for (let k = 0; k < 7; k++) { const t0 = 0.08 + k * 0.13; const t1 = t0 + 0.055; lb += poly([sun(t0, 430), sun(t0, 560), sun(t1, 560), sun(t1, 430)]) + ' '; }
+    g.lightBands = lb;
+    g.sign = qy(0.5, 50, 170, 140, 198);
+    g.signFrame = line([[50, 0.55, 140], [170, 0.55, 140], [170, 0.55, 198], [50, 0.55, 198], [50, 0.55, 140]]);
+    g.signT1 = onX(xy(58, 0.7, 186));
+    g.signT2 = onX(xy(58, 0.7, 175));
+    g.signNum = onX(xy(100, 0.7, 146));
+
+    g.dBoard = qy(0.5, 250, 420, 96, 236);
+    g.dFrame = line([[250, 0.55, 96], [420, 0.55, 96], [420, 0.55, 236], [250, 0.55, 236], [250, 0.55, 96]]);
+    const papers = [[258, 286, 196, 228], [292, 318, 200, 230], [326, 354, 192, 226], [362, 392, 198, 230], [398, 414, 190, 214], [264, 292, 140, 180], [300, 332, 148, 184], [340, 366, 140, 176], [374, 408, 146, 182], [270, 300, 104, 132], [320, 350, 104, 134], [372, 404, 104, 130]];
+    let dp = '';
+    let dk = '';
+    let dl = '';
+    let pins = '';
+    const pinAt = papers.map((q) => [(q[0] + q[1]) / 2, q[3] - 3]);
+    papers.forEach((q, i) => {
+      dp += qy(0.6, q[0], q[1], q[2], q[3]) + ' ';
+      if (i < 5) dk += qy(0.65, q[0], q[1], q[2], q[3]) + ' ';
+      for (let k = 0; k < 3; k++) dl += qy(0.7, q[0] + 4, q[0] + 4 + (q[1] - q[0] - 8) * (0.5 + gr() * 0.5), q[3] - 10 - k * 6, q[3] - 9 - k * 6) + ' ';
+      pins += qy(0.8, pinAt[i][0] - 1.5, pinAt[i][0] + 1.5, pinAt[i][1] - 1.5, pinAt[i][1] + 1.5) + ' ';
+      if (i < 5) g['r' + (i + 1) + 'T'] = onX(xy(q[0] + 3, 0.75, q[2] + 4));
+    });
+    g.dPapers = dp;
+    g.dKept = dk;
+    g.dLines = dl;
+    g.dPins = pins;
+    g.dNotes = qy(0.7, 352, 366, 178, 190) + ' ' + qy(0.7, 304, 318, 118, 130) + ' ' + qy(0.7, 404, 416, 118, 130);
+    const str = (ids) => line(ids.map((i) => [pinAt[i][0], 0.85, pinAt[i][1]]));
+    g.dString = str([0, 6, 2, 7, 3]) + str([5, 9, 10, 7, 8, 4]) + str([1, 6, 11]);
+
+    g.clock = xy(0.5, 250, 205);
+    g.clockHands = 'M' + g.clock.x + ' ' + g.clock.y + 'L' + g.clock.x + ' ' + r1(g.clock.y - 11) + 'M' + g.clock.x + ' ' + g.clock.y + 'L' + r1(g.clock.x + 7) + ' ' + r1(g.clock.y + 4);
+
+    g.files = box(0, 60, 0, 40, 204, 140);
+    let fl = '';
+    let fh = '';
+    let ft = '';
+    for (let i = 0; i < 4; i++) {
+      const y0 = 60 + i * 51;
+      if (i > 0) fl += line([[40.3, y0, 0], [40.3, y0, 140]]);
+      [[4, 36], [38, 70], [72, 104], [106, 138]].forEach((d) => {
+        fl += line([[40.3, y0 + 4, d[0]], [40.3, y0 + 47, d[0]], [40.3, y0 + 47, d[1]], [40.3, y0 + 4, d[1]], [40.3, y0 + 4, d[0]]]);
+        fh += qx(40.5, y0 + 19, y0 + 32, d[0] + 12, d[0] + 15) + ' ';
+        ft += qx(40.5, y0 + 20, y0 + 31, d[1] - 10, d[1] - 4) + ' ';
+      });
+    }
+    g.fileLines = fl;
+    g.fileHandles = fh;
+    g.fileLabels = ft;
+    g.paperA = box(8, 72, 140, 16, 22, 10);
+    g.binder = box(8, 130, 140, 26, 10, 30);
+    g.plaque = qx(0.5, 58, 228, 186, 226);
+    g.plaqueFrame = line([[0.55, 58, 186], [0.55, 228, 186], [0.55, 228, 226], [0.55, 58, 226], [0.55, 58, 186]]);
+    g.plaqueNum = onY(xy(0.7, 220, 199));
+    g.plaqueT = onY(xy(0.7, 190, 201));
+    g.miniPot = box(12, 230, 140, 14, 14, 12);
+    g.miniPlant = xy(19, 237, 162);
+
+    person('sc', 110, 150);
+    g.lanternBox = box(81, 156, 45, 8, 8, 12);
+    g.lantern = xy(85, 160, 51);
+    g.beam = poly([[85, 160, 51], [40, 64, 8], [40, 64, 132], [40, 260, 132], [40, 260, 8]]);
+    const drawer = (i, d) => qx(40.6, 60 + i * 51 + 4, 60 + i * 51 + 47, d[0], d[1]);
+    g.litMeaning = drawer(0, [72, 104]) + ' ' + drawer(1, [38, 70]) + ' ' + drawer(2, [106, 138]);
+    g.litWords = drawer(1, [4, 36]) + ' ' + drawer(2, [72, 104]);
+
+    g.pot = box(200, 8, 0, 22, 22, 24);
+    g.plant = xy(211, 19, 56);
+    g.cooler = box(650, 20, 0, 30, 30, 72);
+    g.bottle = box(654, 24, 72, 22, 22, 36);
+
+    person('tr', 100, 400);
+    g.tdesk = box(10, 320, 0, 74, 140, 60);
+    g.pcCase = box(14, 356, 60, 46, 60, 12);
+    g.crt = box(18, 362, 72, 40, 48, 40);
+    g.crtScreen = qx(58.4, 367, 405, 79, 105);
+    let ct = '';
+    for (let i = 0; i < 5; i++) ct += qx(58.5, 371, 371 + 10 + gr() * 16, 100 - i * 4.5, 101.4 - i * 4.5) + ' ';
+    g.crtText = ct;
+    g.floppy = qx(60.3, 380, 404, 64, 66);
+    g.powerLed = qx(60.3, 360, 363, 64, 66);
+    g.keyboard = qz(60.6, 64, 80, 360, 412);
+    g.keyLines = line([[68, 362, 60.7], [68, 410, 60.7]]) + line([[72, 362, 60.7], [72, 410, 60.7]]) + line([[76, 362, 60.7], [76, 410, 60.7]]);
+    g.mouse = qz(60.7, 68, 78, 418, 426);
+    g.printer = box(18, 430, 60, 36, 30, 16);
+    g.printerFeed = poly([[22, 434, 76], [22, 456, 76], [14, 456, 94], [14, 434, 94]]);
+    g.printerSlot = qx(54.3, 434, 456, 64, 68);
+    g.printout = qz(60.9, 56, 80, 434, 456);
+    let pb = '';
+    for (let i = 0; i < 8; i++) pb += qz(61, 59, 62 + gr() * 14, 436 + i * 2.4, 437.5 + i * 2.4) + ' ';
+    g.printBars = pb;
+    g.cardBox = box(40, 324, 60, 30, 20, 12);
+    let cds = '';
+    for (let i = 0; i < 6; i++) cds += qx(43 + i * 4.5, 326, 342, 66, 76 + (i % 2) * 2) + ' ';
+    g.cards = cds;
+
+    g.jdesk = box(285, 30, 0, 110, 50, 60);
+    g.gavel = all(box(360, 44, 60, 22, 4, 4)) + ' ' + all(box(378, 40, 60, 8, 12, 8));
+    g.keptStack = box(300, 44, 60, 18, 13, 6);
+    g.plate = qy(80.4, 312, 366, 40, 54);
+    g.plateT = onX(xy(317, 80.5, 43));
+    g.magLens = xy(334, 60, 60.8);
+    g.magHandle = line([[341, 64, 60.8], [352, 74, 60.8]]);
+    g.pen = line([[322, 66, 60.8], [338, 77, 60.8]]);
+    g.penTip = line([[338, 77, 60.8], [341, 79, 60.8]]);
+    person('jd', 340, 125);
+
+    person('st', 595, 245);
+    g.sdesk = box(545, 170, 0, 100, 45, 58);
+    g.paper = qy(180, 577, 603, 67, 100);
+    let pls = '';
+    for (let k = 0; k < 5; k++) pls += qy(180.3, 581, 581 + 12 + gr() * 6, 94 - k * 5.5, 95.6 - k * 5.5) + ' ';
+    g.paperLines = pls;
+    g.typer = box(567, 176, 58, 46, 26, 9);
+    g.roller = box(565, 177, 67, 50, 7, 7);
+    g.knobL = xy(563, 180, 70);
+    g.knobR = xy(617, 180, 70);
+    g.lever = line([[561, 180, 72], [552, 186, 82]]);
+    let kd = '';
+    for (let r = 0; r < 3; r++) {
+      for (let i = 0; i < 7; i++) {
+        const k = xy(573 + i * 5.6 + r * 1.4, 186 + r * 4.6, 67.4);
+        kd += 'M' + r1(k.x - 1.9) + ' ' + k.y + 'a1.9 1.3 0 1 0 3.8 0a1.9 1.3 0 1 0 -3.8 0';
+      }
+    }
+    g.keyDots = kd;
+    g.b1 = xy(600, 180.5, 92);
+    g.b2 = xy(597, 180.5, 81);
+    g.b3 = xy(601, 180.5, 75);
+    const ball = (p, r) => 'M' + r1(p.x - r) + ' ' + p.y + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0';
+    const dpts = [[652, 196, 0, 5], [664, 226, 0, 4.5], [626, 236, 0, 5], [540, 230, 0, 4.5], [520, 205, 0, 4], [633, 182, 58, 4]];
+    g.drafts = dpts.map((d) => ball(xy(d[0], d[1], d[2]), d[3])).join('');
+    g.draftCreases = dpts.map((d) => { const p = xy(d[0], d[1], d[2]); return 'M' + r1(p.x - 2.5) + ' ' + r1(p.y - 1) + 'L' + r1(p.x + 0.5) + ' ' + r1(p.y + 1.5) + 'L' + r1(p.x + 2.5) + ' ' + r1(p.y - 1.5); }).join('');
+
+    g.spots = { door: spot(40, 540), translator: spot(175, 400), scout: spot(230, 170), judge: spot(440, 140), storyteller: spot(690, 230), clerkWait: spot(440, 445), board: spot(440, 445) };   // he writes and then waits beside the board
+
+    g.stampMark = qz(61.3, 70, 78, 438, 446);
+    g.stampT = box(20, 466, 0, 46, 26, 56);
+    g.blotter = qz(56.2, 34, 62, 467, 491);
+    g.stampMove = '-43.2 8.8';
+    g.inkPad = box(22, 470, 56, 12, 16, 2);
+    g.inkFelt = qz(58.2, 24, 32, 472, 484);
+    const tw = [22, 14, 26, 18, 10];
+    g.crtLines = tw.map((w, i) => qx(58.6, 371, 371 + w, [101, 97, 93, 89, 85][i], [101, 97, 93, 89, 85][i] + 1.4));
+    g.bar = [0, 1, 2, 3].map((k) => qx(58.6, 371 + k * 7, 377 + k * 7, 80.5, 83));
+    g.cursor = qx(58.7, 371, 374, 80.5, 83);
+    g.led = qx(54.4, 450, 453, 70.5, 72.5);
+    g.feedFrom = '-8 -4';
+    g.sideT = box(10, 276, 0, 46, 40, 50);
+    g.inTray = box(14, 280, 50, 36, 16, 3);
+    g.outTray = box(14, 298, 50, 36, 16, 3);
+    g.inStack = box(18, 282, 53, 26, 11, 4);
+    g.outStack = box(18, 300, 53, 26, 11, 3);
+    g.outMark = qz(56.2, 22, 28, 302, 307);
+    g.inCard = qz(57.5, 18, 44, 282, 293);
+    g.cardFrom = '16 8';
+    const boxOf = (p) => ({ left: r1((p.x - 40 - 150) / 10.6), top: r1((p.y - 116) / 6) });   // % of the 150 0 1060 600 view
+    g.scBox = boxOf(g.sc);
+    g.jdBox = boxOf(g.jd);
+    g.stBox = boxOf(g.st);
+    g.trBox = boxOf(g.tr);
+    this._geo = g;
+    return g;
+  }
+  stepState(phase, i) {
+    const at = ['translator', 'scout', 'judge', 'storyteller'].indexOf(phase);
+    if (at < 0) return ['done', 'nothing'].includes(phase) ? 'done' : 'waiting';
+    return i < at ? 'done' : i === at ? 'working' : 'waiting';
+  }
+  renderVals() {
+    const phase = this.props.phase ?? 'done';
+    const found = ['scout', 'judge', 'storyteller', 'done'].includes(phase);
+    const judged = ['storyteller', 'done'].includes(phase);
+    const done = phase === 'done';
+    const printed = ['scout', 'judge', 'storyteller', 'done', 'nothing'].includes(phase);
+    const stepId = { translator: 'translator', scout: 'scout', judge: 'judge', storyteller: 'storyteller' }[phase];
+    const geo = this.geometry();
+    const pinning = phase === 'desk';
+    const clerkAt = pinning ? geo.spots.board : geo.spots.clerkWait;
+    return {
+      geo: geo,
+      scState: this.stepState(phase, 1),
+      jdState: this.stepState(phase, 2),
+      stState: this.stepState(phase, 3),
+      trState: ['idle', 'desk'].includes(phase) ? 'waiting' : phase === 'translator' ? 'working' : 'done',
+      docs: String(this.props.docs ?? '18'),
+      plaqueSize: 8,
+      beamOpacity: found ? 1 : 0,
+      rankOpacity: judged ? 1 : 0,
+      answerOpacity: done ? 1 : 0,
+      printOpacity: printed ? 1 : 0,
+      syncClock: this._sync || (this._sync = (el) => { if (el && el.setCurrentTime) el.setCurrentTime((Date.now() / 1000) % 8); }),
+      trShakeKeys: '0;0.45;' + [0.46, 0.47, 0.48, 0.49, 0.50, 0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.60, 0.61].map((k) => k.toFixed(2)).join(';') + ';0.62;1',
+      trShake: (phase === 'translator') ? '0 0;0 0;' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((k) => (k % 2 ? '0 0' : '0.5 -0.3')).join(';') + ';0 0;0 0' : '0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0;0 0',
+      crtStatic: (phase === 'translator') ? 0 : 1,
+      trWorkOpacity: phase === 'translator' ? 1 : 0,
+      clerkBox: { left: Math.round((clerkAt.x - 190) / 1.06) / 10, top: Math.round((clerkAt.y - 116) / 0.6) / 10 },
+      clerkInRoom: stepId || phase === 'desk' ? 1 : 0,
+      clerkFacing: pinning ? 'left' : 'right',
+      clerkPose: pinning ? 'give' : 'wait'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+  <!-- Added for the animation: the STAFF door standing open (drawn over the shut door). -->
+  <g id="a-door-open" opacity="0">
+    <path d="M238.9 411L178.1 441.4L178.1 326.2L238.9 295.8Z" fill="#2B1F17"></path>
+    <path d="M238.9 411L178.1 441.4L178.1 436L238.9 405.6Z" fill="#4A3324"></path>
+    <path d="M178.1 441.4L178.1 326.2L186 322.6L186 437.4Z" fill="#7E5536"></path>
+  </g>
+  <!-- The answer the Storyteller hands back, starting on the typewriter. -->
+  <g id="a-answer" opacity="0">
+    <rect x="958" y="440" width="18" height="22" rx="1" fill="#FBF6EC" stroke="#C9BFA8" stroke-width="0.8"></rect>
+    <path d="M961 446H973M961 450H973M961 454H969" stroke="#B8AD98" stroke-width="1"></path>
+    <rect x="966" y="456" width="7" height="4" rx="0.8" fill="#7A5236"></rect>
+  </g>
+  <!-- The kept documents on their way from the Judge's hand to the Storyteller's. -->
+  <g id="a-handover" opacity="0">
+    <rect x="1002" y="528" width="18" height="12" rx="0.8" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.7"></rect>
+    <path d="M1005 532 H1016 M1005 535.5 H1013" stroke="#6F8FA3" stroke-width="0.9"></path>
+  </g>
+  <!-- Nothing found: the Judge's puzzled "?" at the desk, and what the Judge tells the Clerk. -->
+  <g id="jd-puzzled" opacity="0">
+    <circle cx="842" cy="262" r="11" fill="#FBF6EC" stroke="#8C7660" stroke-width="1.2"></circle>
+    <circle cx="832" cy="276" r="2.6" fill="#FBF6EC" stroke="#8C7660" stroke-width="1"></circle>
+    <text x="842" y="267" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="14" fill="#7A5236">?</text>
+  </g>
+  <g id="jd-says" opacity="0">
+    <rect x="622" y="420" width="144" height="26" rx="6" fill="#FBF6EC" stroke="#8C7660" stroke-width="1.2"></rect>
+    <path d="M684 445.4 L692 456 L698 445.4 Z" fill="#FBF6EC"></path>
+    <path d="M684 446 L692 456 L698 446" fill="none" stroke="#8C7660" stroke-width="1.2"></path>
+    <text x="694" y="437.5" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="11" fill="#33261D">No file found on this one.</text>
+  </g>
+  <!-- Clerk, from CharClerk.dc.html (back view). Feet at 40,116. -->
+  <defs>
+    <linearGradient id="clBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D6BC86"></stop><stop offset="0.6" stop-color="#C4A770"></stop><stop offset="1" stop-color="#AC8F5A"></stop>
+    </linearGradient>
+    <linearGradient id="clHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop><stop offset="0.6" stop-color="#D3CFC7"></stop><stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <g id="clerk" opacity="0">
+    <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.2"></ellipse>
+    <g id="cl-flip">
+      <rect x="12" y="54" width="10" height="34" rx="5" fill="#B89A62"></rect>
+      <g id="cl-wait">
+        <rect x="58" y="54" width="10" height="34" rx="5" fill="#B89A62"></rect>
+      </g>
+      <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#clBody)"></rect>
+      <path d="M40 54 L40 108" stroke="#AC8F5A" stroke-width="1"></path>
+      <path d="M30 47 Q40 53 50 47" stroke="#6F8FA3" stroke-width="1.6" fill="none"></path>
+      <circle cx="41" cy="28" r="17" fill="url(#clHead)"></circle>
+      <path d="M23 25 Q41 33 59 25" stroke="#4E6B55" stroke-width="3" fill="none" stroke-linecap="round"></path>
+      <path d="M56 19 Q64 22 62 27 Q59 25 56 25 Z" fill="#8FB39A" fill-opacity="0.85"></path>
+      <g id="cl-clip-side">
+        <rect x="64" y="64" width="6" height="30" rx="1" fill="#8C6D46"></rect>
+        <rect x="64" y="66" width="2" height="26" fill="#F7F2E8"></rect>
+      </g>
+      <g id="cl-write" opacity="0">
+        <rect x="58" y="34" width="10" height="28" rx="5" fill="#B89A62" transform="rotate(40 63 60)"></rect>
+        <rect x="72" y="30" width="4" height="12" rx="1.5" fill="#2F3A44" transform="rotate(40 74 36)"></rect>
+      </g>
+      <g id="cl-give" opacity="0">
+        <rect x="58" y="38" width="10" height="26" rx="5" fill="#B89A62" transform="rotate(30 63 60)"></rect>
+        <rect x="66" y="28" width="18" height="22" rx="1.5" fill="#8C6D46"></rect>
+        <rect x="68" y="31" width="14" height="17" fill="#F7F2E8"></rect>
+        <path d="M70 36 H80 M70 40 H80 M70 44 H77" stroke="#B8AD98" stroke-width="1"></path>
+      </g>
+    </g>
+    <rect x="8" y="122" width="64" height="15" rx="2" fill="#F2C27E"></rect>
+    <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="8" letter-spacing="0.8" fill="#33261D">CLERK</text>
+  </g>

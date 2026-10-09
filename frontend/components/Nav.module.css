@@ -1,0 +1,33 @@
+.nav {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.link:hover {
+  color: var(--ink);
+  background: var(--tab-soft);
+}
+
+.link[aria-current="page"],
+.link[aria-current="page"]:hover {
+  background: var(--accent-dark);
+  color: #ffffff;
+}

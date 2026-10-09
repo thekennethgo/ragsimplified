@@ -17,3 +17,6 @@ Next.js (frontend/) on Vercel, FastAPI (backend/) on Render, Supabase Postgres +
 
 ## Layout
 `frontend/`, `backend/app/pipeline/` (one module per character), `evals/`, `docs/adr/`, `corpus/`.
+
+## Office animation convention
+Each room is one SVG in `frontend/public/office/` (`upload-room.svg`, `ask-room.svg`, `query-room.svg`, and the static `break-room.svg`) with its characters, their carried props and every extra moving part in it, animated in code with `gsap` and `@gsap/react` (exact versions in ADR 004). Ids: moving room parts in kebab-case; each character a group named after it, drawn in an 80 by 120 box with its feet at (40, 116), with a `<p>-flip` group and every part prefixed `<p>-` (`cl`, `ch`, `tr`, `ar`, `sc`, `ju`, `st`); home spots `spot-<name>` and walk targets `spot-<name>-<place>`. Scenes live in `frontend/lib/office/scenes/<room>.ts` as a map from `<step>_<status>` to a function that builds a paused timeline (optional label `handoff`); `frontend/lib/office/sceneQueue.ts` plays them one at a time, starting the next at the `handoff` label or 1 second after the end. All text with real data stays in the DOM.
