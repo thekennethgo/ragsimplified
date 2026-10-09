@@ -1,0 +1,98 @@
+  <!-- Chopper, from CharChopper.dc.html. Feet at 40,116. -->
+  <defs>
+    <linearGradient id="chBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A390"></stop><stop offset="0.6" stop-color="#B58E7A"></stop><stop offset="1" stop-color="#9C7765"></stop>
+    </linearGradient>
+    <linearGradient id="arBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#A898A6"></stop><stop offset="0.6" stop-color="#958494"></stop><stop offset="1" stop-color="#7E6E7D"></stop>
+    </linearGradient>
+  </defs>
+  <g id="chopper">
+    <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+    <g id="ch-flip">
+      <rect x="12" y="54" width="10" height="34" rx="5" fill="#A88370"></rect>
+      <rect id="ch-arm-down" x="58" y="54" width="10" height="34" rx="5" fill="#A88370"></rect>
+      <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#chBody)"></rect>
+      <path d="M40 54 L40 108" stroke="#9C7765" stroke-width="1"></path>
+      <path d="M24 52 L50 92 M56 52 L30 92" stroke="#D8CBB0" stroke-width="4" fill="none" stroke-linecap="round"></path>
+      <path d="M20 90 H60" stroke="#D8CBB0" stroke-width="4" stroke-linecap="round"></path>
+      <path d="M40 90 L33 100 L37 101 Z M40 90 L47 100 L43 101 Z" fill="#CBBD9F"></path>
+      <circle cx="40" cy="90" r="2.6" fill="#CBBD9F"></circle>
+      <circle cx="41" cy="28" r="17" fill="url(#trHead)"></circle>
+      <path d="M24 24 Q41 30 58 24" stroke="#4A4541" stroke-width="3" fill="none" stroke-linecap="round"></path>
+      <rect x="28" y="9" width="11" height="8" rx="3" fill="#B9A97E" stroke="#4A4541" stroke-width="1.5"></rect>
+      <rect x="42" y="9" width="11" height="8" rx="3" fill="#B9A97E" stroke="#4A4541" stroke-width="1.5"></rect>
+      <path d="M57 18 L63 34" stroke="#D9B65E" stroke-width="2.5" stroke-linecap="round"></path>
+      <path d="M63 34 L64 37" stroke="#4A4541" stroke-width="2" stroke-linecap="round"></path>
+      <g id="ch-arm-up" opacity="0">
+        <rect x="58" y="30" width="10" height="30" rx="5" fill="#A88370"></rect>
+        <path d="M60 30 L56 6 M66 30 L70 6" stroke="#9AA0A6" stroke-width="2.5" stroke-linecap="round"></path>
+        <circle cx="59" cy="35" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+        <circle cx="67" cy="35" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+      </g>
+      <g id="ch-tool-down">
+        <path d="M61 92 L58 110 M66 92 L69 110" stroke="#9AA0A6" stroke-width="2.5" stroke-linecap="round"></path>
+        <circle cx="60" cy="88" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+        <circle cx="67" cy="88" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+      </g>
+      <!-- carried props (added for the animation), held in the free hand -->
+      <g id="ch-held-env" opacity="0">
+        <rect x="4" y="82" width="22" height="14" rx="1" fill="#D9BE86"></rect>
+        <path d="M4 82 L15 90 L26 82" fill="#C7A86C"></path>
+      </g>
+      <g id="ch-held-card" opacity="0">
+        <rect x="6" y="84" width="16" height="10" rx="1" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.8"></rect>
+        <path d="M9 87.5 H19 M9 90.5 H16" stroke="#6F8FA3" stroke-width="1"></path>
+      </g>
+    </g>
+    <g id="ch-check" opacity="0">
+      <circle cx="18" cy="50" r="7" fill="#6E8F66"></circle>
+      <path d="M14.5 50 L17 52.8 L21.8 47.2" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+    <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+    <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.6" fill="#EADAC0">CHOPPER</text>
+  </g>
+  <!-- Archivist, from CharArchivist.dc.html. Feet at 40,116. -->
+  <g id="archivist">
+    <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+    <g id="ar-flip">
+      <rect x="12" y="54" width="10" height="34" rx="5" fill="#8A7A89"></rect>
+      <g id="ar-arm-down">
+        <rect x="58" y="54" width="10" height="34" rx="5" fill="#8A7A89"></rect>
+        <path d="M58 66 H68" stroke="#B89A5E" stroke-width="3"></path>
+      </g>
+      <g transform="rotate(-8 16 78)">
+        <rect x="4" y="70" width="18" height="14" rx="1" fill="#D9BE86"></rect>
+        <rect x="6" y="67" width="7" height="4" rx="1" fill="#D9BE86"></rect>
+        <rect x="3" y="73" width="18" height="14" rx="1" fill="#C7A86C"></rect>
+        <g id="ar-held-page" opacity="0">
+          <rect x="1" y="64" width="20" height="13" rx="0.5" fill="#F7F2E8" stroke="#B8AD98" stroke-width="0.6"></rect>
+          <path d="M4 67.5 H17 M4 70 H14 M4 72.5 H16" stroke="#6F8FA3" stroke-width="0.9"></path>
+          <rect x="13" y="71" width="6" height="4" fill="#8A7896"></rect>
+        </g>
+      </g>
+      <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#arBody)"></rect>
+      <path d="M40 54 L40 108" stroke="#7E6E7D" stroke-width="1"></path>
+      <path d="M12 66 H22" stroke="#B89A5E" stroke-width="3"></path>
+      <path d="M19 98 H61" stroke="#5E4E5C" stroke-width="3"></path>
+      <circle cx="24" cy="102" r="4" fill="none" stroke="#C2A27E" stroke-width="1.8"></circle>
+      <path d="M22 105 L21 112 M25 106 L26 113 M27 104 L30 110" stroke="#C2A27E" stroke-width="1.8" stroke-linecap="round"></path>
+      <circle cx="41" cy="28" r="17" fill="url(#trHead)"></circle>
+      <path d="M26 20 Q41 10 56 20" stroke="#4A4541" stroke-width="1.5" fill="none"></path>
+      <ellipse cx="34" cy="13" rx="6" ry="3.5" fill="#CFE0EE" fill-opacity="0.7" stroke="#4A4541" stroke-width="1.5"></ellipse>
+      <ellipse cx="48" cy="13" rx="6" ry="3.5" fill="#CFE0EE" fill-opacity="0.7" stroke="#4A4541" stroke-width="1.5"></ellipse>
+      <path d="M40 13 H42" stroke="#4A4541" stroke-width="1.5"></path>
+      <g id="ar-arm-up" opacity="0">
+        <rect x="58" y="30" width="10" height="30" rx="5" fill="#8A7A89"></rect>
+        <path d="M58 64 H68" stroke="#B89A5E" stroke-width="3"></path>
+        <rect x="56" y="12" width="16" height="20" rx="1" fill="#D9BE86"></rect>
+        <rect x="58" y="9" width="7" height="4" rx="1" fill="#D9BE86"></rect>
+      </g>
+    </g>
+    <g id="ar-check" opacity="0">
+      <circle cx="62" cy="50" r="7" fill="#6E8F66"></circle>
+      <path d="M58.5 50 L61 52.8 L65.8 47.2" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+    <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+    <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.6" fill="#EADAC0">ARCHIVIST</text>
+  </g>
