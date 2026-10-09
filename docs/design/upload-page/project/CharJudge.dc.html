@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Character · Judge</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; line-height: 0;">
+<svg viewBox="0 0 80 120" width="100%" role="img" aria-label="{{label}}" style="display: block; overflow: visible;">
+  <defs>
+    <linearGradient id="jdBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7A7678"></stop>
+      <stop offset="0.6" stop-color="#686466"></stop>
+      <stop offset="1" stop-color="#555153"></stop>
+    </linearGradient>
+    <linearGradient id="jdHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop>
+      <stop offset="0.6" stop-color="#D3CFC7"></stop>
+      <stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+  <g transform="{{flip}}">
+    <rect x="12" y="54" width="10" height="34" rx="5" fill="#5E5A5C"></rect>
+    <g opacity="{{armDown}}">
+      <rect x="58" y="54" width="10" height="34" rx="5" fill="#5E5A5C"></rect>
+    </g>
+
+    <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#jdBody)"></rect>
+    <path d="M40 54 L40 108" stroke="#555153" stroke-width="1"></path>
+    <path d="M30 56 V112 M36 54 V114 M44 54 V114 M50 56 V112" stroke="#4C484A" stroke-width="1" fill="none"></path>
+    <path d="M31 46 Q40 52 49 46 L49 50 Q40 56 31 50 Z" fill="#F1ECE2"></path>
+    <circle cx="41" cy="28" r="17" fill="url(#jdHead)"></circle>
+    <path d="M23 30 Q22 12 41 10 Q60 12 59 30 Z" fill="#ECE8E0"></path>
+    <g fill="#E2DDD2" stroke="#CFC8BA" stroke-width="0.8">
+      <circle cx="26" cy="30" r="4"></circle><circle cx="33" cy="33" r="4"></circle><circle cx="41" cy="34" r="4"></circle><circle cx="49" cy="33" r="4"></circle><circle cx="56" cy="30" r="4"></circle>
+      <circle cx="25" cy="22" r="3.5"></circle><circle cx="57" cy="22" r="3.5"></circle>
+    </g>
+    <path d="M41 36 L41 44" stroke="#ECE8E0" stroke-width="4" stroke-linecap="round"></path>
+    <path d="M37 40 L41 42 L45 40 L45 45 L41 43 L37 45 Z" fill="#2F2A26"></path>
+    <g opacity="{{armUp}}">
+      <rect x="58" y="30" width="10" height="30" rx="5" fill="#5E5A5C"></rect>
+      <circle cx="63" cy="18" r="7" fill="#CFE0EE" fill-opacity="0.75" stroke="#B98F57" stroke-width="2.5"></circle>
+      <path d="M63 25 L63 32" stroke="#3E2A1E" stroke-width="3" stroke-linecap="round"></path>
+    </g>
+    <g opacity="{{toolDown}}">
+      <circle cx="63" cy="96" r="6" fill="#CFE0EE" fill-opacity="0.75" stroke="#B98F57" stroke-width="2.2"></circle>
+      <path d="M63 86 L63 90" stroke="#3E2A1E" stroke-width="3" stroke-linecap="round"></path>
+    </g>
+
+  </g>
+  <g opacity="{{doneMark}}">
+    <circle cx="{{checkX}}" cy="50" r="7" fill="#6E8F66"></circle>
+    <path d="{{checkPath}}" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+  <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="1.2" fill="#EADAC0">JUDGE</text>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","working","done"],"default":"working"},"facing":{"editor":"enum","options":["right","left"],"default":"right"},"$preview":{"width":160,"height":280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'working';
+    const left = (this.props.facing ?? 'right') === 'left';
+    const working = state === 'working';
+    const done = state === 'done';
+    const cx = left ? 18 : 62;
+    return {
+      flip: left ? 'translate(80 0) scale(-1 1)' : '',
+      armUp: working ? 1 : 0,
+      armDown: working ? 0 : 1,
+      toolDown: working ? 0 : 1,
+      doneMark: done ? 1 : 0,
+      checkX: cx,
+      checkPath: 'M' + (cx - 3.5) + ' 50 L' + (cx - 1) + ' 52.8 L' + (cx + 3.8) + ' 47.2',
+      label: 'The Judge: a charcoal bean-shaped figure with a light grey head under a short powdered wig with a black ribbon, in a pleated robe with a white collar, seen from behind, ' + (working ? 'holding a magnifying glass up to the detective board.' : done ? 'finished ranking, magnifying glass at their side.' : 'waiting at the desk under the detective board.')
+    };
+  }
+}
+</script>
+</body>
+</html>

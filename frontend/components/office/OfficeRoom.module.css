@@ -1,0 +1,23 @@
+.wrap {
+  position: relative;
+  container-type: inline-size;
+}
+
+.room {
+  line-height: 0;
+}
+
+.room svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

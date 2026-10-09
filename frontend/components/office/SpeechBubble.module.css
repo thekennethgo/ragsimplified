@@ -1,0 +1,52 @@
+.bubble {
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+
+.waiting {
+  background: var(--chip-waiting-bg);
+  color: var(--chip-waiting-fg);
+}
+
+.working {
+  background: var(--chip-working-bg);
+  color: var(--chip-working-fg);
+}
+
+.done {
+  background: var(--chip-done-bg);
+  color: var(--chip-done-fg);
+}
+
+.error {
+  background: var(--chip-error-bg);
+  color: var(--chip-error-fg);
+}
+
+.text {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}

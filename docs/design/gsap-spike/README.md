@@ -10,7 +10,7 @@ flat room SVG, driven by buttons that stand in for the backend's step events.
 cd docs/design/gsap-spike && python3 -m http.server 8765
 ```
 
-Open http://127.0.0.1:8765/index.html. GSAP 3.12.5 loads from cdnjs.
+Open http://127.0.0.1:8765/index.html (add `?play` to loop the whole cycle). GSAP 3.12.5 loads from cdnjs.
 
 - The six buttons are the events `chopper_start`, `chopper_done`, `translator_start`,
   `translator_done`, `archivist_start`, `archivist_done`. "Fire all 6 at once" checks the
@@ -21,7 +21,9 @@ Open http://127.0.0.1:8765/index.html. GSAP 3.12.5 loads from cdnjs.
 ## Files
 
 - `upload-room.svg`: the flat Upload room exported from `OfficeUpload.dc.html` on the
-  design canvas, with a named group for every moving part.
+  design canvas, with a named group for every moving part. It shows the canvas's zoom
+  (`viewBox="150 0 1060 600"`), and its `mail-trolley` group holds the wire mail trolley and
+  the fax by the inbox, copied from the canvas export.
 - `translator.svgfrag`, `chars.svgfrag`: the Translator, Chopper and Archivist, copied by
   hand from `CharTranslator`, `CharChopper` and `CharArchivist` (`.dc.html`) without their
   SMIL animation, plus the props they carry (envelope, card, stamped page).

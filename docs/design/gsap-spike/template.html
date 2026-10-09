@@ -145,7 +145,7 @@ const scenes = {
   chopper_start() {
     const tl = gsap.timeline({ paused: true });
     tl.add(reset)
-      .fromTo('#envelope', { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' });   // mail arrives
+      .fromTo('#envelope', { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' });   // mail arrives on top of the inbox
     walk(tl, 'ch', P.chSpot, P.chInbox, '-=0.2');
     tl.to('#envelope', { y: -8, opacity: 0, duration: 0.3 })          // take the document
       .set('#ch-held-env', { opacity: 1 }, '<0.15');
@@ -329,6 +329,15 @@ gsap.set('#spots', { opacity: 0 });
 reset();
 status();
 window.__room = { emit, scenes, reset };   // for screenshot scrubbing
+// ?play: loop the whole cycle on its own (the Ask office alternates a normal run and a "nothing found" run)
+if (new URLSearchParams(location.search).has('play')) {
+  const runs = ['#burst'];
+  let n = 0;
+  const go = () => { $('#reset').click(); $(runs[n++ % runs.length]).click(); };
+  let idle = 0;   // seconds the office has been idle; start the next run after 3
+  setInterval(() => { idle = running || queue.length ? 0 : idle + 1; if (idle >= 3) { idle = 0; go(); } }, 1000);
+  go();
+}
 </script>
 </body>
 </html>

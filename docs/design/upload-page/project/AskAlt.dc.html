@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ask · office in depth</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#E4D8C6}
+a{color:#6B4429}a:hover{color:#4A2E1B}
+h1,h2,h3,p{margin:0}
+input,textarea,button{font:inherit;color:inherit}
+input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid #7A5236;outline-offset:2px}
+.bubbles{position:absolute;inset:0;pointer-events:none}
+.bubble{position:absolute;pointer-events:auto}
+.tail{position:absolute;bottom:-7px;width:12px;height:12px;background:#F6EFE4;border-right:1px solid #C2AE92;border-bottom:1px solid #C2AE92;transform:rotate(45deg);margin-left:-6px}
+.mapfloor{background-color:#F2EFE8;background-image:linear-gradient(#E3DED3 1px,transparent 1px),linear-gradient(90deg,#E3DED3 1px,transparent 1px);background-size:32px 32px}
+.cite{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 5px;margin:0 2px;border-radius:4px;font:600 12px 'IBM Plex Mono',monospace;cursor:pointer;vertical-align:1px}
+@media (max-width: 760px){
+  .bubbles{position:static;display:flex;flex-direction:column;gap:10px;padding:12px;background:#3A2A20}
+  .bubble{position:static !important;width:auto !important}
+  .tail{display:none}
+}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #33261D; background: #E4D8C6; min-height: 100%;">
+<div style="max-width: 1360px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px) 56px; display: flex; flex-direction: column; gap: 20px;">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <nav aria-label="Pages" style="display: inline-flex; padding: 4px; gap: 4px; border: 1px solid #D2C1A8; border-radius: 8px; background: #F6EFE4;">
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"></path><path d="M6 10v10h12V10"></path></svg>Home</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 20h16"></path></svg>Upload</a>
+      <a href="#" aria-current="page" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; background: #4A3426; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"></path><circle cx="12" cy="18" r="0.6"></circle><circle cx="12" cy="12" r="9"></circle></svg>Ask</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <span style="font-weight: 700; font-size: 18px; letter-spacing: -0.01em;">ragsimplified</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 6px; background: #DCE3D6; color: #2F4F2A; font-size: 13px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4E7A46;"></span>Backend online</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="office-h" style="position: relative; border: 1px solid #C2AE92; border-radius: 12px; overflow: hidden; background: #2B1F17;">
+    <h1 id="office-h" style="position: absolute; top: 14px; left: 14px; z-index: 2; font-weight: 600; font-size: 15px; color: #33261D; background: #F6EFE4; border: 1px solid #C2AE92; border-radius: 6px; padding: 4px 12px;">The office<br></h1>
+
+    <dc-import name="OfficeAsk" phase="{{phase}}" docs="18" hint-size="100%,600px"></dc-import>
+
+    <div class="bubbles">
+      <sc-for list="{{cast}}" as="c" hint-placeholder-count="2">
+        <div class="bubble" style="left: {{c.left}}%; bottom: {{c.bottom}}%; width: 12.5%; background: #F6EFE4; border: 1px solid #C2AE92; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); padding: 9px 11px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <span style="font-weight: 600; font-size: 13px;">{{c.name}}</span>
+            <span style="font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 4px; background: {{c.bg}}; color: {{c.fg}};">{{c.status}}</span>
+          </div>
+          <p style="font-size: 12px; line-height: 1.4; color: #3F3127;">{{c.say}}</p>
+          <span class="tail" style="left: {{c.tail}}%;"></span>
+        </div>
+      </sc-for>
+      <sc-if value="{{clerkWaits}}" hint-placeholder-val="{{ false }}">
+        <div class="bubble" aria-label="The Clerk is waiting for a reply" style="left: {{clerkBubble.left}}%; bottom: {{clerkBubble.bottom}}%; width: 44px; height: 26px; background: #FFFFFF; border: 1px solid #C99A5E; border-radius: 13px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span style="width: 5px; height: 5px; border-radius: 50%; background: #8C7660;"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #8C7660;"></span><span style="width: 5px; height: 5px; border-radius: 50%; background: #8C7660;"></span>
+          <span class="tail" style="left: 50%; background: #FFFFFF; border-color: #C99A5E;"></span>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+
+    <section aria-labelledby="ask-h" style="flex: 1 1 380px; max-width: 100%; box-sizing: border-box; background: #FBF6EC; border: 1px solid #D2C1A8; border-radius: 8px; box-shadow: 0 1px 3px rgba(47, 51, 55, 0.12); padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="ask-h" style="font-size: 20px; font-weight: 600;">Query</h2>
+      <div style="position: relative;">
+        <dc-import name="RoomQuery" here="{{clerkHere}}" pose="{{clerkPose}}" hint-size="100%,180px"></dc-import>
+        <div style="position: absolute; left: 41%; right: 3%; top: 8%; padding: 9px 11px; border: 1px solid #C99A5E; border-radius: 10px; background: #FFFFFF; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); font-size: 13px; line-height: 1.4;">
+          <span style="position: absolute; left: -7px; top: 22px; width: 12px; height: 12px; background: #FFFFFF; border-left: 1px solid #C99A5E; border-bottom: 1px solid #C99A5E; transform: rotate(45deg);"></span>
+          <p style="font-weight: 600; font-size: 12px;">{{clerkLabel}}</p>
+          <p aria-live="polite">{{clerkSays}}</p>
+        </div>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600;">Your question
+        <textarea rows="3" maxlength="500" placeholder="e.g. How did the M1 chip change MacBook battery life?" style="padding: 10px 12px; border: 1px solid #B5A68C; border-radius: 4px; font-weight: 400; line-height: 1.5; resize: vertical; background: #FFFFFF; box-sizing: border-box;"></textarea>
+      </label>
+      <button type="button" style="min-height: 46px; border: 0; border-radius: 4px; background: #7A5236; color: #FFFFFF; font-weight: 600; font-size: 15px; cursor: pointer;">{{askLabel}}</button>
+      <p style="font-size: 12.5px; line-height: 1.5; color: #6A5848;">Sent to Voyage AI (fingerprint) and Anthropic (answer).</p>
+    </section>
+
+
+    <section id="answer" aria-labelledby="ans-h" style="flex: 999 1 620px; min-width: 0; background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; box-shadow: 0 1px 3px rgba(47, 51, 55, 0.08); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <h2 id="ans-h" style="font-size: 20px; font-weight: 600;">Answer</h2>
+        <div role="group" aria-label="Answer and the steps that produced it" style="margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; padding: 3px; gap: 2px; border: 1px solid #D2C1A8; border-radius: 6px; background: #EDE2D0;">
+          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+            <button type="button" aria-pressed="{{t.on}}" onClick="{{t.pick}}" style="min-height: 40px; padding: 0 12px; border: 0; border-radius: 4px; background: {{t.bg}}; color: {{t.fg}}; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;">
+              <sc-if value="{{t.isStep}}" hint-placeholder-val="{{true}}"><span title="{{t.status}}" style="width: 9px; height: 9px; border-radius: 50%; background: {{t.dotBg}}; border: 1px solid {{t.dotRing}};"></span></sc-if>{{t.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+      <sc-if value="{{tabAnswer}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+          <div style="flex: 999 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+            <sc-if value="{{showAnswer}}" hint-placeholder-val="{{true}}">
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 13px; color: #6A5848;">How did the M1 chip change MacBook battery life?</p>
+                <p style="font-size: 16px; line-height: 1.7; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px; padding: 16px 18px;">
+                  <sc-for list="{{answer}}" as="s" hint-placeholder-count="6"><span>{{s.text}}</span><sc-if value="{{s.cite}}" hint-placeholder-val="{{false}}"><button type="button" class="cite" aria-label="Source {{s.n}}" onClick="{{s.open}}" style="border: 1px solid {{s.border}}; background: {{s.bg}}; color: {{s.fg}};">{{s.n}}</button></sc-if></sc-for>
+                </p>
+                <p style="font-size: 13px; color: #6A5848;">Written only from the 5 cards the Judge kept.</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{showNothing}}" hint-placeholder-val="{{false}}">
+              <p style="font-size: 16px; line-height: 1.6; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px; padding: 16px 18px;">Nothing in the file cabinet answers this, so there's no answer. No guessing.</p>
+            </sc-if>
+            <sc-if value="{{showWriting}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px; padding: 16px 18px;">
+                <span style="font-size: 13px; color: #6A5848;">Working on it. Open a step above to watch.</span>
+                <div style="height: 10px; width: 92%; border-radius: 3px; background: #EDE2D0;"></div><div style="height: 10px; width: 78%; border-radius: 3px; background: #EDE2D0;"></div><div style="height: 10px; width: 60%; border-radius: 3px; background: #EDE2D0;"></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{showIdle}}" hint-placeholder-val="{{false}}">
+              <p style="font-size: 14px; color: #6A5848; padding: 22px; border: 1px dashed #C2AE92; border-radius: 6px; text-align: center;">Your answer shows up here, with its sources.</p>
+            </sc-if>
+          </div>
+          <aside aria-label="Sources" style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+            <h3 style="font-size: 15px; font-weight: 600;">Sources</h3>
+            <sc-if value="{{showAnswer}}" hint-placeholder-val="{{true}}">
+              <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{sources}}" as="r" hint-placeholder-count="3">
+                  <li style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 6px; background: #FFFFFF; border: {{r.border}};">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 12px; padding: 1px 6px; border-radius: 4px; background: #7A5236; color: #FFFFFF;">{{r.n}}</span>
+                      <span style="font-weight: 600; font-size: 14px;">{{r.title}}</span>
+                      <span style="margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6A5848;">card {{r.card}}</span>
+                    </div>
+                    <p style="font-size: 13px; line-height: 1.5; color: #3F3127;">…{{r.before}}<mark style="background: #EDE1B8; color: inherit; padding: 0 2px;">{{r.hit}}</mark>{{r.after}}…</p>
+                    <a href="#" style="font-size: 13px; font-weight: 500; min-height: 32px; display: inline-flex; align-items: center;">Open in the file cabinet</a>
+                  </li>
+                </sc-for>
+              </ol>
+            </sc-if>
+            <sc-if value="{{noSources}}" hint-placeholder-val="{{false}}">
+              <p style="font-size: 13px; color: #6A5848; padding: 14px; border: 1px dashed #C2AE92; border-radius: 6px; text-align: center;">No sources yet.</p>
+            </sc-if>
+          </aside>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{tabStep}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 14px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <p style="font-weight: 600; font-size: 15px;">{{cur.name}} · {{cur.title}}</p>
+              <p style="font-size: 14px; line-height: 1.55; color: #3F3127;">{{cur.text}}</p>
+              <p style="font-size: 12px; color: #6A5848;">In RAG terms: <strong style="font-weight: 600; color: #33261D;">{{cur.term}}</strong></p>
+            </div>
+          </div>
+
+          <sc-if value="{{cur.empty}}" hint-placeholder-val="{{false}}">
+            <p style="font-size: 14px; color: #6A5848; padding: 22px; border: 1px dashed #C2AE92; border-radius: 6px; text-align: center;">{{cur.emptyText}}</p>
+          </sc-if>
+
+          <sc-if value="{{showTranslator}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+              <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 8px;">
+                <h3 style="font-size: 14px; font-weight: 600;">Which words mattered <span style="font-weight: 400; color: #6A5848;">· darker = shaped the meaning more</span></h3>
+                <p aria-label="Question words by influence" style="display: flex; flex-wrap: wrap; gap: 4px; font-size: 16px;">
+                  <sc-for list="{{words}}" as="w" hint-placeholder-count="9">
+                    <span title="Influence {{w.pct}}%" style="padding: 4px 7px; border-radius: 3px; background: rgba(122, 82, 54, {{w.a}}); color: {{w.fg}};">{{w.text}}</span>
+                  </sc-for>
+                </p>
+              </div>
+              <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 8px;">
+                <h3 style="font-size: 14px; font-weight: 600;">Its fingerprint <span style="font-weight: 400; color: #6A5848;">· the first 32 of 1,024 numbers</span></h3>
+                <div aria-hidden="true" style="height: 64px; display: flex; align-items: center; gap: 3px; padding: 6px 10px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px;">
+                  <sc-for list="{{print}}" as="b" hint-placeholder-count="32">
+                    <span style="flex: 1; height: {{b.h}}px; margin-top: {{b.up}}px; margin-bottom: {{b.down}}px; background: {{b.c}}; border-radius: 1px;"></span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{showScout}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px;">
+                <span style="padding: 3px 10px; border-radius: 4px; background: #4A3426; color: #FFFFFF; font-weight: 600;">20 cards found</span>
+                <span style="padding: 3px 10px; border-radius: 4px; background: #DCE6EC; color: #2F4F63;">14 by meaning</span>
+                <span style="padding: 3px 10px; border-radius: 4px; background: #F1E2CC; color: #6B4A1F;">9 by matching words</span>
+                <span style="padding: 3px 10px; border-radius: 4px; background: #EDE2D0; color: #4A3426;">3 found both ways</span>
+                <span style="padding: 3px 10px; color: #6A5848;">From the Apple silicon and MacBook Pro drawers.</span>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                <div class="mapfloor" style="flex: 999 1 460px; min-width: 0; position: relative; height: 300px; border: 1px solid #D2C1A8; border-radius: 6px; overflow: hidden;">
+                  <sc-for list="{{points}}" as="p" hint-placeholder-count="40">
+                    <span title="{{p.label}}" style="position: absolute; left: {{p.x}}%; top: {{p.y}}%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: {{p.c}}; opacity: {{p.o}};"></span>
+                  </sc-for>
+                  <sc-for list="{{finds}}" as="f" hint-placeholder-count="20">
+                    <span title="{{f.label}}" style="position: absolute; left: {{f.x}}%; top: {{f.y}}%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; box-sizing: border-box; border: 3px solid {{f.ring}}; outline: {{f.outline}}; background: transparent;"></span>
+                  </sc-for>
+                  <span title="Your question" style="position: absolute; left: 30%; top: 36%; width: 18px; height: 18px; margin: -9px 0 0 -9px; background: #33261D; transform: rotate(45deg); border: 2px solid #F2EFE8;"></span>
+                  <span style="position: absolute; left: calc(30% + 14px); top: calc(36% - 8px); font-size: 12px; font-weight: 600; background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 4px; padding: 1px 6px;">Your question</span>
+                </div>
+                <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 10px;">
+                  <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+                    <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; background: #33261D; transform: rotate(45deg);"></span>Your question</li>
+                    <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 14px; height: 14px; border-radius: 50%; border: 3px solid #4F7FA0; box-sizing: border-box;"></span>Found by meaning</li>
+                    <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 14px; height: 14px; border-radius: 50%; border: 3px solid #C0803A; box-sizing: border-box;"></span>Found by words</li>
+                    <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 14px; height: 14px; border-radius: 50%; border: 3px solid #4F7FA0; outline: 3px solid #C0803A; box-sizing: border-box;"></span>Both</li>
+                  </ul>
+                  <p style="font-size: 12.5px; line-height: 1.5; color: #6A5848; padding: 10px 12px; background: #EDE2D0; border-radius: 4px;">Each dot is a card. 1,024 numbers flattened to 2-D, so distances are rough.</p>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{showJudge}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+              <div style="flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+                <h3 style="font-size: 14px; font-weight: 600;">Kept: the best 5 of 20</h3>
+                <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;">
+                  <sc-for list="{{kept}}" as="k" hint-placeholder-count="5">
+                    <li title="Score {{k.score}}" style="display: grid; grid-template-columns: 30px minmax(0, 1fr) 130px 64px; align-items: center; gap: 12px; padding: 8px 12px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px;">
+                      <span style="font: 600 13px 'IBM Plex Mono', monospace; width: 26px; height: 26px; border-radius: 4px; background: #7A5236; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center;">{{k.n}}</span>
+                      <span style="font-weight: 600; font-size: 14px;">{{k.title}} <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 12px; color: #6A5848;">· card {{k.card}}</span></span>
+                      <div style="height: 8px; border-radius: 4px; background: #EDE2D0; overflow: hidden;"><div style="width: {{k.pct}}%; height: 100%; background: #7A5236;"></div></div>
+                      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{k.moveFg}};">was #{{k.was}}</span>
+                    </li>
+                  </sc-for>
+                </ol>
+              </div>
+              <div style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 8px; opacity: 0.6;">
+                <h3 style="font-size: 14px; font-weight: 600;">Set aside: 15 cards</h3>
+                <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;">
+                  <sc-for list="{{tossed}}" as="k" hint-placeholder-count="3">
+                    <li style="padding: 7px 12px; border: 1px dashed #C2AE92; border-radius: 6px; font-size: 13px;">{{k.title}} · card {{k.card}}</li>
+                  </sc-for>
+                  <li style="font-size: 13px; padding: 2px 12px;">+ 12 more</li>
+                </ul>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{showStory}}" hint-placeholder-val="{{false}}">
+            <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;">
+              <sc-for list="{{used}}" as="u" hint-placeholder-count="5">
+                <li style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 6px; opacity: {{u.o}};">
+                  <span style="font: 600 13px 'IBM Plex Mono', monospace; width: 26px; height: 26px; border-radius: 4px; background: #7A5236; color: #FFFFFF; display: inline-flex; align-items: center; justify-content: center;">{{u.n}}</span>
+                  <span style="font-weight: 600; font-size: 14px;">{{u.title}} <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 12px; color: #6A5848;">· card {{u.card}}</span></span>
+                  <span style="margin-left: auto; font-size: 13px; color: {{u.fg}};">{{u.note}}</span>
+                </li>
+              </sc-for>
+            </ol>
+          </sc-if>
+        </div>
+      </sc-if>
+      </div>
+    </section>
+  </div>
+
+  <section id="library" aria-labelledby="lib-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; box-shadow: 0 1px 3px rgba(47, 51, 55, 0.08); padding: 20px 22px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span style="width: 32px; height: 32px; border-radius: 4px; background: #8C7660; display: inline-flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2F1EC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4v16H5zM10 4h4v16h-4z"></path><path d="M15.5 5l3.8-1 2.7 15.5-3.8 1z"></path></svg></span>
+      <div style="display: flex; flex-direction: column;">
+        <h2 id="lib-h" style="font-size: 20px; font-weight: 600;">File cabinet</h2>
+        <span style="font-size: 13px; color: #6A5848;">17 starter books + 1 of yours · all searched</span>
+      </div>
+      <div role="group" aria-label="File cabinet view" style="margin-left: auto; display: inline-flex; padding: 3px; gap: 3px; border: 1px solid #D2C1A8; border-radius: 6px; background: #EDE2D0;">
+        <button type="button" aria-pressed="{{libDocs}}" onClick="{{showLibDocs}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 4px; background: {{libDocsBg}}; color: {{libDocsFg}}; font-weight: 600; font-size: 14px; cursor: pointer;">Documents</button>
+        <button type="button" aria-pressed="{{libMap}}" onClick="{{showLibMap}}" style="min-height: 40px; padding: 0 16px; border: 0; border-radius: 4px; background: {{libMapBg}}; color: {{libMapFg}}; font-weight: 600; font-size: 14px; cursor: pointer;">Vector map</button>
+      </div>
+    </div>
+
+    <sc-if value="{{libDocs}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid #D2C1A8; border-radius: 6px; background: #FFFFFF;">
+          <span style="width: 8px; height: 32px; border-radius: 2px; background: #4A3426;"></span>
+          <div style="display: flex; flex-direction: column;"><span style="font-weight: 600;">Sourdough starter notes</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6A5848;">Your book · 6 cards · private to this tab</span></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px;">
+          <sc-for list="{{shelves}}" as="g" hint-placeholder-count="5">
+            <div style="border: 1px solid #D2C1A8; border-radius: 6px; overflow: hidden; background: #FFFFFF;">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: #EDE2D0; border-bottom: 1px solid #D2C1A8;">
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: {{g.color}};"></span>
+                <span style="font-weight: 600; font-size: 13px;">{{g.name}}</span>
+              </div>
+              <ul style="list-style: none; margin: 0; padding: 4px 6px; display: flex; flex-direction: column;">
+                <sc-for list="{{g.docs}}" as="d" hint-placeholder-count="3">
+                  <li style="display: flex; justify-content: space-between; gap: 8px; padding: 6px; font-size: 14px;"><span>{{d.title}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6A5848; white-space: nowrap;">{{d.chunks}}</span></li>
+                </sc-for>
+              </ul>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{libMap}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+        <div class="mapfloor" style="flex: 999 1 460px; min-width: 0; position: relative; height: 420px; border: 1px solid #D2C1A8; border-radius: 6px; overflow: hidden;">
+          <sc-for list="{{libPoints}}" as="p" hint-placeholder-count="40">
+            <span title="{{p.label}}" style="position: absolute; left: {{p.x}}%; top: {{p.y}}%; width: {{p.s}}px; height: {{p.s}}px; margin: -5px 0 0 -5px; border-radius: 50%; background: {{p.c}}; border: {{p.b}};"></span>
+          </sc-for>
+          <span style="position: absolute; left: 10px; bottom: 10px; font-size: 12px; background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 4px; padding: 3px 8px; color: #4A3426;">Hover a dot to see its book and card</span>
+        </div>
+        <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 12px;">
+          <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+            <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #33261D; border: 2px solid #C9AE77;"></span>Your books</li>
+            <sc-for list="{{shelves}}" as="g" hint-placeholder-count="5">
+              <li style="display: flex; align-items: center; gap: 10px;"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{g.color}};"></span>{{g.name}}</li>
+            </sc-for>
+          </ul>
+          <p style="font-size: 12.5px; line-height: 1.5; color: #6A5848; padding: 10px 12px; background: #EDE2D0; border-radius: 4px;">Each dot is a card. Similar cards sit close together; 1,024 numbers flattened to 2-D, so distances are rough.</p>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"phase":{"editor":"enum","options":["idle","desk","translator","scout","judge","storyteller","done","nothing"],"default":"done"},"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'translator', lib: 'map', cited: 0 };
+  }
+  renderVals() {
+    const phase = this.props.phase ?? 'done';
+    const chip = {
+      waiting: { status: 'Waiting', bg: '#E4E1D8', fg: '#4A3426' },
+      working: { status: 'Working', bg: '#EDE1B8', fg: '#5A4A12' },
+      done: { status: 'Done', bg: '#DCE3D6', fg: '#2F4F2A' }
+    };
+    const mates = [
+      { name: 'Translator', left: 14.3, bottom: 50.8, tail: 74, say: 'Fingerprinting your question. "M1" and "battery" matter most.' },
+      { name: 'Scout', left: 37, bottom: 66.8, tail: 50, say: 'Searching by meaning and by words. 20 cards so far.' },
+      { name: 'Judge', left: 56.2, bottom: 53.2, tail: 50, say: 'Keeping the best 5 of 20.' },
+      { name: 'Storyteller', left: 68.8, bottom: 28.2, tail: 31, say: 'Writing from those 5, citing each one.' }
+    ];
+    const active = { translator: [0], scout: [1], judge: [2], storyteller: [3] }[phase] || [];
+    const cast = active.map((i) => Object.assign({}, mates[i], chip.working));
+    const found = ['scout', 'judge', 'storyteller', 'done'].includes(phase);
+    const judged = ['storyteller', 'done'].includes(phase);
+    const done = phase === 'done';
+    const weights = [['How', 0.1], ['did', 0.05], ['the', 0.03], ['M1', 1], ['chip', 0.72], ['change', 0.3], ['MacBook', 0.64], ['battery', 0.91], ['life?', 0.48]];
+    const words = weights.map((w) => ({ text: w[0], a: (0.08 + w[1] * 0.85).toFixed(2), fg: w[1] > 0.55 ? '#FFFFFF' : '#33261D', pct: Math.round(w[1] * 100) }));
+    const sel = this.state.cited;
+    const cite = (n) => ({ cite: true, n: n, open: () => this.setState({ cited: n }), bg: sel === n ? '#7A5236' : '#EDE2D0', fg: sel === n ? '#FFFFFF' : '#33261D', border: '#7A5236' });
+    const answer = [
+      Object.assign({ text: 'Apple began moving the Mac from Intel processors to its own chips with the M1 in late 2020' }, cite(2)),
+      Object.assign({ text: '. Because the M1 puts the CPU, GPU and memory in one package, it does more work per watt, so MacBooks need less power for the same tasks' }, cite(3)),
+      Object.assign({ text: '. Apple rated the 13-inch M1 MacBook Pro for up to 20 hours of video playback' }, cite(1)),
+      { text: '.', cite: false }
+    ];
+    const srcs = [
+      { n: 1, title: 'MacBook Pro', card: 7, before: 'Apple rated the 13-inch MacBook Pro with the M1 chip for ', hit: 'up to 20 hours of video playback', after: ', the longest of any Mac at launch' },
+      { n: 2, title: 'Apple silicon', card: 2, before: 'The M1, announced in November 2020, ', hit: 'was the first Apple silicon chip for the Mac', after: ', replacing Intel processors' },
+      { n: 3, title: 'Apple silicon', card: 5, before: 'Combining the CPU, GPU and unified memory in one package ', hit: 'lets the chip do more work per watt', after: ' than separate parts' }
+    ];
+    const sources = srcs.map((s) => Object.assign({}, s, { border: sel === s.n ? '2px solid #7A5236' : '1px solid #D2C1A8' }));
+    const keptRaw = [
+      { n: 1, title: 'MacBook Pro', card: 7, was: 7, score: 0.91, meaning: true, words: true },
+      { n: 2, title: 'Apple silicon', card: 2, was: 1, score: 0.88, meaning: true, words: false },
+      { n: 3, title: 'Apple silicon', card: 5, was: 4, score: 0.83, meaning: true, words: true },
+      { n: 4, title: 'MacBook Pro', card: 3, was: 12, score: 0.71, meaning: false, words: true },
+      { n: 5, title: 'Apple Inc.', card: 14, was: 2, score: 0.64, meaning: true, words: false }
+    ];
+    const kept = keptRaw.map((k) => {
+      const d = k.was - k.n;
+      return Object.assign({}, k, { pct: Math.round(k.score * 100), score: k.score.toFixed(2), move: d > 0 ? '↑' + d : d < 0 ? '↓' + (-d) : '', moveFg: d > 0 ? '#2F4F2A' : d < 0 ? '#8A3F33' : '#6A5848' });
+    });
+    const tossed = [{ title: 'iPhone', card: 9, was: 3, score: '0.41' }, { title: 'Apple Inc.', card: 6, was: 5, score: '0.38' }, { title: 'Microsoft', card: 11, was: 9, score: '0.12' }];
+    const shelves = [
+      { name: 'Apple', color: '#6F7F96', docs: [{ title: 'Apple Inc.', chunks: 22 }, { title: 'Apple silicon', chunks: 11 }, { title: 'iPhone', chunks: 19 }, { title: 'MacBook Pro', chunks: 12 }] },
+      { name: 'Phones and big tech', color: '#B9A26E', docs: [{ title: 'Android', chunks: 14 }, { title: 'Samsung Galaxy', chunks: 10 }, { title: 'Microsoft', chunks: 20 }] },
+      { name: 'Search and RAG', color: '#6F8A6E', docs: [{ title: 'Information retrieval', chunks: 13 }, { title: 'Search engine', chunks: 12 }, { title: 'Large language model', chunks: 21 }, { title: 'Retrieval-augmented generation', chunks: 8 }, { title: 'Vector database', chunks: 9 }] },
+      { name: 'Star Wars', color: '#9A6B5F', docs: [{ title: 'Star Wars', chunks: 24 }, { title: 'Star Wars (film)', chunks: 17 }, { title: 'The Empire Strikes Back', chunks: 15 }] },
+      { name: 'Cyberpunk', color: '#85788F', docs: [{ title: 'Cyberpunk', chunks: 9 }, { title: 'Cyberpunk 2077', chunks: 16 }] }
+    ];
+    const centers = [[26, 28], [52, 48], [32, 72], [74, 26], [80, 70]];
+    let seed = 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const points = [];
+    shelves.forEach((g, gi) => {
+      g.docs.forEach((d) => {
+        const ox = centers[gi][0] + (rnd() - 0.5) * 12;
+        const oy = centers[gi][1] + (rnd() - 0.5) * 14;
+        for (let i = 0; i < d.chunks; i++) points.push({ x: (ox + (rnd() - 0.5) * 9).toFixed(1), y: (oy + (rnd() - 0.5) * 11).toFixed(1), c: found ? '#B5A68C' : g.color, gc: g.color, o: 1, label: d.title + ' · card ' + (i + 1) });
+      });
+    });
+    ['Why keep a starter', 'Feeding schedule', 'Choosing flour', 'Signs it is ready', 'Troubleshooting', 'Storing it in the fridge'].forEach((h) => points.push({ x: (12 + (rnd() - 0.5) * 8).toFixed(1), y: (86 + (rnd() - 0.5) * 10).toFixed(1), c: '#33261D', mine: true, o: 0.5, label: 'Your book · Sourdough starter notes · ' + h }));
+    const finds = [];
+    const ways = ['meaning', 'meaning', 'words', 'meaning', 'both', 'meaning', 'words', 'meaning', 'words', 'meaning', 'both', 'meaning', 'words', 'meaning', 'meaning'];
+    ways.forEach((w, i) => {
+      const a = rnd() * Math.PI * 2;
+      const r = 5 + rnd() * 9;
+      finds.push({ x: (30 + Math.cos(a) * r).toFixed(1), y: (34 + Math.sin(a) * r * 1.2).toFixed(1), ring: w === 'words' ? '#C0803A' : '#4F7FA0', outline: w === 'both' ? '3px solid #C0803A' : 'none', label: 'Candidate ' + (i + 6) + ' · found by ' + (w === 'both' ? 'meaning and words' : w) });
+    });
+    const keptPts = [{ n: 1, x: 24, y: 30, label: 'MacBook Pro · card 7' }, { n: 2, x: 33, y: 26, label: 'Apple silicon · card 2' }, { n: 3, x: 37, y: 31, label: 'Apple silicon · card 5' }, { n: 4, x: 22, y: 39, label: 'MacBook Pro · card 3' }, { n: 5, x: 28, y: 20, label: 'Apple Inc. · card 14' }];
+    const statusOf = {
+      idle: ['waiting', 'waiting', 'waiting', 'waiting'],
+      desk: ['waiting', 'waiting', 'waiting', 'waiting'],
+      translator: ['working', 'waiting', 'waiting', 'waiting'],
+      scout: ['done', 'working', 'waiting', 'waiting'],
+      judge: ['done', 'done', 'working', 'waiting'],
+      storyteller: ['done', 'done', 'done', 'working'],
+      done: ['done', 'done', 'done', 'done'],
+      nothing: ['done', 'done', 'done', 'done']
+    }[phase];
+    const nothing = phase === 'nothing';
+    const readyAt = (i) => statusOf[i] === 'done' && (i <= 1 || !nothing);
+    const emptyAt = (i, nothingText) => nothing ? nothingText : statusOf[i] === 'working' ? 'Working on it…' : 'Ask a question to see this step.';
+    const dot = { waiting: ['#FFFFFF', '#6A5848'], working: ['#EDE1B8', '#5A4A12'], done: ['#DCE3D6', '#2F4F2A'] };
+    const steps = [
+      { id: 'translator', n: 1, name: 'Translator', title: 'fingerprints your question', text: 'A fingerprint is 1,024 numbers for what the question means. Similar meaning, similar numbers, so the cabinet can be searched by meaning.', term: 'embedding the query', ready: readyAt(0), emptyText: emptyAt(0, '') },
+      { id: 'scout', n: 2, name: 'Scout', title: 'searches two ways', text: 'By meaning (closest fingerprints) and by words (same words), then pulls the cards.', term: 'hybrid search: vector + keyword', ready: readyAt(1), emptyText: emptyAt(1, '') },
+      { id: 'judge', n: 3, name: 'Judge', title: 'keeps the best 5', text: 'Search is fast but rough. The Judge reads each card next to your question and scores how well it answers.', term: 'reranking', ready: readyAt(2), emptyText: emptyAt(2, 'None of the 20 cards answered the question, so the Judge kept nothing.') },
+      { id: 'storyteller', n: 4, name: 'Storyteller', title: 'writes the answer from those 5', text: 'Only from those cards, each one numbered. If they don\'t cover it, it says so instead of guessing.', term: 'grounded generation with citations', ready: readyAt(3), emptyText: emptyAt(3, 'Nothing to write from, so no answer.') }
+    ];
+    const tabId = this.state.tab;
+    const dotStyle = { waiting: ['transparent', '#B5A68C'], working: ['#E0B04A', '#C99A2E'], done: ['#4E7A46', '#4E7A46'] };
+    const tabs = steps.map((s, i) => ({ id: s.id, label: s.name, isStep: true, status: statusOf[i], dotBg: dotStyle[statusOf[i]][0], dotRing: dotStyle[statusOf[i]][1] })).concat([{ id: 'answer', label: 'Answer', isStep: false }]).map((t) => Object.assign(t, { on: tabId === t.id, bg: tabId === t.id ? '#4A3426' : 'transparent', fg: tabId === t.id ? '#FFFFFF' : '#33261D', pick: () => this.setState({ tab: t.id }) }));
+    const curStep = steps.find((s) => s.id === tabId) || steps[0];
+    const cur = Object.assign({}, curStep, { empty: !curStep.ready });
+    const show = (id) => tabId === id && curStep.ready;
+    let ps = 41;
+    const prnd = () => { ps = (ps * 9301 + 49297) % 233280; return ps / 233280; };
+    const print = [];
+    for (let i = 0; i < 32; i++) {
+      const v = (prnd() - 0.5) * 2;
+      const h = Math.max(2, Math.round(Math.abs(v) * 24));
+      print.push({ h: h, up: v < 0 ? h : 0, down: v >= 0 ? h : 0, c: v >= 0 ? '#7A5236' : '#C2AE92' });
+    }
+    const used = kept.map((k) => Object.assign({}, k, k.n <= 3 ? { note: 'cited as [' + k.n + ']', fg: '#2F4F2A', o: 1 } : { note: 'read, not needed', fg: '#6A5848', o: 0.6 }));
+    const libPoints = points.map((p) => p.mine ? Object.assign({}, p, { s: 13, b: '2px solid #C9AE77', c: '#33261D' }) : Object.assign({}, p, { s: 10, b: '1px solid rgba(47, 51, 55, 0.35)', c: p.gc }));
+    const lib = this.state.lib;
+    const stepIndex = { translator: 0, scout: 1, judge: 2, storyteller: 3 }[phase];
+    const away = stepIndex !== undefined;
+    const clerkSays = {
+      idle: 'Hi, I\'m the Clerk. What do you want to know?',
+      desk: 'Got it. Pinning it up in the office.',
+      done: 'Here\'s your answer. The tabs show who did what.',
+      nothing: 'Sorry, nothing on file about that. Try something else?'
+    }[phase] || (phase === 'translator' ? 'Pinned it on the board. Back soon.' : 'The ' + steps[stepIndex].name + ' is on it. Back soon.');
+    return {
+      phase: phase,
+      tabs: tabs,
+      tabAnswer: tabId === 'answer',
+      tabStep: tabId !== 'answer',
+      cur: cur,
+      showTranslator: show('translator'),
+      showScout: show('scout'),
+      showJudge: show('judge'),
+      showStory: show('storyteller'),
+      print: print,
+      used: used,
+      libPoints: libPoints,
+      libDocs: lib === 'docs',
+      libMap: lib === 'map',
+      libDocsBg: lib === 'docs' ? '#4A3426' : 'transparent',
+      libDocsFg: lib === 'docs' ? '#FFFFFF' : '#33261D',
+      libMapBg: lib === 'map' ? '#4A3426' : 'transparent',
+      libMapFg: lib === 'map' ? '#FFFFFF' : '#33261D',
+      showLibDocs: () => this.setState({ lib: 'docs' }),
+      showLibMap: () => this.setState({ lib: 'map' }),
+      cast: cast,
+      clerkWaits: away,
+      clerkBubble: !away ? { left: 0, bottom: 0 } : { left: 44.1, bottom: 25.1 },
+      clerkHere: !away && phase !== 'desk',
+      clerkLabel: !away && phase !== 'desk' ? 'Clerk' : 'Note from the Clerk',
+      clerkAway: away || phase === 'desk',
+      clerkPose: phase === 'done' ? 'present' : phase === 'nothing' ? 'shrug' : 'wave',
+      clerkSays: clerkSays,
+      askLabel: phase === 'idle' || done || nothing ? 'Ask' : 'Asking…',
+      words: words,
+      showAnswer: done,
+      showNothing: nothing,
+      showWriting: !done && !nothing && phase !== 'idle',
+      showIdle: phase === 'idle',
+      noSources: !done,
+      answer: answer,
+      sources: sources,
+      kept: kept,
+      tossed: tossed,
+      shelves: shelves,
+      points: points,
+      finds: finds
+    };
+  }
+}
+</script>
+</body>
+</html>

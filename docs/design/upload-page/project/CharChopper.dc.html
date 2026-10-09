@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Character · Chopper</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; line-height: 0;">
+<svg viewBox="0 0 80 120" width="100%" role="img" aria-label="{{label}}" style="display: block; overflow: visible;">
+  <defs>
+    <linearGradient id="chBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C9A390"></stop>
+      <stop offset="0.6" stop-color="#B58E7A"></stop>
+      <stop offset="1" stop-color="#9C7765"></stop>
+    </linearGradient>
+    <linearGradient id="chHead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E2DFD8"></stop>
+      <stop offset="0.6" stop-color="#D3CFC7"></stop>
+      <stop offset="1" stop-color="#BFBAB1"></stop>
+    </linearGradient>
+  </defs>
+  <ellipse cx="40" cy="116" rx="30" ry="9" fill="#000000" opacity="0.18"></ellipse>
+  <g transform="{{flip}}">
+    <rect x="12" y="54" width="10" height="34" rx="5" fill="#A88370"></rect>
+    <g opacity="{{armDown}}">
+      <rect x="58" y="54" width="10" height="34" rx="5" fill="#A88370"></rect>
+    </g>
+
+    <rect x="18" y="46" width="44" height="70" rx="20" fill="url(#chBody)"></rect>
+    <path d="M40 54 L40 108" stroke="#9C7765" stroke-width="1"></path>
+    <path d="M24 52 L50 92 M56 52 L30 92" stroke="#D8CBB0" stroke-width="4" fill="none" stroke-linecap="round"></path>
+    <path d="M20 90 H60" stroke="#D8CBB0" stroke-width="4" stroke-linecap="round"></path>
+    <path d="M40 90 L33 100 L37 101 Z M40 90 L47 100 L43 101 Z" fill="#CBBD9F"></path>
+    <circle cx="40" cy="90" r="2.6" fill="#CBBD9F"></circle>
+    <circle cx="41" cy="28" r="17" fill="url(#chHead)"></circle>
+    <path d="M24 24 Q41 30 58 24" stroke="#4A4541" stroke-width="3" fill="none" stroke-linecap="round"></path>
+    <rect x="28" y="9" width="11" height="8" rx="3" fill="#B9A97E" stroke="#4A4541" stroke-width="1.5"></rect>
+    <rect x="42" y="9" width="11" height="8" rx="3" fill="#B9A97E" stroke="#4A4541" stroke-width="1.5"></rect>
+    <path d="M57 18 L63 34" stroke="#D9B65E" stroke-width="2.5" stroke-linecap="round"></path>
+    <path d="M63 34 L64 37" stroke="#4A4541" stroke-width="2" stroke-linecap="round"></path>
+    <g opacity="{{armUp}}">
+      <rect x="58" y="30" width="10" height="30" rx="5" fill="#A88370"></rect>
+      <path d="M60 30 L56 6 M66 30 L70 6" stroke="#9AA0A6" stroke-width="2.5" stroke-linecap="round"></path>
+      <circle cx="59" cy="35" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+      <circle cx="67" cy="35" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+    </g>
+    <g opacity="{{toolDown}}">
+      <path d="M61 92 L58 110 M66 92 L69 110" stroke="#9AA0A6" stroke-width="2.5" stroke-linecap="round"></path>
+      <circle cx="60" cy="88" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+      <circle cx="67" cy="88" r="3.5" fill="none" stroke="#4A4541" stroke-width="2"></circle>
+    </g>
+
+  </g>
+  <g opacity="{{doneMark}}">
+    <circle cx="{{checkX}}" cy="50" r="7" fill="#6E8F66"></circle>
+    <path d="{{checkPath}}" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <rect x="8" y="122" width="64" height="15" rx="2" fill="#3A2A20"></rect>
+  <text x="40" y="132" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="600" font-size="8" letter-spacing="0.6" fill="#EADAC0">CHOPPER</text>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","working","done"],"default":"working"},"facing":{"editor":"enum","options":["right","left"],"default":"left"},"$preview":{"width":160,"height":280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const state = this.props.state ?? 'working';
+    const left = (this.props.facing ?? 'left') === 'left';
+    const working = state === 'working';
+    const done = state === 'done';
+    const cx = left ? 18 : 62;
+    return {
+      flip: left ? 'translate(80 0) scale(-1 1)' : '',
+      armUp: working ? 1 : 0,
+      armDown: working ? 0 : 1,
+      toolDown: working ? 0 : 1,
+      doneMark: done ? 1 : 0,
+      checkX: cx,
+      checkPath: 'M' + (cx - 3.5) + ' 50 L' + (cx - 1) + ' 52.8 L' + (cx + 3.8) + ' 47.2',
+      label: 'The Chopper: a muted rust bean-shaped figure with a light grey head, safety goggles pushed up, a pencil tucked by the ear and a canvas work apron tied at the back, seen from behind, ' + (working ? 'raising big paper scissors over the cutting bench.' : done ? 'finished, holding the scissors at their side.' : 'waiting at the cutting bench, scissors at their side.')
+    };
+  }
+}
+</script>
+</body>
+</html>

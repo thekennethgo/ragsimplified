@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ragsimplified · Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#E4D8C6}
+a{color:#6B4429}a:hover{color:#4A2E1B}
+h1,h2,h3,p{margin:0}
+input,textarea,button{font:inherit;color:inherit}
+input:focus,textarea:focus,button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #7A5236;outline-offset:2px}
+summary{cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+details[open] .chev{transform:rotate(90deg)}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #33261D; background: #E4D8C6; min-height: 100%;">
+<div style="max-width: 1360px; margin: 0 auto; padding: 18px clamp(16px, 3vw, 40px) 64px; display: flex; flex-direction: column; gap: 20px;">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+    <nav aria-label="Pages" style="display: inline-flex; flex-wrap: wrap; padding: 4px; gap: 4px; border: 1px solid #D2C1A8; border-radius: 8px; background: #F6EFE4;">
+      <a href="#" aria-current="page" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; background: #4A3426; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"></path><path d="M6 10v10h12V10"></path></svg>Home</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 20h16"></path></svg>Upload</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 6px; color: #33261D; text-decoration: none; font-weight: 600; font-size: 15px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"></path><circle cx="12" cy="18" r="0.6"></circle><circle cx="12" cy="12" r="9"></circle></svg>Ask</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+      <span style="font-weight: 700; font-size: 18px; letter-spacing: -0.01em;">ragsimplified</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 6px; background: #DCE3D6; color: #2F4F2A; font-size: 13px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4E7A46;"></span>Backend online</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="hero-h" style="display: flex; flex-direction: column; gap: 16px; padding: 8px 2px 4px;">
+    <h1 id="hero-h" style="font-size: clamp(30px, 4vw, 44px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; max-width: 22ch;">A language model that looks things up before it answers.</h1>
+    <p style="font-size: 18px; line-height: 1.55; color: #3F3127; max-width: 62ch;">That's RAG. This site shows it step by step, as an office of characters: ask a question, or file your own text and watch it get used.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 6px; background: #7A5236; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 16px;">Ask a question</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 6px; border: 1px solid #7A5236; color: #4A3426; text-decoration: none; font-weight: 600; font-size: 16px; background: #F6EFE4;">Add your own text</a>
+    </div>
+  </section>
+
+  <section aria-label="The break room" style="position: relative; border: 1px solid #C2AE92; border-radius: 12px; overflow: hidden; background: #2B1F17;">
+    <dc-import name="OfficeBreakRoom" hint-size="100%,300px"></dc-import>
+    <div style="position: absolute; left: 58.5%; top: 9%; width: 17%; background: #F6EFE4; border: 1px solid #C2AE92; border-radius: 8px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); padding: 9px 11px; box-sizing: border-box;">
+      <p style="font-weight: 600; font-size: 13px;">Clerk</p>
+      <p style="font-size: 12px; line-height: 1.4; color: #3F3127;">New here? Ask me anything at the front desk.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="what-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-wrap: wrap; gap: 28px;">
+    <div style="flex: 1 1 440px; display: flex; flex-direction: column; gap: 14px;">
+      <h2 id="what-h" style="font-size: 26px; font-weight: 700; letter-spacing: -0.01em;">What is RAG?</h2>
+      <p style="font-size: 16px; line-height: 1.65;"><strong>Retrieval-augmented generation.</strong> A model on its own answers from memory, which can be out of date or simply wrong. With RAG it first finds the right passages in a library you trust, then answers only from those, and shows where each part came from.</p>
+      <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Translator + Scout</span>
+          <span style="font-size: 16px; font-weight: 700;">1 · Find</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">By meaning and by words.</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Judge</span>
+          <span style="font-size: 16px; font-weight: 700;">2 · Pick the best</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">Keep the few that really answer it.</span>
+        </li>
+        <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #6A5848;">Storyteller</span>
+          <span style="font-size: 16px; font-weight: 700;">3 · Answer with sources</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #3F3127;">Only from those, each one numbered.</span>
+        </li>
+      </ol>
+      <p style="font-size: 13px; color: #6A5848;">Perplexity, Microsoft 365 Copilot and Notion AI work this way.</p>
+    </div>
+    <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 10px;">
+      <p style="font-size: 14px; color: #6A5848;">Same question, both ways: <span style="color: #33261D; font-weight: 600;">“How many questions can I ask here per day?”</span></p>
+      <div style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h3 style="font-size: 14px; font-weight: 600;">Model on its own</h3>
+          <span style="font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #F3DCD6; color: #8A3F33;">No source</span>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5;">“Up to 100 a day.”</p>
+        <p style="font-size: 13px; line-height: 1.5; color: #6A5848;">Confident, and made up: it never saw this site's rules.</p>
+      </div>
+      <div style="background: #FFFFFF; border: 2px solid #7A5236; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <h3 style="font-size: 14px; font-weight: 600;">With RAG</h3>
+          <span style="font-size: 12px; padding: 1px 8px; border-radius: 4px; background: #DCE3D6; color: #2F4F2A;">1 source</span>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5;">“20 a day. <span style="font: 600 12px 'IBM Plex Mono', monospace; padding: 1px 5px; border-radius: 4px; background: #7A5236; color: #FFFFFF;">1</span>”</p>
+        <p style="font-size: 13px; line-height: 1.5; color: #6A5848;"><span style="font-family: 'IBM Plex Mono', monospace;">[1]</span> Site rules · card 3: “…20 questions per visitor each day…”</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="why-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <h2 id="why-h" style="font-size: 22px; font-weight: 700;">Why not just ask the model?</h2>
+      <p style="font-size: 16px; line-height: 1.6; max-width: 80ch;">Models make things up, and it costs real money: <a href="https://www.cbc.ca/news/canada/british-columbia/air-canada-chatbot-lawsuit-1.7116416">Air Canada had to pay out after its chatbot invented a refund policy</a> (CBC News).</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+      <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Far fewer hallucinations</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Answers come from real passages, which cuts made-up facts a lot. Not to zero.</p>
+      </li>
+      <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <h3 style="font-size: 15px; font-weight: 600;">Up to date, no retraining</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Change a document and the answers change. Fine-tuning would mean training again.</p>
+      </li>
+      <li style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+        <h3 style="font-size: 15px; font-weight: 600;">You can check it</h3>
+        <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">Every claim points to its source. Nothing on file? It says so.</p>
+      </li>
+    </ul>
+    <p style="font-size: 13px; line-height: 1.5; color: #6A5848;">The catch: it's only as good as its library and its search. That's why the sources are always shown.</p>
+  </section>
+
+  <section aria-labelledby="built-h" style="background: #F6EFE4; border: 1px solid #D2C1A8; border-radius: 8px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h2 id="built-h" style="font-size: 22px; font-weight: 700;">How this one is built</h2>
+      <p style="font-size: 14px; color: #6A5848;">The questions people ask about a RAG system, answered for this one.</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{built}}" as="b" hint-placeholder-count="7">
+        <li style="display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 2fr) auto; align-items: center; gap: 8px 20px; padding: 12px 16px; background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px;">
+          <h3 style="font-size: 15px; font-weight: 600;">{{b.q}}</h3>
+          <p style="font-size: 14px; line-height: 1.5; color: #3F3127;">{{b.a}}</p>
+          <a href="#" style="font-size: 13px; font-weight: 600; white-space: nowrap; min-height: 32px; display: inline-flex; align-items: center;">{{b.link}}</a>
+        </li>
+      </sc-for>
+    </ul>
+  </section>
+
+  <section aria-labelledby="me-h" style="background: #FBF6EC; border: 2px solid #7A5236; border-radius: 10px; padding: 24px 26px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px;">
+      <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 8px;">
+        <h2 id="me-h" style="font-size: 22px; font-weight: 700;">About the creator</h2>
+        <p style="font-size: 16px; line-height: 1.6;">[YOUR NAME]: [ONE OR TWO SENTENCES ABOUT YOU].</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+        <a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 6px; background: #7A5236; color: #FFFFFF; text-decoration: none; font-weight: 600; font-size: 16px;">Ask the office about me
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg></a>
+        <span style="font-size: 12.5px; color: #6A5848;">It answers from my own documents, with sources.</span>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{faq}}" as="f" hint-placeholder-count="4">
+        <details style="background: #FFFFFF; border: 1px solid #D2C1A8; border-radius: 8px;">
+          <summary style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; font-size: 15px; font-weight: 600;">
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M9 6l6 6-6 6"></path></svg>{{f.q}}</summary>
+          <p style="padding: 0 16px 14px 40px; font-size: 15px; line-height: 1.6;">{{f.a}}</p>
+        </details>
+      </sc-for>
+    </div>
+  </section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      built: [
+        { q: 'How big are the cards?', a: '[YOUR CARD SIZE AND OVERLAP, AND WHY THEY FIT YOUR DOCUMENTS].', link: 'See the Chopper' },
+        { q: 'How does it search?', a: 'Two ways at once: by meaning (vector search) and by matching words (keyword search). A reranker then keeps the best 5.', link: 'See the Scout' },
+        { q: 'How do you know the search works?', a: 'A set of test questions with known answers, scored on whether the right card was found and the citations are valid.', link: 'See the evals' },
+        { q: 'How does it avoid making things up?', a: 'The Judge keeps only cards that answer the question; the Storyteller may use only those and must cite each one.', link: 'See the Judge' },
+        { q: 'What if the right card isn\'t found?', a: 'It says “nothing on file” instead of guessing. It doesn\'t rewrite the question and retry yet.', link: 'Try it' },
+        { q: 'How do you debug a wrong answer?', a: 'Every step is shown on its own: the question\'s fingerprint, the finds, the ranking, the answer. Find the step where it went wrong.', link: 'See the steps' },
+        { q: 'What is it built with?', a: 'Next.js, FastAPI, Postgres with pgvector, Voyage AI for fingerprints and reranking, and Claude Haiku for the answers. Open source: fork it for your own documents.', link: 'GitHub' }
+      ],
+      faq: [
+        { q: 'Why did you build ragsimplified?', a: '[WHY YOU BUILT IT, IN YOUR WORDS].' },
+        { q: 'What are you working on now?', a: '[WHAT YOU\'RE WORKING ON OR LOOKING FOR].' },
+        { q: 'How can I reach you?', a: '[HOW TO REACH YOU].' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ Status: Accepted (2026-10-09, after the GSAP spike in `docs/design/gsap-spike/`)
 
 The pages, rooms and characters were designed on the Claude Design canvas "Upload Page Workshop" (https://claude.ai/artifact/XkNNxKuaj5gfEvSfFhR15F). The art is kept apart from the page UI there: three animated rooms (the Upload office, the Ask office and the small Query room where the Clerk greets the visitor), a static break room on the Why RAG? page, and seven characters (Clerk, Chopper, Translator, Archivist, Scout, Judge, Storyteller), each in its own file.
 
-The scenes need motion that crosses between characters and waits for the backend: a card goes from the Chopper's bench to the Translator's in-tray; the Translator types, prints and walks to the stamping table; the Archivist takes the stamped page and files it; on the Ask page the Clerk carries the question in and waits by the Storyteller. Each scene must wait for the real step event, and must last as long as the real step does.
+The scenes need motion that crosses between characters and waits for the backend: a card goes from the Chopper's bench to the Translator's in-tray; the Translator types, prints and walks to the stamping table; the Archivist takes the stamped page and files it; on the Ask page the Clerk carries the question in, writes it on the whiteboard for the crew and waits beside it. Each scene must wait for the real step event, and must last as long as the real step does.
 
 The first version of this ADR chose Rive: one `.riv` file per room, a state machine with a `step` input, and the owner animating in the Rive editor. Two problems with that:
 
@@ -29,7 +29,7 @@ A spike (`docs/design/gsap-spike/`) built the whole Upload cycle with GSAP on th
   | Room | Scene keys |
   | --- | --- |
   | Upload | `chopper_start`, `chopper_done`, `translator_start`, `translator_done`, `archivist_start`, `archivist_done` |
-  | Ask | `clerk_start` (Clerk walks in and hands over the question), `translator_*`, `scout_*`, `judge_*`, `storyteller_*`, `clerk_done` (Clerk leaves) |
+  | Ask | `clerk_start` (Clerk walks in and writes the question on the whiteboard), `translator_*`, `scout_*`, `judge_*`, `storyteller_*`, `clerk_done` (Clerk takes the answer from the Storyteller and leaves) |
   | Query | `clerk_away` (door open, "Back soon"), `clerk_back` (Clerk returns with the answer), `clerk_shrug` (nothing found) |
 
   - **From the backend:** `chopper`, `translator`, `scout`, `judge` and `storyteller`, each with `start` and `done`.
@@ -48,7 +48,7 @@ A spike (`docs/design/gsap-spike/`) built the whole Upload cycle with GSAP on th
 - **Real data.**
   - **Text stays in the DOM:** speech bubbles, counts, word weights, scores and the answer are React overlays placed with `frontend/lib/office-spots.ts`, so they stay readable and accessible.
   - **Drawn from real data:** shapes in the room may be drawn or placed by code from the real data. Examples: one card per real chunk, cuts at the real chunk boundaries, a fingerprint from the first 32 numbers of a real vector. These shapes are `aria-hidden`, and the same information is in the DOM.
-- **Art comes from the design canvas.** Claude exports flat SVGs from the canvas files (step 5.0b) and keeps the ids above. Claude writes the scenes. The owner reviews them in the browser on the PR's preview URL.
+- **Art comes from the design canvas.** Claude exports flat SVGs from the canvas files (PLAN step 5.1) and keeps the ids above. Claude writes the scenes. The owner reviews them in the browser on the PR's preview URL.
 
 ## Options considered and rejected
 
@@ -71,4 +71,5 @@ A spike (`docs/design/gsap-spike/`) built the whole Upload cycle with GSAP on th
   - 5.0b writes the room SVGs with their characters, props and walk markers, starting from the spike.
   - The Rive steps 5.1 to 5.4 become code steps: 5.1 the room player and the Upload scenes, 5.2 the Ask room scenes, 5.3 the Query room scenes, 5.4 both rooms on the Ask page.
   - 5.8 and 5.9 add the data-driven parts to these scenes.
+  - Later (2026-10-09), once both rooms were tested in spikes (`docs/design/gsap-spike/`, `docs/design/gsap-ask-spike/`), the page steps 5.0a to 5.0f and 5.0h and the code steps 5.1 to 5.4 were merged into one step, 5.1, that ports them into the app.
   - The cast stays seven characters: the Collector (seed script only) and the Fact-Checker (step 4.3, skipped) have no character.

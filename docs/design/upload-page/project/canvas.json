@@ -1,0 +1,162 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Alt.dc.html": {
+      "expand": "fill",
+      "h": 2000,
+      "is_interactive": true,
+      "title": "Upload office \u00b7 3D alternative",
+      "w": 1440,
+      "x": 0,
+      "y": -43
+    },
+    "AskAlt.dc.html": {
+      "expand": "fill",
+      "h": 2000,
+      "is_interactive": true,
+      "title": "Ask office \u00b7 3D alternative",
+      "w": 1440,
+      "x": 0,
+      "y": 2287
+    },
+    "OfficeAsk.dc.html": {
+      "h": 600,
+      "title": "Office art \u00b7 Ask",
+      "w": 1060,
+      "x": 1520,
+      "y": 2287
+    },
+    "OfficeBreakRoom.dc.html": {
+      "h": 300,
+      "title": "Office art \u00b7 Break room",
+      "w": 1280,
+      "x": 1520,
+      "y": 4640
+    },
+    "OfficeUpload.dc.html": {
+      "h": 600,
+      "title": "Office art \u00b7 Upload",
+      "w": 1060,
+      "x": 1520,
+      "y": -43
+    },
+    "WhyRag.dc.html": {
+      "expand": "fill",
+      "h": 2000,
+      "is_interactive": true,
+      "title": "Home (Why RAG?)",
+      "w": 1440,
+      "x": 0,
+      "y": 4640
+    },
+    "CharTranslator.dc.html": {
+      "title": "Character \u00b7 Translator",
+      "x": 2880,
+      "y": -43,
+      "w": 160,
+      "h": 280
+    },
+    "CharChopper.dc.html": {
+      "title": "Character \u00b7 Chopper",
+      "x": 3120,
+      "y": -43,
+      "w": 160,
+      "h": 280
+    },
+    "CharArchivist.dc.html": {
+      "title": "Character \u00b7 Archivist",
+      "x": 3360,
+      "y": -43,
+      "w": 160,
+      "h": 280
+    },
+    "CharScout.dc.html": {
+      "title": "Character \u00b7 Scout",
+      "x": 2880,
+      "y": 2287,
+      "w": 160,
+      "h": 280
+    },
+    "CharJudge.dc.html": {
+      "title": "Character \u00b7 Judge",
+      "x": 3120,
+      "y": 2287,
+      "w": 160,
+      "h": 280
+    },
+    "CharStoryteller.dc.html": {
+      "title": "Character \u00b7 Storyteller",
+      "x": 3360,
+      "y": 2287,
+      "w": 160,
+      "h": 280
+    },
+    "CharClerk.dc.html": {
+      "title": "Character \u00b7 Clerk",
+      "x": 3600,
+      "y": 2287,
+      "w": 160,
+      "h": 280
+    },
+    "RoomQuery.dc.html": {
+      "title": "Room art \u00b7 Query",
+      "x": 1520,
+      "y": 2967,
+      "w": 400,
+      "h": 180
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-07T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "askTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Ask page",
+      "w": 240,
+      "x": 0,
+      "y": 2040
+    },
+    "uploadTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Upload page",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "whyTitle": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Home page",
+      "w": 240,
+      "x": 0,
+      "y": 4340
+    }
+  },
+  "order": [
+    "Alt.dc.html",
+    "AskAlt.dc.html",
+    "WhyRag.dc.html",
+    "OfficeUpload.dc.html",
+    "OfficeAsk.dc.html",
+    "OfficeBreakRoom.dc.html",
+    "CharTranslator.dc.html",
+    "CharChopper.dc.html",
+    "CharArchivist.dc.html",
+    "CharScout.dc.html",
+    "CharJudge.dc.html",
+    "CharStoryteller.dc.html",
+    "CharClerk.dc.html",
+    "RoomQuery.dc.html"
+  ],
+  "pages": [],
+  "title": "Upload Page Workshop"
+}

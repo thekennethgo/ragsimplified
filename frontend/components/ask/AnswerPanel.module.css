@@ -1,0 +1,309 @@
+.root {
+  flex: 999 1 620px;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  margin-left: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--tab-soft);
+}
+
+.tabs button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.tabs button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.tabs button[aria-pressed="true"] {
+  background: var(--accent-dark);
+  color: #ffffff;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid #b5a68c;
+}
+
+.working {
+  background: #e0b04a;
+  border-color: #c99a2e;
+}
+
+.done {
+  background: #4e7a46;
+  border-color: #4e7a46;
+}
+
+.error {
+  background: #b34a37;
+  border-color: #b34a37;
+}
+
+.body {
+  min-height: 320px;
+  max-height: 520px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.answerTab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.answerCol {
+  flex: 999 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sources {
+  flex: 1 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sources h3,
+.block h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.block h3 span {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.sources ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sources li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.snippet {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.num {
+  font:
+    600 13px var(--font-mono),
+    monospace;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.mono {
+  margin-left: auto;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.empty {
+  font-size: 14px;
+  color: var(--muted);
+  padding: 22px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.cardTitle {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.term {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.term strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.chips span {
+  padding: 3px 10px;
+  border-radius: 4px;
+}
+
+.chipDark {
+  background: var(--accent-dark);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.chipMeaning {
+  background: #dce6ec;
+  color: #2f4f63;
+}
+
+.chipWords {
+  background: #f1e2cc;
+  color: #6b4a1f;
+}
+
+.chipSoft {
+  background: var(--tab-soft);
+  color: var(--accent-dark);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.cited {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--chip-done-fg);
+}
+
+.judge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.judge > div:first-child {
+  flex: 999 1 420px;
+  min-width: 0;
+}
+
+.aside {
+  flex: 1 1 220px;
+  opacity: 0.75;
+}
+
+.aside ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.aside li {
+  padding: 7px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  font-size: 13px;
+}

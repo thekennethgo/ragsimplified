@@ -13,3 +13,27 @@ export type Citation = {
 export type Word = { text: string; influence: number | null };
 
 export type StepState = "waiting" | "working" | "done" | "error";
+
+/** One candidate the Scout found (the "scout" step's done event). */
+export type ScoutResult = {
+  rank: number;
+  source: "library" | "private";
+  title: string;
+  page: number | null;
+  heading: string | null;
+  score: number;
+  found_by: "vector" | "keyword" | "both";
+};
+
+/** One candidate with the Judge's verdict (the "judge" step's done event). */
+export type JudgeResult = {
+  n: number | null;
+  kept: boolean;
+  old_rank: number;
+  new_rank: number;
+  rerank_score: number | null;
+  source: "library" | "private";
+  title: string;
+  page: number | null;
+  heading: string | null;
+};

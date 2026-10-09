@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 
 import type { Citation } from "../../lib/ask";
+import styles from "./SourcesSidebar.module.css";
 
 export function SourcesSidebar({
   citations,
@@ -20,15 +21,15 @@ export function SourcesSidebar({
   }, [selected]);
 
   return (
-    <aside className="sidebar" aria-label="Sources">
-      <button type="button" onClick={onClose}>
+    <aside className={styles.sidebar} aria-label="Sources">
+      <button type="button" className={styles.close} onClick={onClose}>
         Close sources
       </button>
       <h2>Sources</h2>
       {citations.length === 0 ? (
         <p>No sources cited.</p>
       ) : (
-        <ul>
+        <ul className={styles.list}>
           {citations.map((c) => {
             const href = hrefFor(c);
             return (
@@ -38,13 +39,13 @@ export function SourcesSidebar({
                   if (node) items.current.set(c.n, node);
                 }}
                 aria-current={selected === c.n}
-                style={selected === c.n ? { background: "#fff3bf" } : undefined}
+                className={styles.item}
               >
                 <strong>[{c.n}]</strong> {c.title}
                 {c.page !== null ? `, page ${c.page}` : ""}
                 {c.heading ? ` (${c.heading})` : ""}{" "}
                 <em>{c.source === "private" ? "your pasted text" : "starter library"}</em>
-                <blockquote>{c.snippet}</blockquote>
+                <blockquote className={styles.snippet}>{c.snippet}</blockquote>
                 {href && <Link href={href}>Open source {c.n}</Link>}
               </li>
             );
