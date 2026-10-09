@@ -1,0 +1,8 @@
+  <!-- Pulled-out drawer (column 3, row 2), drawn fully open; GSAP slides it in/out along the cabinet normal. -->
+  <g id="cabinet-drawer" opacity="0">
+    <path d="M1047.8 362.9L1082.2 380.1L1070.2 386.1L1035.8 368.9Z" fill="#4E463C"></path>
+    <path d="M1082.2 380.1L1082.2 405.7L1070.2 411.7L1070.2 386.1Z" fill="#A39880"></path>
+    <path d="M1035.8 394.5L1070.2 411.7L1070.2 386.1L1035.8 368.9Z" fill="#B8AD95" stroke="#8C826E" stroke-width="1.2"></path>
+    <path d="M1048.4 383.4L1057.2 387.8L1057.2 383L1048.4 378.6Z" fill="#F1E7D2"></path>
+    <path d="M1047.6 391L1058 396.2L1058 393.8L1047.6 388.6Z" fill="#6B6255"></path>
+  </g>
