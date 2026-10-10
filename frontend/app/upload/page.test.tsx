@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { PrivateTextsProvider } from "../../lib/PrivateTexts";
@@ -6,11 +13,23 @@ import UploadPage from "./page";
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
+vi.mock("../../lib/office/useFollow", () => ({
+  useFollow: (_box: unknown, _id: string, on: boolean) =>
+    on ? { left: 0, top: 0 } : null,
+}));
 vi.mock("../../lib/office/useSceneQueue", () => {
   const queue = {
     register: () => () => undefined,
-    emit: (event: { name: string }) => emitted.push(event),
+    emit: (
+      event: { name: string },
+      hooks?: { onStart?: () => void; onEnd?: () => void },
+    ) => {
+      emitted.push(event);
+      hooks?.onStart?.();
+      hooks?.onEnd?.();
+    },
     clear: () => undefined,
+    skipAll: () => undefined,
   };
   return { useSceneQueue: () => queue };
 });
@@ -66,7 +85,9 @@ function stubBackend(events: object[] = UPLOAD_EVENTS) {
     vi.fn((url: string) => {
       if (url.endsWith("/library")) {
         return Promise.resolve(
-          new Response(JSON.stringify([{ id: 1, title: "Starter doc", chunk_count: 4 }])),
+          new Response(
+            JSON.stringify([{ id: 1, title: "Starter doc", chunk_count: 4 }]),
+          ),
         );
       }
       return Promise.resolve(ndjson(events));
@@ -75,7 +96,9 @@ function stubBackend(events: object[] = UPLOAD_EVENTS) {
 }
 
 function paste(title: string, text: string) {
-  fireEvent.change(screen.getByLabelText("Title"), { target: { value: title } });
+  fireEvent.change(screen.getByLabelText("Title"), {
+    target: { value: title },
+  });
   fireEvent.change(screen.getByLabelText("Text"), { target: { value: text } });
   fireEvent.click(screen.getByRole("button", { name: "Add text" }));
 }
@@ -83,17 +106,18 @@ function paste(title: string, text: string) {
 test("lists the starter library and says where text is sent", async () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
-  expect(await screen.findByRole("link", { name: "Starter doc" })).toHaveAttribute(
-    "href",
-    "/library/1",
-  );
+  expect(
+    await screen.findByRole("link", { name: "Starter doc" }),
+  ).toHaveAttribute("href", "/library/1");
   expect(screen.getByText(/Sent to Voyage/)).toBeInTheDocument();
 });
 
 test("shows a character counter", () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
-  fireEvent.change(screen.getByLabelText("Text"), { target: { value: "hello" } });
+  fireEvent.change(screen.getByLabelText("Text"), {
+    target: { value: "hello" },
+  });
   expect(screen.getByText("5 / 20,000")).toBeInTheDocument();
 });
 
@@ -102,27 +126,40 @@ test("pasting a text adds it under your books and empties the form", async () =>
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
   paste("My note", "hello");
 
-  expect(await screen.findByRole("link", { name: "My note" })).toHaveAttribute("href", "/texts/0");
+  expect(await screen.findByRole("link", { name: "My note" })).toHaveAttribute(
+    "href",
+    "/texts/0",
+  );
   await waitFor(() => expect(screen.getByLabelText("Title")).toHaveValue(""));
-  expect(screen.getByRole("button", { name: "Remove My note" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Remove My note" }),
+  ).toBeInTheDocument();
 });
 
-test("the speech bubbles follow the steps and show the real card count", async () => {
+test("a speech bubble shows only while its character is working", async () => {
+  stubBackend([{ step: "chopper", status: "start" }]);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.queryByRole("group", { name: "Chopper" })).toBeNull();
+  paste("My note", "hello");
+
+  const bubble = await screen.findByRole("group", { name: "Chopper" });
+  expect(
+    within(bubble).getByText('Cutting "My note" into cards.'),
+  ).toBeInTheDocument();
+  expect(within(bubble).queryByText("Working")).toBeNull();
+  expect(screen.queryByRole("group", { name: "Translator" })).toBeNull();
+  expect(screen.queryByRole("group", { name: "Archivist" })).toBeNull();
+});
+
+test("no speech bubble is left once every step is done", async () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
   paste("My note", "hello");
   await screen.findByRole("link", { name: "My note" });
 
-  expect(
-    within(screen.getByRole("group", { name: "Chopper" })).getByText("Done"),
-  ).toBeInTheDocument();
-  expect(screen.getByText("Cut into 2 cards.")).toBeInTheDocument();
-  expect(
-    within(screen.getByRole("group", { name: "Translator" })).getByText("Done"),
-  ).toBeInTheDocument();
-  expect(
-    within(screen.getByRole("group", { name: "Archivist" })).getByText("Done"),
-  ).toBeInTheDocument();
+  for (const name of ["Chopper", "Translator", "Archivist"]) {
+    expect(screen.queryByRole("group", { name })).toBeNull();
+  }
 });
 
 test("a full upload plays the scenes in order, with the Archivist around adding the text", async () => {
@@ -147,7 +184,12 @@ test("the What happened panel shows the real cards and fingerprints", async () =
   expect(screen.getByText("Send a text to see this step.")).toBeInTheDocument();
   paste("My note", "hello");
 
-  expect(await screen.findByText(/2 cards from 200 characters/)).toBeInTheDocument();
+  // the panel follows the newest step with results; go back to the Chopper's
+  await screen.findByRole("link", { name: "My note" });
+  fireEvent.click(screen.getByRole("button", { name: "Chopper" }));
+  expect(
+    await screen.findByText(/2 cards from 200 characters/),
+  ).toBeInTheDocument();
   expect(screen.getByText("Intro")).toBeInTheDocument();
   expect(screen.getByTitle("Characters 1–120")).toBeInTheDocument();
   expect(screen.getByTitle("Characters 101–200")).toBeInTheDocument();
@@ -155,10 +197,12 @@ test("the What happened panel shows the real cards and fingerprints", async () =
   fireEvent.click(screen.getByRole("button", { name: "Translator" }));
   expect(screen.getByText(/2 fingerprints/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Archivist" }));
-  expect(screen.getAllByText("Filed with your books, in this tab only.").length).toBeGreaterThan(0);
+  expect(
+    screen.getAllByText("Filed with your books, in this tab only.").length,
+  ).toBeGreaterThan(0);
 });
 
-test("a failed step shows an error on the running character and in an alert", async () => {
+test("a failed step shows an alert and takes the bubble away", async () => {
   stubBackend([
     { step: "chopper", status: "start" },
     { step: "error", status: "done", data: { message: "Upload failed" } },
@@ -167,19 +211,46 @@ test("a failed step shows an error on the running character and in an alert", as
   paste("My note", "hello");
 
   expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed");
-  expect(
-    within(screen.getByRole("group", { name: "Chopper" })).getByText("Error"),
-  ).toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: "Chopper" })).toBeNull();
   expect(emitted.map((e) => e.name)).toEqual(["chopper_start", "error"]);
   // nothing was added, so the form keeps the text
   expect(screen.getByLabelText("Title")).toHaveValue("My note");
+});
+
+test("a successful upload shows a filed toast that scrolls to the file cabinet", async () => {
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  paste("My note", "hello");
+
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    '"My note" was filed in the cabinet: 2 cards.',
+  );
+  fireEvent.click(screen.getByRole("button", { name: "See it in the file cabinet" }));
+  expect(scroll).toHaveBeenCalled();
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+test("a failed upload shows no filed toast", async () => {
+  stubBackend([
+    { step: "chopper", status: "start" },
+    { step: "error", status: "done", data: { message: "Upload failed" } },
+  ]);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  paste("My note", "hello");
+
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/was filed in the cabinet/)).toBeNull();
 });
 
 test("removing a book deletes it from the file cabinet", async () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
   paste("My note", "hello");
-  fireEvent.click(await screen.findByRole("button", { name: "Remove My note" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Remove My note" }),
+  );
   expect(screen.queryByRole("link", { name: "My note" })).toBeNull();
 });
 
@@ -187,4 +258,17 @@ test("the button stays disabled until there is a title and text", () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
   expect(screen.getByRole("button", { name: "Add text" })).toBeDisabled();
+});
+
+test("the Animations switch is on by default and remembers its setting", () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  const toggle = screen.getByRole("switch", { name: /Animations/ });
+  expect(toggle).toHaveAttribute("aria-checked", "true");
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-checked", "false");
+  expect(localStorage.getItem("ragsimplified.animations")).toBe("off");
+  fireEvent.click(toggle);
+  expect(localStorage.getItem("ragsimplified.animations")).toBe("on");
+  localStorage.removeItem("ragsimplified.animations");
 });

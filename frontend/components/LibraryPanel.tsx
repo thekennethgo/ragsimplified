@@ -5,18 +5,29 @@ import { useEffect, useState } from "react";
 
 import { backendUrl } from "../lib/backend";
 import { usePrivateTexts } from "../lib/PrivateTexts";
+import type { ViewTarget } from "../lib/viewer";
+import DocViewer from "./viewer/DocViewer";
 import styles from "./LibraryPanel.module.css";
 
 type LibraryDocument = { id: number; title: string; chunk_count: number };
-type View = "docs" | "map";
+type View = "docs" | "map" | "viewer";
 
 const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
 
 /**
  * The File cabinet: the visitor's own books (this tab only) and the starter collection from
- * GET /library. The vector map arrives in step 5.0g.
+ * GET /library. The vector map arrives in step 5.0g. With `onOpen` (the Ask page) it also has a
+ * Viewer tab that reads the passage in `viewer` in full.
  */
-export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: number) => void }) {
+export default function LibraryPanel({
+  onCount,
+  onOpen,
+  viewer,
+}: {
+  onCount?: (starterBooks: number) => void;
+  onOpen?: (target: ViewTarget) => void;
+  viewer?: ViewTarget | null;
+}) {
   const { texts, remove } = usePrivateTexts();
   const [view, setView] = useState<View>("docs");
   const [library, setLibrary] = useState<LibraryDocument[] | null>(null);
@@ -30,6 +41,10 @@ export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: num
       })
       .catch(() => setLibrary([]));
   }, []);
+
+  useEffect(() => {
+    if (viewer) setView("viewer");
+  }, [viewer]);
 
   const starter = [...(library ?? [])].sort((a, b) => a.title.localeCompare(b.title));
   const summary =
@@ -65,10 +80,20 @@ export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: num
           <button type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>
             Vector map
           </button>
+          {onOpen && (
+            <button
+              type="button"
+              aria-pressed={view === "viewer"}
+              disabled={!viewer}
+              onClick={() => setView("viewer")}
+            >
+              Viewer
+            </button>
+          )}
         </div>
       </div>
 
-      {view === "docs" ? (
+      {view === "docs" && (
         <div className={styles.docs}>
           <div className={styles.group}>
             <div className={styles.groupHead}>
@@ -85,7 +110,17 @@ export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: num
                   <li key={index}>
                     <span className={styles.spine} />
                     <div className={styles.bookText}>
-                      <Link href={`/texts/${index}`}>{item.title}</Link>
+                      {onOpen ? (
+                        <button
+                          type="button"
+                          className={styles.open}
+                          onClick={() => onOpen({ kind: "private", index, chunk: null })}
+                        >
+                          {item.title}
+                        </button>
+                      ) : (
+                        <Link href={`/texts/${index}`}>{item.title}</Link>
+                      )}
                       <span className={styles.mono}>
                         {cards(item.chunks.length)} · {item.text.length.toLocaleString("en-US")}{" "}
                         characters
@@ -130,7 +165,17 @@ export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: num
               <ul className={styles.starter}>
                 {starter.map((doc) => (
                   <li key={doc.id}>
-                    <Link href={`/library/${doc.id}`}>{doc.title}</Link>
+                    {onOpen ? (
+                      <button
+                        type="button"
+                        className={styles.open}
+                        onClick={() => onOpen({ kind: "library", id: doc.id, chunk: null })}
+                      >
+                        {doc.title}
+                      </button>
+                    ) : (
+                      <Link href={`/library/${doc.id}`}>{doc.title}</Link>
+                    )}
                     <span className={styles.mono}>{cards(doc.chunk_count)}</span>
                   </li>
                 ))}
@@ -138,7 +183,15 @@ export default function LibraryPanel({ onCount }: { onCount?: (starterBooks: num
             )}
           </div>
         </div>
-      ) : (
+      )}
+
+      {view === "viewer" && viewer && (
+        <div className={styles.viewer}>
+          <DocViewer target={viewer} />
+        </div>
+      )}
+
+      {view === "map" && (
         <div className={styles.soon}>
           <h3>Coming soon</h3>
           <p>

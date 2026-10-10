@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { Phase } from "../../lib/sceneState";
 import styles from "./WhatHappened.module.css";
@@ -18,21 +18,21 @@ const STEPS: { id: StepId; name: string; title: string; text: string; term: stri
     id: "chopper",
     name: "Chopper",
     title: "cuts your text into cards",
-    text: "About 500 tokens per card. Each card shares a little with the next, so no idea is cut in half.",
-    term: "chunking with overlap",
+    text: "Long text is hard to search, so it's cut into cards about a page long. Each card repeats a little of the one before, so no idea gets split in half.",
+    term: "chunking",
   },
   {
     id: "translator",
     name: "Translator",
-    title: "fingerprints every card",
-    text: "1,024 numbers per card for what it means. Similar cards get similar fingerprints.",
+    title: "gives each card a fingerprint",
+    text: "Each card becomes a list of 1,024 numbers that captures what it means. Cards about similar things get similar numbers.",
     term: "embedding",
   },
   {
     id: "archivist",
     name: "Archivist",
     title: "files the cards",
-    text: "Into the cabinet, next to the starter books. Yours stay in this tab only.",
+    text: "The cards go into the cabinet next to the starter books, ready to be searched. Yours stay in this browser tab only.",
     term: "indexing",
   },
 ];
@@ -50,6 +50,11 @@ export default function WhatHappened({
   vectors: number[][] | null;
 }) {
   const [step, setStep] = useState<StepId>("chopper");
+  // Show a step's results as soon as they arrive.
+  const latest = [...STEPS].reverse().find((s) => states[s.id] === "done")?.id;
+  useEffect(() => {
+    if (latest) setStep(latest);
+  }, [latest]);
   const current = STEPS.find((s) => s.id === step)!;
   const phase = states[step] ?? "waiting";
   const ready = phase === "done";
@@ -75,6 +80,7 @@ export default function WhatHappened({
                 key={s.id}
                 type="button"
                 aria-pressed={step === s.id}
+                disabled={s.id !== "chopper" && (states[s.id] ?? "waiting") === "waiting"}
                 onClick={() => setStep(s.id)}
               >
                 <span

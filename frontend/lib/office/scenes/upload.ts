@@ -65,12 +65,6 @@ export function buildUploadScenes(root: SVGSVGElement): SceneSet {
   }
   const face = (tl: gsap.core.Timeline, who: Who, left: boolean) =>
     tl.set(q(`#${who}-flip`), { scaleX: left ? -1 : 1 });
-  const popCheck = (tl: gsap.core.Timeline, sel: string, origin: string) =>
-    tl.fromTo(
-      q(sel),
-      { opacity: 0, scale: 0.4, svgOrigin: origin },
-      { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" },
-    );
 
   function reset() {
     Object.keys(holds).forEach(stopHold);
@@ -169,7 +163,6 @@ export function buildUploadScenes(root: SVGSVGElement): SceneSet {
         )
         .addLabel("handoff"); // card is in the tray: the Translator can start while the Chopper walks back
       walk(tl, "ch", P.chTray, P.chSpot, "+=0.2");
-      popCheck(tl, "#ch-check", "18 50");
       return tl;
     },
 
@@ -247,7 +240,6 @@ export function buildUploadScenes(root: SVGSVGElement): SceneSet {
       face(tl, "tr", false)
         .to(progress, { opacity: 0, duration: 0.2 })
         .to(q("#crt-text-idle"), { opacity: 1, duration: 0.2 }, "<");
-      popCheck(tl, "#tr-check", "62 50");
       return tl;
     },
 
@@ -289,7 +281,6 @@ export function buildUploadScenes(root: SVGSVGElement): SceneSet {
         .set(q("#ar-arm-down"), { opacity: 1 })
         .to(q("#cabinet-drawer"), { x: 12, y: -6, duration: 0.35, ease: "power2.in" }, "+=0.15")
         .set(q("#cabinet-drawer"), { opacity: 0 });
-      popCheck(tl, "#ar-check", "62 50");
       return tl;
     },
   };

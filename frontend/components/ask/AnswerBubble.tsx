@@ -1,7 +1,11 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import type { Citation } from "../../lib/ask";
+import type { ViewTarget } from "../../lib/viewer";
 import styles from "./AnswerBubble.module.css";
+import CitationPopover from "./CitationPopover";
+
+const POPOVER_WIDTH = 320;
 
 /** Split an answer into text and [n] markers; a marker is a button only if it has a source. */
 export function AnswerText({
@@ -11,7 +15,7 @@ export function AnswerText({
 }: {
   answer: string;
   citations: Citation[];
-  onOpen: (n: number) => void;
+  onOpen: (n: number, el: HTMLElement) => void;
 }) {
   const known = new Set(citations.map((c) => c.n));
   return (
@@ -28,7 +32,7 @@ export function AnswerText({
             type="button"
             className={styles.cite}
             aria-label={`Source ${n}`}
-            onClick={() => onOpen(n)}
+            onClick={(e) => onOpen(n, e.currentTarget)}
           >
             [{n}]
           </button>
@@ -38,32 +42,66 @@ export function AnswerText({
   );
 }
 
-/** The written answer. Pressing it (or "Show sources") opens the citations sidebar. */
+/** The written answer. Pressing a [n] marker opens a popover with that source; one at a time. */
 export function AnswerBubble({
   answer,
   citations,
-  onOpenSource,
-  onShowSources,
+  targetFor,
+  onOpenInViewer,
 }: {
   answer: string;
   citations: Citation[];
-  onOpenSource: (n: number) => void;
-  onShowSources: () => void;
+  targetFor: (citation: Citation) => ViewTarget | null;
+  onOpenInViewer: (target: ViewTarget) => void;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  const popover = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<{ n: number; left: number; top: number } | null>(null);
+
+  // Close on a press outside the popover and the markers.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (popover.current?.contains(target) || target.closest(`.${styles.cite}`)) return;
+      setOpen(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  function toggle(n: number, el: HTMLElement) {
+    if (open?.n === n) {
+      setOpen(null);
+      return;
+    }
+    const width = root.current?.offsetWidth ?? POPOVER_WIDTH;
+    const left = Math.min(Math.max(el.offsetLeft, 0), Math.max(width - POPOVER_WIDTH, 0));
+    setOpen({ n, left, top: el.offsetTop + el.offsetHeight + 6 });
+  }
+
+  const cited = open ? citations.find((c) => c.n === open.n) : undefined;
+  const target = cited ? targetFor(cited) : null;
+
   return (
-    <div className={styles.answer} aria-label="Answer" role="region" onClick={onShowSources}>
-      <AnswerText answer={answer} citations={citations} onOpen={onOpenSource} />
-      {answer && (
-        <button
-          type="button"
-          className={styles.show}
-          onClick={(e) => {
-            e.stopPropagation();
-            onShowSources();
-          }}
-        >
-          Show sources
-        </button>
+    <div ref={root} className={styles.answer} aria-label="Answer" role="region">
+      <AnswerText answer={answer} citations={citations} onOpen={toggle} />
+      {open && cited && (
+        <div ref={popover} style={{ display: "contents" }}>
+          <CitationPopover
+            citation={cited}
+            style={{ left: open.left, top: open.top }}
+            onClose={() => setOpen(null)}
+            onOpenInViewer={
+              target
+                ? () => {
+                    onOpenInViewer(target);
+                    setOpen(null);
+                  }
+                : null
+            }
+          />
+        </div>
       )}
     </div>
   );

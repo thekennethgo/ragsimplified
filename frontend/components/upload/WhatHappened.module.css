@@ -1,5 +1,12 @@
 .panel {
-  flex: 999 1 620px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .panel {
+    flex-basis: 100%;
+  }
 }
 
 .details {

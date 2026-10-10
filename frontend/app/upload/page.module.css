@@ -4,6 +4,8 @@
   border-radius: 12px;
   overflow: hidden;
   background: var(--room);
+  width: 70%;
+  margin-inline: auto;
 }
 
 .title {
@@ -61,6 +63,10 @@
 }
 
 @media (max-width: 760px) {
+  .office {
+    width: 100%;
+  }
+
   .bubbles {
     position: static;
     display: flex;
