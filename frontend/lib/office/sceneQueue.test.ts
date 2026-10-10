@@ -5,7 +5,9 @@ import type { SceneSet, Timeline } from "./types";
 
 type Fake = Timeline & { reachHandoff(): void; finish(): void };
 
-function setup(options: { handoff?: string[]; reduced?: boolean } = {}) {
+function setup(
+  options: { handoff?: string[]; reduced?: boolean; gapMs?: number; skip?: () => boolean } = {},
+) {
   const log: string[] = [];
   const timelines: Record<string, Fake> = {};
   const holds: SceneSet["holds"] = {};
@@ -38,13 +40,18 @@ function setup(options: { handoff?: string[]; reduced?: boolean } = {}) {
   };
   const names = ["chopper_start", "chopper_done", "translator_start", "translator_done"];
   const set: SceneSet = {
-    reset: () => undefined,
+    reset: vi.fn(),
     scenes: Object.fromEntries(names.map((n) => [n, scene(n)])),
     holds,
   };
-  const queue = createSceneQueue({ reduced: () => options.reduced ?? false, holdMs: 1000 });
+  const queue = createSceneQueue({
+    reduced: () => options.reduced ?? false,
+    skip: options.skip,
+    holdMs: 1000,
+    gapMs: options.gapMs,
+  });
   queue.register(set);
-  return { queue, log, timelines, holds };
+  return { queue, log, timelines, holds, set };
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -134,4 +141,117 @@ test("reduced motion jumps each scene to its end, still a second apart, with no 
   await vi.advanceTimersByTimeAsync(1);
   expect(log).toContain("progress chopper_done 1");
   expect(log.some((entry) => entry.startsWith("play"))).toBe(false);
+});
+
+test("hooks run in order: onStart before the scene plays, onEnd once it finishes", async () => {
+  const { queue, log, timelines } = setup();
+  queue.emit(
+    { name: "chopper_start" },
+    { onStart: () => log.push("onStart"), onEnd: () => log.push("onEnd") },
+  );
+  await flush();
+  expect(log).toEqual(["onStart", "play chopper_start"]);
+  timelines.chopper_start.finish();
+  await flush();
+  expect(log).toEqual(["onStart", "play chopper_start", "onEnd"]);
+});
+
+test("onEnd runs at the handoff label, while the scene keeps playing", async () => {
+  const { queue, log, timelines } = setup({ handoff: ["chopper_done"] });
+  queue.emit({ name: "chopper_done" }, { onEnd: () => log.push("onEnd") });
+  await flush();
+  expect(log).toEqual(["play chopper_done"]);
+  timelines.chopper_done.reachHandoff();
+  await flush();
+  expect(log).toEqual(["play chopper_done", "onEnd"]);
+});
+
+test("an event with no scene runs both hooks right away", async () => {
+  const { queue, log } = setup();
+  queue.emit(
+    { name: "scout_start" },
+    { onStart: () => log.push("onStart"), onEnd: () => log.push("onEnd") },
+  );
+  await flush();
+  expect(log).toEqual(["onStart", "onEnd"]);
+});
+
+test("a new character waits gapMs, the same character does not", async () => {
+  const { queue, log, timelines } = setup({ gapMs: 800 });
+  queue.emit({ name: "chopper_start" });
+  queue.emit({ name: "chopper_done" });
+  queue.emit({ name: "translator_start" });
+  await flush();
+  timelines.chopper_start.finish();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(log).toEqual(["play chopper_start", "play chopper_done"]);
+
+  timelines.chopper_done.finish();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(log).not.toContain("play translator_start");
+  await vi.advanceTimersByTimeAsync(799);
+  expect(log).not.toContain("play translator_start");
+  await vi.advanceTimersByTimeAsync(1);
+  expect(log).toContain("play translator_start");
+});
+
+test("skip builds no timeline: each event just runs its hooks, in order", async () => {
+  const { queue, log } = setup({ gapMs: 800, skip: () => true });
+  const hooks = (name: string) => ({
+    onStart: () => log.push(`start ${name}`),
+    onEnd: () => log.push(`end ${name}`),
+  });
+  queue.emit({ name: "chopper_start" }, hooks("chopper_start"));
+  queue.emit({ name: "translator_start" }, hooks("translator_start"));
+  await flush();
+  expect(log).toEqual([
+    "start chopper_start",
+    "end chopper_start",
+    "start translator_start",
+    "end translator_start",
+  ]);
+});
+
+test("skipAll runs the remaining hooks, kills the scene and resets the rooms", async () => {
+  const { queue, log, set } = setup();
+  const hooks = (name: string) => ({
+    onStart: () => log.push(`start ${name}`),
+    onEnd: () => log.push(`end ${name}`),
+  });
+  queue.emit({ name: "chopper_start" }, hooks("chopper_start"));
+  queue.emit({ name: "translator_start" }, hooks("translator_start"));
+  await flush();
+  queue.skipAll();
+  expect(log).toEqual([
+    "start chopper_start",
+    "play chopper_start",
+    "end chopper_start",
+    "start translator_start",
+    "end translator_start",
+    "kill chopper_start",
+  ]);
+  expect(set.reset).toHaveBeenCalledTimes(1);
+});
+
+test("an error runs the remaining hooks in order, then kills the timelines", async () => {
+  const { queue, log } = setup();
+  const hooks = (name: string) => ({
+    onStart: () => log.push(`start ${name}`),
+    onEnd: () => log.push(`end ${name}`),
+  });
+  queue.emit({ name: "chopper_start" }, hooks("chopper_start"));
+  queue.emit({ name: "chopper_done" }, hooks("chopper_done"));
+  queue.emit({ name: "translator_start" }, hooks("translator_start"));
+  await flush();
+  queue.emit({ name: "error" });
+  expect(log).toEqual([
+    "start chopper_start",
+    "play chopper_start",
+    "end chopper_start",
+    "start chopper_done",
+    "end chopper_done",
+    "start translator_start",
+    "end translator_start",
+    "kill chopper_start",
+  ]);
 });

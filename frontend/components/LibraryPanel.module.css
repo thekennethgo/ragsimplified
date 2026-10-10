@@ -194,3 +194,19 @@
   color: var(--muted);
   max-width: 60ch;
 }
+
+.open {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.viewer {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 4px 2px;
+}

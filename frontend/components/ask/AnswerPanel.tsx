@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { Citation, JudgeResult, ScoutResult, Word } from "../../lib/ask";
 import type { Phase } from "../../lib/sceneState";
+import type { ViewTarget } from "../../lib/viewer";
 import { AnswerBubble } from "./AnswerBubble";
 import styles from "./AnswerPanel.module.css";
 import { HighlightedWords } from "./QuestionBubble";
@@ -15,29 +15,29 @@ const STEPS = [
   {
     id: "translator",
     name: "Translator",
-    title: "fingerprints your question",
-    text: "A fingerprint is 1,024 numbers for what the question means. Similar meaning, similar numbers, so the cabinet can be searched by meaning.",
-    term: "embedding the query",
+    title: "turns your question into a fingerprint",
+    text: "Your question gets the same kind of 1,024-number fingerprint as the cards, so it can be compared with them by meaning.",
+    term: "embedding the question",
   },
   {
     id: "scout",
     name: "Scout",
-    title: "searches two ways",
-    text: "By meaning (closest fingerprints) and by words (same words), then pulls the cards.",
-    term: "hybrid search: vector + keyword",
+    title: "finds likely cards",
+    text: "Looks two ways at once: cards whose fingerprints are closest to your question, and cards that use the same words. It brings back the best matches.",
+    term: "hybrid search",
   },
   {
     id: "judge",
     name: "Judge",
-    title: "keeps the best cards",
-    text: "Search is fast but rough. The Judge reads each card next to your question and scores how well it answers.",
+    title: "keeps only the best",
+    text: "Reads each card next to your question and scores how well it really answers it. Weak cards are set aside.",
     term: "reranking",
   },
   {
     id: "storyteller",
     name: "Storyteller",
-    title: "writes the answer from those cards",
-    text: "Only from the kept cards, each one numbered. If they don't cover it, it says so instead of guessing.",
+    title: "writes the answer",
+    text: "Writes using only the kept cards, and marks each fact with its card number, like [1]. If the cards don't cover it, it says so.",
     term: "grounded generation with citations",
   },
 ] as const;
@@ -54,9 +54,9 @@ export default function AnswerPanel({
   scout,
   judge,
   nothingFound,
-  hrefFor,
-  onOpenSource,
-  onShowSources,
+  targetFor,
+  onOpenInViewer,
+  follow,
 }: {
   states: Record<string, Phase>;
   answer: string;
@@ -65,12 +65,22 @@ export default function AnswerPanel({
   scout: ScoutResult[] | null;
   judge: JudgeResult[] | null;
   nothingFound: boolean;
-  hrefFor: (citation: Citation) => string | null;
-  onOpenSource: (n: number) => void;
-  onShowSources: () => void;
+  targetFor: (citation: Citation) => ViewTarget | null;
+  onOpenInViewer: (target: ViewTarget) => void;
+  /** Jump to each step as its results arrive (off when the animations are off). */
+  follow: boolean;
 }) {
   const [tab, setTab] = useState<TabId>("answer");
   const phase = (id: string): Phase => states[id] ?? "waiting";
+  // Follow the newest step whose results are in, and show the answer when it first appears.
+  const latest = [...STEPS].reverse().find((s) => phase(s.id) === "done")?.id;
+  useEffect(() => {
+    if (follow && latest) setTab(latest);
+  }, [follow, latest]);
+  const hasAnswer = Boolean(answer);
+  useEffect(() => {
+    if (hasAnswer) setTab("answer");
+  }, [hasAnswer]);
   const step = STEPS.find((s) => s.id === tab);
   const kept = (judge ?? []).filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const setAside = (judge ?? []).filter((r) => !r.kept);
@@ -91,7 +101,7 @@ export default function AnswerPanel({
               key={s.id}
               type="button"
               aria-pressed={tab === s.id}
-              disabled={phase(s.id) !== "done"}
+              disabled={phase(s.id) === "waiting"}
               onClick={() => setTab(s.id)}
             >
               <span className={`${styles.dot} ${styles[phase(s.id)]}`} title={phase(s.id)} />
@@ -112,8 +122,8 @@ export default function AnswerPanel({
                 <AnswerBubble
                   answer={answer}
                   citations={citations}
-                  onOpenSource={onOpenSource}
-                  onShowSources={onShowSources}
+                  targetFor={targetFor}
+                  onOpenInViewer={onOpenInViewer}
                 />
               ) : phase("translator") !== "waiting" ? (
                 <p className={styles.empty}>Working on it. Open a step above to watch.</p>
@@ -126,7 +136,7 @@ export default function AnswerPanel({
               {citations.length > 0 ? (
                 <ol>
                   {citations.map((c) => {
-                    const href = hrefFor(c);
+                    const t = targetFor(c);
                     return (
                       <li key={c.n}>
                         <div className={styles.cardHead}>
@@ -135,7 +145,11 @@ export default function AnswerPanel({
                           <span className={styles.mono}>card {c.position + 1}</span>
                         </div>
                         <p className={styles.snippet}>{c.snippet}</p>
-                        {href && <Link href={href}>Open in the file cabinet</Link>}
+                        {t && (
+                          <button type="button" onClick={() => onOpenInViewer(t)}>
+                            Open in viewer
+                          </button>
+                        )}
                       </li>
                     );
                   })}
@@ -159,7 +173,13 @@ export default function AnswerPanel({
               </p>
             </div>
 
-            {tab === "translator" && (
+            {phase(tab) !== "done" && (
+              <p className={styles.empty}>
+                {phase(tab) === "error" ? "This step did not finish." : "Working on it…"}
+              </p>
+            )}
+
+            {phase(tab) === "done" && tab === "translator" && (
               <div className={styles.block}>
                 <h3>
                   Which words mattered <span>· darker = shaped the meaning more</span>
@@ -168,7 +188,7 @@ export default function AnswerPanel({
               </div>
             )}
 
-            {tab === "scout" && (
+            {phase(tab) === "done" && tab === "scout" && (
               <div className={styles.block}>
                 <div className={styles.chips}>
                   <span className={styles.chipDark}>{scout?.length ?? 0} cards found</span>
@@ -199,7 +219,7 @@ export default function AnswerPanel({
               </div>
             )}
 
-            {tab === "judge" && (
+            {phase(tab) === "done" && tab === "judge" && (
               <div className={styles.judge}>
                 <div className={styles.block}>
                   <h3>
@@ -232,7 +252,7 @@ export default function AnswerPanel({
               </div>
             )}
 
-            {tab === "storyteller" && (
+            {phase(tab) === "done" && tab === "storyteller" && (
               <div className={styles.block}>
                 {nothingFound ? (
                   <p className={styles.empty}>Nothing to write from, so no answer.</p>

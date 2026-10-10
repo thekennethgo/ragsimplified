@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import LibraryPanel from "../../components/LibraryPanel";
+import Toast from "../../components/Toast";
+import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
 import SpeechBubble from "../../components/office/SpeechBubble";
 import EnvelopeForm from "../../components/upload/EnvelopeForm";
 import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHappened";
 import { backendUrl, readEvents } from "../../lib/backend";
-import { UPLOAD_BUBBLES, UPLOAD_DOC_COUNT } from "../../lib/office-spots";
+import { useAnimationsSetting } from "../../lib/office/animationSetting";
+import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
 import { buildUploadScenes } from "../../lib/office/scenes/upload";
+import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { type PrivateText, usePrivateTexts } from "../../lib/PrivateTexts";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
@@ -18,56 +22,68 @@ import styles from "./page.module.css";
 const ROOM_LABEL = "The Upload office: the Chopper, the Translator and the Archivist at work.";
 
 export default function UploadPage() {
-  const queue = useSceneQueue();
+  const [animationsOn, setAnimationsOn] = useAnimationsSetting();
+  const onRef = useRef(animationsOn);
+  onRef.current = animationsOn;
+  const queue = useSceneQueue(() => !onRef.current);
+  useEffect(() => {
+    if (!animationsOn) queue.skipAll();
+  }, [animationsOn, queue]);
+  const officeRef = useRef<HTMLElement>(null);
   // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
   const { texts, add } = usePrivateTexts();
   const [busy, setBusy] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const [error, setError] = useState("");
   const [states, setStates] = useState<Record<string, Phase>>({});
   const [title, setTitle] = useState("");
   const [chunkCount, setChunkCount] = useState<number | null>(null);
   const [chunkDetails, setChunkDetails] = useState<ChunkDetail[] | null>(null);
   const [vectors, setVectors] = useState<number[][] | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const closeToast = useCallback(() => setToast(null), []);
   const [starterBooks, setStarterBooks] = useState<number | null>(null);
 
   const phase = (step: string): Phase => states[step] ?? "waiting";
   const cards =
     chunkCount === null ? "your cards" : `${chunkCount} ${chunkCount === 1 ? "card" : "cards"}`;
   const says = {
-    chopper: {
-      waiting: "Inbox empty. I'll cut your text into cards.",
-      working: `Cutting "${title}" into cards.`,
-      done: `Cut into ${cards}.`,
-      error: "Sorry, I could not cut that.",
-    },
-    translator: {
-      waiting: "I'll give each card a fingerprint.",
-      working: `Fingerprinting ${cards}.`,
-      done: `All ${cards} fingerprinted.`,
-      error: "Sorry, I could not fingerprint that.",
-    },
-    archivist: {
-      waiting: "I'll file it in the cabinet.",
-      working: "Filing it with your books.",
-      done: "Filed with your books, in this tab only.",
-      error: "Sorry, I could not file that.",
-    },
+    chopper: `Cutting "${title}" into cards.`,
+    translator: `Fingerprinting ${cards}.`,
+    archivist: "Filing it with your books.",
   };
 
-  /** Move a step's phase and (for the Archivist, which has no backend step) the scene along. */
-  function archivist(status: "start" | "done") {
-    setStates((now) => sceneReducer(now, { step: "archivist", status }));
-    queue.emit({ name: `archivist_${status}` });
+  /** Move the Archivist's phase and scene along (it has no backend step). */
+  function archivist(status: "start" | "done", title?: string, cardCount?: number) {
+    const update = () => setStates((now) => sceneReducer(now, { step: "archivist", status }));
+    if (status === "start") {
+      queue.emit({ name: "archivist_start" }, { onStart: update });
+    } else {
+      queue.emit(
+        { name: "archivist_done" },
+        {
+          onEnd: () => {
+            update();
+            setAnimating(false);
+            setToast(
+              `"${title}" was filed in the cabinet: ${cardCount} ${cardCount === 1 ? "card" : "cards"}.`,
+            );
+          },
+        },
+      );
+    }
   }
 
   async function onSubmit(newTitle: string, text: string): Promise<boolean> {
     setBusy(true);
+    setAnimating(true);
     setError("");
     setStates({});
     setTitle(newTitle);
     setChunkCount(null);
     setChunkDetails(null);
     setVectors(null);
+    setToast(null);
     queue.clear();
     let added = false;
     try {
@@ -78,44 +94,73 @@ export default function UploadPage() {
       });
       if (!response.ok) {
         setError(`Upload rejected (${response.status})`);
+        setAnimating(false);
         return false;
       }
       for await (const e of readEvents(response)) {
         if (!("status" in e)) continue;
-        setStates((now) => sceneReducer(now, e));
-        toSceneEvents(e).forEach((event) => queue.emit(event));
+        const [sceneEvent] = toSceneEvents(e);
+        const update = () => setStates((now) => sceneReducer(now, e));
         if (e.step === "error") {
           setError(String(e.data?.message ?? "Upload failed"));
+          queue.emit({ name: "error" });
+          update();
+          setAnimating(false);
         } else if (e.step === "chopper" && e.status === "done") {
-          setChunkCount(Number(e.data?.chunks ?? 0));
-          setChunkDetails((e.data?.chunk_details ?? null) as ChunkDetail[] | null);
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setChunkCount(Number(e.data?.chunks ?? 0));
+              setChunkDetails((e.data?.chunk_details ?? null) as ChunkDetail[] | null);
+            },
+          });
         } else if (e.step === "translator" && e.status === "done" && e.data) {
           const { chunks, vectors: made } = e.data as Pick<PrivateText, "chunks" | "vectors">;
-          setVectors(made);
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setVectors(made);
+            },
+          });
           archivist("start");
           add({ title: newTitle, text, chunks, vectors: made });
-          archivist("done");
+          archivist("done", newTitle, chunks.length);
           added = true;
+        } else {
+          queue.emit(sceneEvent, e.status === "start" ? { onStart: update } : { onEnd: update });
         }
       }
     } catch {
       setError("Could not reach the backend");
-      setStates((now) => sceneReducer(now, { step: "error", status: "done" }));
       queue.emit({ name: "error" });
+      setStates((now) => sceneReducer(now, { step: "error", status: "done" }));
+      setAnimating(false);
     } finally {
       setBusy(false);
     }
     return added;
   }
 
+  const chopperAt = useFollow(officeRef, "chopper", animationsOn && phase("chopper") === "working");
+  const translatorAt = useFollow(
+    officeRef,
+    "translator",
+    animationsOn && phase("translator") === "working",
+  );
+  const archivistAt = useFollow(
+    officeRef,
+    "archivist",
+    animationsOn && phase("archivist") === "working",
+  );
   const documents = starterBooks === null ? null : starterBooks + texts.length;
 
   return (
     <>
-      <section aria-labelledby="office-h" className={styles.office}>
+      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
         <h1 id="office-h" className={styles.title}>
           The office
         </h1>
+        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
         <div className={styles.stage}>
           <OfficeRoom
             src="/office/upload-room.svg"
@@ -134,24 +179,9 @@ export default function UploadPage() {
           )}
         </div>
         <div className={styles.bubbles}>
-          <SpeechBubble
-            name="Chopper"
-            phase={phase("chopper")}
-            text={says.chopper[phase("chopper")]}
-            anchor={UPLOAD_BUBBLES.chopper}
-          />
-          <SpeechBubble
-            name="Translator"
-            phase={phase("translator")}
-            text={says.translator[phase("translator")]}
-            anchor={UPLOAD_BUBBLES.translator}
-          />
-          <SpeechBubble
-            name="Archivist"
-            phase={phase("archivist")}
-            text={says.archivist[phase("archivist")]}
-            anchor={UPLOAD_BUBBLES.archivist}
-          />
+          {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
+          {translatorAt && <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />}
+          {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
         </div>
       </section>
 
@@ -162,11 +192,25 @@ export default function UploadPage() {
       )}
 
       <div className={styles.row}>
-        <EnvelopeForm onSubmit={onSubmit} busy={busy} />
+        <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} />
         <WhatHappened states={states} chunks={chunkDetails} vectors={vectors} />
       </div>
 
       <LibraryPanel onCount={setStarterBooks} />
+
+      {toast && (
+        <Toast
+          message={toast}
+          action={{
+            label: "See it in the file cabinet",
+            onClick: () => {
+              setToast(null);
+              document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            },
+          }}
+          onClose={closeToast}
+        />
+      )}
     </>
   );
 }

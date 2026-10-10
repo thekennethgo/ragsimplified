@@ -24,15 +24,15 @@ export function buildQueryScenes(root: SVGSVGElement): SceneSet {
     tl.set(q("#q-door-shut"), { opacity: 0 })
       .set(q("#q-door-open, #q-back"), { opacity: 1 })
       .set(q("#q-front"), { opacity: 0 })
-      .fromTo(q("#q-clerk"), { y: -6, scale: 0.86, opacity: 0 }, { opacity: 1, duration: 0.3 })
-      .to(q("#q-clerk"), { y: 0, scale: 1, duration: 0.6, ease: "power1.out" })
+      .fromTo(q("#q-clerk"), { y: -6, scale: 0.86, opacity: 0 }, { opacity: 1, duration: 0.15 })
+      .to(q("#q-clerk"), { y: 0, scale: 1, duration: 0.3, ease: "power1.out" })
       .set(q("#q-back"), { opacity: 0 })
       .set(q("#q-front"), { opacity: 1 })
       .set(q("#q-wave-arms, #q-wave-clip"), { opacity: 0 })
       .set(shrug ? q("#q-shrug-arms") : q("#q-present-arms, #q-present-page"), { opacity: 1 })
-      .to(q("#q-door-open"), { opacity: 0, duration: 0.25 })
-      .to(q("#q-door-shut"), { opacity: 1, duration: 0.25 }, "<")
-      .to(q("#q-back-soon"), { opacity: 0, duration: 0.25 }, "<");
+      .to(q("#q-door-open"), { opacity: 0, duration: 0.12 })
+      .to(q("#q-door-shut"), { opacity: 1, duration: 0.12 }, "<")
+      .to(q("#q-back-soon"), { opacity: 0, duration: 0.12 }, "<");
     return tl;
   }
 

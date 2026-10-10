@@ -127,7 +127,7 @@ summary:focus-visible {
   color: var(--chip-error-fg);
 }
 
-/* Speech bubbles over the office rooms (positions come from lib/office-spots.ts). */
+/* Speech bubbles over the office rooms (placed above their character's head by lib/office/useFollow.ts). */
 .bubble {
   position: absolute;
   background: var(--panel);
@@ -152,6 +152,7 @@ summary:focus-visible {
 @media (max-width: 760px) {
   .bubble {
     position: static !important;
+    transform: none !important;
     width: auto !important;
   }
 
@@ -161,6 +162,12 @@ summary:focus-visible {
 }
 
 main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.route {
   display: flex;
   flex-direction: column;
   gap: 20px;

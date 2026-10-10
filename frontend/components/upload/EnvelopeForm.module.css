@@ -1,14 +1,25 @@
 .envelope {
-  flex: 1 1 400px;
+  flex: 0 0 calc(40% - 10px);
+  min-width: 0;
   max-width: 100%;
   position: relative;
-  background: #e9ddbf;
-  border: 1px solid #c9b98f;
-  border-radius: 6px;
+  padding: 6px;
+  border-radius: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #b4483c 0 12px,
+    #efe4c8 12px 18px,
+    #3b5878 18px 30px,
+    #efe4c8 30px 36px
+  );
   box-shadow: 0 1px 3px rgba(47, 51, 55, 0.12);
+}
+
+.paper {
+  position: relative;
+  background: #efe4c8;
+  border-radius: 4px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 .flap {
@@ -17,21 +28,74 @@
 
 .seal {
   position: absolute;
-  top: 36px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #8c7660;
-  border: 3px solid #e9ddbf;
+  border: 3px solid #efe4c8;
+}
+
+.stamp {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  width: 46px;
+  height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #f7f0dc;
+  outline: 3px dotted #efe4c8;
+  outline-offset: -2px;
+  border: 2px solid #b4483c;
+  color: #b4483c;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  transform: rotate(4deg);
+}
+
+.postmark {
+  position: absolute;
+  top: 4px;
+  right: 76px;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 2px solid rgba(59, 88, 120, 0.55);
+  border-radius: 50%;
+  color: rgba(59, 88, 120, 0.7);
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  text-transform: uppercase;
+  text-align: center;
+  transform: rotate(-14deg);
+  pointer-events: none;
 }
 
 .body {
-  padding: 20px 22px 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  padding: 14px 22px 20px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.actions > * {
+  flex: 1 1 160px;
 }
 
 .heading {
@@ -180,4 +244,17 @@
 .privacy svg {
   flex: none;
   margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .stamp,
+  .postmark {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .envelope {
+    flex-basis: 100%;
+  }
 }

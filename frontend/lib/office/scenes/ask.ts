@@ -216,7 +216,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
 
   // ---------- walking ----------
   const pos: Partial<Record<Who, Point>> = {}; // where each character's feet are, for walk directions and durations
-  function walk(tl: gsap.core.Timeline, who: Who, to: Point, position?: gsap.Position) {
+  function walk(tl: gsap.core.Timeline, who: Who, to: Point, position?: gsap.Position, pace = 1) {
     const from = pos[who]!;
     pos[who] = to;
     const d = Math.hypot(to.x - from.x, to.y - from.y);
@@ -224,7 +224,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .set(q(`#${who}-flip`), { scaleX: to.x < from.x ? -1 : 1 }, position)
       .to(q(`#${GROUP[who]}`), {
         ...at(to),
-        duration: Math.max(MIN_WALK, d / SPEED[who === "cl" ? "clerk" : "crew"]),
+        duration: Math.max(MIN_WALK / pace, d / (SPEED[who === "cl" ? "clerk" : "crew"] * pace)),
         ease: "power1.inOut",
       });
   }
@@ -240,12 +240,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     tl
       .set(q(`#${who}-arm-up`), { opacity: up ? 1 : 0 }, position)
       .set(q(`#${who}-arm-down, #${who}-tool-down`), { opacity: up ? 0 : 1 }, "<");
-  const popCheck = (tl: gsap.core.Timeline, who: Who) =>
-    tl.fromTo(
-      q(`#${who}-check`),
-      { opacity: 0, scale: 0.4, transformOrigin: "50% 50%" },
-      { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" },
-    );
 
   function reset() {
     Object.keys(holds).forEach(stopHold);
@@ -335,7 +329,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .set(q("#jd-held-rejects"), { x: 0 });
     walk(tl, "jd", P.jdSpot, "+=0.2");
     faceHome(tl, "jd");
-    popCheck(tl, "jd");
     return tl;
   }
   const nothingToDo = () => gsap.timeline({ paused: true }).to({}, { duration: 0.01 });
@@ -437,7 +430,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         { opacity: 1, duration: 0.2 },
         "<",
       );
-      popCheck(tl, "tr");
       return tl;
     },
 
@@ -495,7 +487,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         .addLabel("handoff"); // the pile is on the Judge's desk
       walk(tl, "sc", P.scSpot, "+=0.2");
       faceHome(tl, "sc");
-      popCheck(tl, "sc");
       return tl;
     },
 
@@ -553,7 +544,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         .set(q("#jd-held-rejects"), { x: 0 });
       walk(tl, "jd", P.jdSpot, "+=0.2");
       faceHome(tl, "jd");
-      popCheck(tl, "jd");
       return tl;
     },
 
@@ -602,7 +592,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       armUp(tl, "st", true, "+=0.2"); // holds up the finished page
       armUp(tl, "st", false, "+=0.8");
       tl.fromTo(q("#a-answer"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, "<");
-      popCheck(tl, "st");
       return tl;
     },
 
@@ -610,22 +599,21 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     clerk_done() {
       const tl = gsap.timeline({ paused: true });
       if (!nothingFound) {
-        walk(tl, "cl", P.clAtStoryteller); // over from the board; walking right, so facing the Storyteller
+        walk(tl, "cl", P.clAtStoryteller, undefined, 2.2); // over from the board; walking right, so facing the Storyteller
         clerkPose(tl, true);
         tl.fromTo(
           q("#a-answer"),
           { x: 0, y: 0, opacity: 1 },
-          { ...ANSWER_TO, duration: 0.45, ease: "power2.inOut" },
-          "+=0.15",
+          { ...ANSWER_TO, duration: 0.25, ease: "power2.inOut" },
         ).to(q("#a-answer"), { opacity: 0, duration: 0.15 });
         clerkPose(tl, false);
       }
-      walk(tl, "cl", P.door, "+=0.1");
-      tl.to(q("#a-door-open"), { opacity: 1, duration: 0.2 });
-      walk(tl, "cl", P.doorway);
-      tl.to(q("#clerk"), { opacity: 0, duration: 0.3 }, "-=0.2")
+      walk(tl, "cl", P.door, undefined, 2.2);
+      tl.to(q("#a-door-open"), { opacity: 1, duration: 0.12 });
+      walk(tl, "cl", P.doorway, undefined, 2.2);
+      tl.to(q("#clerk"), { opacity: 0, duration: 0.12 }, "-=0.2")
         .addLabel("handoff") // gone through the door: he is back in the Query room straight away
-        .to(q("#a-door-open"), { opacity: 0, duration: 0.25 });
+        .to(q("#a-door-open"), { opacity: 0, duration: 0.12 });
       return tl;
     },
   };

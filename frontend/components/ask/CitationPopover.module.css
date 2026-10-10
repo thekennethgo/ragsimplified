@@ -1,0 +1,54 @@
+.popover {
+  position: absolute;
+  z-index: 5;
+  width: min(320px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 28px;
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.head {
+  padding-right: 24px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.source {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.snippet {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.open {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--panel);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}

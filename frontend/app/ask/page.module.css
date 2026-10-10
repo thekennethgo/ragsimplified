@@ -1,15 +1,11 @@
-.intro {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
 .office {
   position: relative;
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   overflow: hidden;
   background: var(--room);
+  width: 70%;
+  margin-inline: auto;
 }
 
 .title {
@@ -122,6 +118,10 @@
 }
 
 @media (max-width: 760px) {
+  .office {
+    width: 100%;
+  }
+
   .bubbles {
     position: static;
     display: flex;

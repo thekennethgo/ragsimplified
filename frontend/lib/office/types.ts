@@ -17,3 +17,6 @@ export type SceneSet = {
   /** A looping "still working" tween started when a scene completes, keyed by character. */
   holds: Record<string, { kill(): void }>;
 };
+
+/** UI updates tied to a scene: onStart when it starts, onEnd when the queue moves past it. */
+export type SceneHooks = { onStart?: () => void; onEnd?: () => void };

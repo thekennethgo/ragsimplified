@@ -1,22 +1,24 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, Suspense, useState } from "react";
+import { type FormEvent, Suspense, useEffect, useRef, useState } from "react";
 
 import AnswerPanel from "../../components/ask/AnswerPanel";
 import { QuestionBubble } from "../../components/ask/QuestionBubble";
-import { SourcesSidebar } from "../../components/ask/SourcesSidebar";
 import LibraryPanel from "../../components/LibraryPanel";
+import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
 import SpeechBubble from "../../components/office/SpeechBubble";
 import { type Citation, type JudgeResult, type ScoutResult, type Word } from "../../lib/ask";
 import { backendUrl, readEvents } from "../../lib/backend";
-import { ASK_BUBBLES } from "../../lib/office-spots";
+import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { buildAskScenes } from "../../lib/office/scenes/ask";
 import { buildQueryScenes } from "../../lib/office/scenes/query";
+import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
+import type { ViewTarget } from "../../lib/viewer";
 import styles from "./page.module.css";
 
 // The backend accepts at most this many private chunks per question.
@@ -42,7 +44,17 @@ export default function AskPage() {
 }
 
 function AskOffice() {
-  const queue = useSceneQueue();
+  const [animationsOn, setAnimationsOn] = useAnimationsSetting();
+  const onRef = useRef(animationsOn);
+  onRef.current = animationsOn;
+  const queue = useSceneQueue(() => !onRef.current);
+  useEffect(() => {
+    if (!animationsOn) queue.skipAll();
+  }, [animationsOn, queue]);
+  const officeRef = useRef<HTMLElement>(null);
+  // With the office on, the streamed answer waits here until the Clerk is back.
+  const pending = useRef("");
+  const answerRef = useRef<HTMLDivElement>(null);
   const { texts } = usePrivateTexts();
   // /ask?q=... opens with the question filled in (the Home page's "Ask the office about me").
   const prefilled = useSearchParams().get("q") ?? "";
@@ -50,9 +62,9 @@ function AskOffice() {
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [viewer, setViewer] = useState<ViewTarget | null>(null);
   const [busy, setBusy] = useState(false);
+  const [animating, setAnimating] = useState(false);
   const [states, setStates] = useState<Record<string, Phase>>({});
   const [words, setWords] = useState<Word[]>([]);
   const [scout, setScout] = useState<ScoutResult[] | null>(null);
@@ -70,42 +82,47 @@ function AskOffice() {
       })),
     )
     .slice(0, MAX_PRIVATE_CHUNKS);
-  const totalPrivateChunks = texts.reduce((sum, item) => sum + item.chunks.length, 0);
 
   /** Where to read the cited passage in full: a library document, or the visitor's own text. */
-  function sourceHref(c: Citation): string | null {
+  function targetFor(c: Citation): ViewTarget | null {
     if (c.source === "library") {
-      return c.document_id === null ? null : `/library/${c.document_id}?chunk=${c.position}`;
+      return c.document_id === null
+        ? null
+        : { kind: "library", id: c.document_id, chunk: c.position };
     }
     const index = texts.findIndex((item) => item.title === c.title);
-    return index === -1 ? null : `/texts/${index}?chunk=${c.position}`;
+    return index === -1 ? null : { kind: "private", index, chunk: c.position };
   }
 
-  function openSource(n: number) {
-    setSelected(n);
-    setSidebarOpen(true);
+  function openViewer(target: ViewTarget) {
+    setViewer(target);
+    document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function fail(message: string) {
     setError(message);
+    queue.emit({ name: "error" });
     // Whatever was running when it failed shows as failed.
     setStates((now) => sceneReducer(now, { step: "error", status: "done" }));
-    queue.emit({ name: "error" });
+    setAnimating(false);
   }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
+    setAnimating(true);
     setAsked(true);
     setError("");
     setAnswer("");
     setCitations([]);
-    setSelected(null);
-    setSidebarOpen(false);
     setStates({});
     setWords([]);
     setScout(null);
     setJudge(null);
+    pending.current = "";
+    if (!onRef.current) {
+      answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     queue.clear();
     queue.emit({ name: "clerk_away" });
     queue.emit({ name: "clerk_start" });
@@ -122,29 +139,65 @@ function AskOffice() {
       }
       for await (const e of readEvents(response)) {
         if ("delta" in e) {
-          setAnswer((text) => text + e.delta);
+          if (!onRef.current) {
+            setAnswer((text) => text + e.delta);
+          } else {
+            pending.current += e.delta;
+          }
           continue;
         }
-        setStates((now) => sceneReducer(now, e));
-        toSceneEvents(e).forEach((sceneEvent) => queue.emit(sceneEvent));
+        const update = () => setStates((now) => sceneReducer(now, e));
+        const [sceneEvent] = toSceneEvents(e);
         if (e.step === "error") {
           setError(String(e.data?.message ?? "Something went wrong"));
-          continue;
-        }
-        if (e.step === "translator" && e.status === "done") {
-          setWords((e.data?.words ?? []) as Word[]);
-        } else if (e.step === "scout" && e.status === "done") {
-          setScout((e.data?.results ?? []) as ScoutResult[]);
-        } else if (e.step === "judge" && e.status === "done") {
+          queue.emit({ name: "error" });
+          update();
+          setAnimating(false);
+        } else if (e.status === "start") {
+          queue.emit(sceneEvent, { onStart: update });
+        } else if (e.step === "translator") {
+          const found = (e.data?.words ?? []) as Word[];
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setWords(found);
+            },
+          });
+        } else if (e.step === "scout") {
+          const found = (e.data?.results ?? []) as ScoutResult[];
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setScout(found);
+            },
+          });
+        } else if (e.step === "judge") {
           const results = (e.data?.results ?? []) as JudgeResult[];
-          setJudge(results);
           nothingFound = !results.some((r) => r.kept);
-        } else if (e.step === "storyteller" && e.status === "done" && e.data) {
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setJudge(results);
+            },
+          });
+        } else if (e.step === "storyteller" && e.data) {
           // The final answer has made-up [n] markers removed.
-          setAnswer(String(e.data.answer ?? ""));
-          setCitations((e.data.citations ?? []) as Citation[]);
+          const final = String(e.data.answer ?? "");
+          const sources = (e.data.citations ?? []) as Citation[];
+          queue.emit(sceneEvent, { onEnd: update });
           queue.emit({ name: "clerk_done" });
-          queue.emit({ name: nothingFound ? "clerk_shrug" : "clerk_back" });
+          queue.emit(
+            { name: nothingFound ? "clerk_shrug" : "clerk_back" },
+            {
+              onEnd: () => {
+                setAnswer(final);
+                setCitations(sources);
+                setAnimating(false);
+              },
+            },
+          );
+        } else {
+          queue.emit(sceneEvent, { onEnd: update });
         }
       }
     } catch {
@@ -157,8 +210,10 @@ function AskOffice() {
   const phase = (step: string): Phase => states[step] ?? "waiting";
   const working = CREW.filter((step) => phase(step) === "working");
   const nothingFound = judge !== null && !judge.some((r) => r.kept);
-  const clerkAway = busy && Object.keys(states).length > 0 && phase("storyteller") !== "done";
-  const finished = phase("storyteller") === "done";
+  const running = busy || animating;
+  const clerkAway = running && Object.keys(states).length > 0 && phase("storyteller") !== "done";
+  const storytellerDone = phase("storyteller") === "done";
+  const finished = storytellerDone && !animating;
 
   const crewSays: Record<(typeof CREW)[number], string> = {
     translator: "Fingerprinting your question.",
@@ -176,27 +231,37 @@ function AskOffice() {
       ? "Sorry, nothing on file about that. Try something else?"
       : finished
         ? "Here's your answer. The tabs show who did what."
-        : clerkAway
-          ? `The ${NAMES[working[0] ?? "translator"]} is on it. Back soon.`
-          : asked && busy
-            ? "Got it. Pinning it up in the office."
-            : "Hi, I'm the Clerk. What do you want to know?";
-  const clerkHere = !asked || !busy;
+        : storytellerDone
+          ? nothingFound
+            ? "Coming back, empty-handed."
+            : "Bringing your answer back."
+          : clerkAway && working.length === 0
+            ? "Passing it to the next desk."
+            : clerkAway
+              ? `The ${NAMES[working[0]]} is on it. Back soon.`
+              : asked && running
+                ? "Got it. Pinning it up in the office."
+                : "Hi, I'm the Clerk. What do you want to know?";
+  const crewAt = {
+    translator: useFollow(officeRef, "translator", animationsOn && phase("translator") === "working"),
+    scout: useFollow(officeRef, "scout", animationsOn && phase("scout") === "working"),
+    judge: useFollow(officeRef, "judge", animationsOn && phase("judge") === "working"),
+    storyteller: useFollow(
+      officeRef,
+      "storyteller",
+      animationsOn && phase("storyteller") === "working",
+    ),
+  };
+  const clerkAt = useFollow(officeRef, "clerk", animationsOn && clerkAway);
+  const clerkHere = !asked || !running;
 
   return (
     <>
-      <p className={styles.intro}>
-        Questions search the starter library
-        {texts.length > 0 ? ` and your ${texts.length} pasted text(s)` : ""}. Your question and the
-        passages found are sent to Voyage and to the language model provider.
-        {totalPrivateChunks > MAX_PRIVATE_CHUNKS &&
-          ` Only the first ${MAX_PRIVATE_CHUNKS} of your ${totalPrivateChunks} chunks are searched.`}
-      </p>
-
-      <section aria-labelledby="office-h" className={styles.office}>
+      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
         <h1 id="office-h" className={styles.title}>
           The office
         </h1>
+        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
         <div className={styles.stage}>
           <OfficeRoom
             src="/office/ask-room.svg"
@@ -206,22 +271,20 @@ function AskOffice() {
           />
         </div>
         <div className={styles.bubbles}>
-          {working.map((step) => (
-            <SpeechBubble
-              key={step}
-              name={NAMES[step]}
-              phase="working"
-              text={crewSays[step]}
-              anchor={ASK_BUBBLES[step]}
-              width={12.5}
-            />
-          ))}
-          {clerkAway && (
+          {CREW.map((step) => {
+            const at = crewAt[step];
+            return at && <SpeechBubble key={step} name={NAMES[step]} text={crewSays[step]} at={at} />;
+          })}
+          {clerkAt && (
             <div
               className={`bubble ${styles.clerkWaits}`}
               aria-label="The Clerk is waiting for a reply"
               role="img"
-              style={{ left: `${ASK_BUBBLES.clerk.left}%`, bottom: `${ASK_BUBBLES.clerk.bottom}%` }}
+              style={{
+                left: `${clerkAt.left}px`,
+                top: `${clerkAt.top}px`,
+                transform: "translate(-50%, calc(-100% - 10px))",
+              }}
             >
               <span />
               <span />
@@ -252,7 +315,7 @@ function AskOffice() {
             question={question}
             onChange={setQuestion}
             onSubmit={onSubmit}
-            busy={busy}
+            busy={running}
           />
           {error && (
             <p role="alert" className={styles.error}>
@@ -261,30 +324,23 @@ function AskOffice() {
           )}
         </section>
 
-        <AnswerPanel
-          states={states}
-          answer={answer}
-          citations={citations}
-          words={words}
-          scout={scout}
-          judge={judge}
-          nothingFound={nothingFound}
-          hrefFor={sourceHref}
-          onOpenSource={openSource}
-          onShowSources={() => setSidebarOpen(true)}
-        />
+        <div ref={answerRef} style={{ flex: "999 1 620px", minWidth: 0 }}>
+          <AnswerPanel
+            states={states}
+            answer={answer}
+            citations={citations}
+            words={words}
+            scout={scout}
+            judge={judge}
+            nothingFound={nothingFound}
+            targetFor={targetFor}
+            onOpenInViewer={openViewer}
+            follow={animationsOn}
+          />
+        </div>
       </div>
 
-      <LibraryPanel />
-
-      {sidebarOpen && (
-        <SourcesSidebar
-          citations={citations}
-          selected={selected}
-          hrefFor={sourceHref}
-          onClose={() => setSidebarOpen(false)}
-        />
-      )}
+      <LibraryPanel onOpen={openViewer} viewer={viewer} />
     </>
   );
 }
