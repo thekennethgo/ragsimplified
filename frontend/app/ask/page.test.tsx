@@ -8,10 +8,22 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { resetAboutCache } from "../../lib/about";
 import { resetHealthCache } from "../../lib/health";
 import { resetMapCache } from "../../lib/map";
 import { PrivateTextsProvider, usePrivateTexts } from "../../lib/PrivateTexts";
 import AskPage from "./page";
+
+const ABOUT = {
+  embedder: { provider: "Voyage AI", model: "voyage-4", dimensions: 1024 },
+  reranker: { provider: "Voyage AI", model: "rerank-3-lite" },
+  llm: { provider: "openai_compatible", model: "gemini-3.5-flash-lite", max_tokens: 1024 },
+  chopper: { chunk_tokens: 500, overlap_tokens: 50, chars_per_token: 4, max_text_chars: 20000 },
+  translator: { max_weighted_words: 40 },
+  scout: { candidates: 20, rrf_k: 60, max_private_chunks: 60 },
+  judge: { keep: 5 },
+  storyteller_prompt: "STUB SYSTEM PROMPT",
+};
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
@@ -41,6 +53,7 @@ vi.mock("../../lib/office/useSceneQueue", () => {
 beforeEach(() => {
   resetMapCache();
   resetHealthCache();
+  resetAboutCache();
   emitted.length = 0;
   search.params = new URLSearchParams();
 });
@@ -182,8 +195,10 @@ function stubFetch(askResponse: () => Response) {
     Promise.resolve(
       url.endsWith("/health")
         ? new Response("{}")
-        : url.endsWith("/library")
-          ? new Response("[]")
+        : url.endsWith("/about")
+          ? new Response(JSON.stringify(ABOUT))
+          : url.endsWith("/library")
+            ? new Response("[]")
           : url.endsWith("/map")
             ? new Response("[]")
             : askResponse(),
@@ -512,8 +527,8 @@ test("markup in a question's words is shown as text, not rendered", async () => 
 test("each step tab shows its status and what the step found", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  // the step tabs wait until their step has data
-  expect(screen.getByRole("button", { name: "Scout" })).toBeDisabled();
+  // every tab is open from the start
+  expect(screen.getByRole("button", { name: "Scout" })).toBeEnabled();
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   for (const name of ["Translator", "Scout", "Judge"]) {
@@ -536,8 +551,6 @@ test("each step tab shows its status and what the step found", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Kept: the best 1 of 3")).toBeInTheDocument();
   expect(screen.getByText("Set aside: 2 cards")).toBeInTheDocument();
-
-  expect(screen.queryByRole("button", { name: "Storyteller" })).toBeNull();
 });
 
 test("the Scout tab shows a vector map of the candidates", async () => {
@@ -728,7 +741,7 @@ test("only the working crew member has a speech bubble", async () => {
   push({ step: "translator", status: "start" });
   const bubble = await screen.findByRole("group", { name: "Translator" });
   expect(
-    within(bubble).getByText("Fingerprinting your question."),
+    within(bubble).getByText("Turning your question into numbers…"),
   ).toBeInTheDocument();
   expect(within(bubble).queryByText("Working")).toBeNull();
   expect(
@@ -768,7 +781,7 @@ test("only the working crew member has a speech bubble", async () => {
   });
   push({ step: "judge", status: "start" });
   expect(
-    await screen.findByText("Keeping the best of 2 cards."),
+    await screen.findByText("Picking the best 5 of 2…"),
   ).toBeInTheDocument();
   close();
 });
@@ -960,6 +973,7 @@ test("once a tab is clicked the panel stops switching on its own, until a new qu
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
+      if (url.endsWith("/about")) return Promise.resolve(new Response(JSON.stringify(ABOUT)));
       if (url.endsWith("/health") || url.endsWith("/library") || url.endsWith("/map")) {
         return Promise.resolve(new Response(url.endsWith("/health") ? "{}" : "[]"));
       }
@@ -983,7 +997,9 @@ test("once a tab is clicked the panel stops switching on its own, until a new qu
   const pressed = (name: string) => screen.getByRole("button", { name });
 
   first.push({ step: "translator", status: "start" });
-  await waitFor(() => expect(pressed("Translator")).toBeEnabled());
+  await waitFor(() =>
+    expect(within(pressed("Translator")).getByTitle("working")).toBeInTheDocument(),
+  );
   fireEvent.click(pressed("Translator"));
 
   first.push({ step: "translator", status: "done", data: { words: [] } });
@@ -1095,4 +1111,52 @@ test("a tab clicked before asking does not stop the panel following the run", as
     ),
   );
   close();
+});
+
+test("the six character tabs are all enabled before asking", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  for (const name of ["Clerk", "Translator", "Scout", "Judge", "Storyteller", "Answer"]) {
+    expect(screen.getByRole("button", { name })).toBeEnabled();
+  }
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(
+    screen.getByText("Nothing yet. Ask a question to see what I do with it."),
+  ).toBeInTheDocument();
+});
+
+test("the Storyteller tab shows the system prompt and the exact message sent", async () => {
+  const prompt = "<chunks>\n<chunk n=\"1\">Apple text</chunk>\n</chunks>\n\n<question>\nWhen?\n</question>";
+  stubAsk(
+    EVENTS.map((e) =>
+      (e as { step: string; status?: string }).step === "storyteller" &&
+      (e as { status?: string }).status === "start"
+        ? { ...e, data: { prompt } }
+        : e,
+    ),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
+  expect(screen.getByText("Ask a question to see the message.")).toBeInTheDocument();
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
+  expect(await screen.findByText("STUB SYSTEM PROMPT")).toBeInTheDocument();
+  expect(screen.getByText("The rules we give the model")).toBeInTheDocument();
+  expect(screen.getByText("The exact message sent this time")).toBeInTheDocument();
+  expect(
+    screen.getByText((_, node) => node?.tagName === "PRE" && node.textContent === prompt),
+  ).toBeInTheDocument();
+  // the live model is named from /about
+  expect(screen.getByText(/Google Gemini · gemini-3\.5-flash-lite/)).toBeInTheDocument();
+});
+
+test("the Clerk tab shows the question that was asked", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+  expect(screen.getByText(/You asked: When was Apple founded\?/)).toBeInTheDocument();
+  expect(screen.getByText(/Cards in your folder searched: none/)).toBeInTheDocument();
 });

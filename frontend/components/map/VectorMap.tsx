@@ -473,47 +473,54 @@ export default function VectorMap({
             </div>
           )}
         </div>
-        <ul className={styles.legend} aria-label="Map legend">
-          {!compact &&
-            titles.map((title) => (
-              <li key={title}>
-                <span className={styles.swatch} style={{ background: colorOf(title) }} />
-                {title}
-              </li>
-            ))}
-          {!compact && privateDots.length > 0 && (
-            <li>
-              <span className={`${styles.swatch} ${styles.square}`} />
-              Your text
-            </li>
+        <div className={styles.legendCol}>
+          {!compact && (
+            <ul className={styles.legend} aria-label="Documents on the map">
+              {titles.map((title) => (
+                <li key={title}>
+                  <span className={styles.swatch} style={{ background: colorOf(title) }} />
+                  {title}
+                </li>
+              ))}
+            </ul>
           )}
-          {question && (
-            <li>
-              <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
-                <path
-                  d={starPath(0, 0, 6.5, 2.7)}
-                  fill={QUESTION_COLOR}
-                  stroke="var(--ink)"
-                  strokeWidth={1}
-                />
-              </svg>
-              Your question
-            </li>
+          {((!compact && privateDots.length > 0) || question || candidates.length > 0) && (
+            <ul className={`${styles.legend} ${styles.keys}`} aria-label="Map key">
+              {!compact && privateDots.length > 0 && (
+                <li>
+                  <span className={`${styles.swatch} ${styles.square}`} />
+                  Your text
+                </li>
+              )}
+              {question && (
+                <li>
+                  <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+                    <path
+                      d={starPath(0, 0, 6.5, 2.7)}
+                      fill={QUESTION_COLOR}
+                      stroke="var(--ink)"
+                      strokeWidth={1}
+                    />
+                  </svg>
+                  Your question
+                </li>
+              )}
+              {candidates.length > 0 &&
+                (["vector", "keyword", "both"] as const).map((kind) => (
+                  <li key={kind}>
+                    <span
+                      className={`${styles.swatch} ${styles.ring}`}
+                      style={{
+                        borderColor: kind === "keyword" ? FOUND_COLOR.keyword : FOUND_COLOR.vector,
+                        boxShadow: kind === "both" ? `0 0 0 2px ${FOUND_COLOR.keyword}` : undefined,
+                      }}
+                    />
+                    Found by {FOUND_LABEL[kind]}
+                  </li>
+                ))}
+            </ul>
           )}
-          {candidates.length > 0 &&
-            (["vector", "keyword", "both"] as const).map((kind) => (
-              <li key={kind}>
-                <span
-                  className={`${styles.swatch} ${styles.ring}`}
-                  style={{
-                    borderColor: kind === "keyword" ? FOUND_COLOR.keyword : FOUND_COLOR.vector,
-                    boxShadow: kind === "both" ? `0 0 0 2px ${FOUND_COLOR.keyword}` : undefined,
-                  }}
-                />
-                Found by {FOUND_LABEL[kind]}
-              </li>
-            ))}
-        </ul>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,13 @@ import LibraryPanel from "../../components/LibraryPanel";
 import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
 import SpeechBubble from "../../components/office/SpeechBubble";
+import { useAbout } from "../../lib/about";
+import {
+  askTranslatorSays,
+  judgeSays,
+  scoutSays,
+  storytellerSays,
+} from "../../lib/characters";
 import { type Citation, type JudgeResult, type ScoutResult, type Word } from "../../lib/ask";
 import { backendUrl, readEvents } from "../../lib/backend";
 import type { MapOverlay, Point } from "../../lib/map";
@@ -82,6 +89,9 @@ function AskOffice() {
   const [judge, setJudge] = useState<JudgeResult[] | null>(null);
   const [asked, setAsked] = useState(false);
   const [overlay, setOverlay] = useState<MapOverlay>({});
+  const [privateSent, setPrivateSent] = useState(0);
+  const [sentPrompt, setSentPrompt] = useState<string | null>(null);
+  const about = useAbout();
 
   const privateChunks = texts
     .flatMap((item) =>
@@ -133,6 +143,8 @@ function AskOffice() {
     setScout(null);
     setJudge(null);
     setOverlay({});
+    setPrivateSent(privateChunks.length);
+    setSentPrompt(null);
     pending.current = "";
     if (!onRef.current) {
       answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -168,6 +180,10 @@ function AskOffice() {
           update();
           setAnimating(false);
         } else if (e.status === "start") {
+          // The message isn't visible progress, so it shows up right away.
+          if (e.step === "storyteller" && typeof e.data?.prompt === "string") {
+            setSentPrompt(e.data.prompt);
+          }
           queue.emit(sceneEvent, { onStart: update });
         } else if (e.step === "translator") {
           const found = (e.data?.words ?? []) as Word[];
@@ -243,15 +259,12 @@ function AskOffice() {
   const storytellerDone = phase("storyteller") === "done";
   const finished = storytellerDone && !animating;
 
+  const keptCount = judge ? judge.filter((r) => r.kept).length : null;
   const crewSays: Record<(typeof CREW)[number], string> = {
-    translator: "Fingerprinting your question.",
-    scout: "Searching by meaning and by words.",
-    judge: scout
-      ? `Keeping the best of ${scout.length} cards.`
-      : "Reading the cards next to your question.",
-    storyteller: judge
-      ? `Writing from those ${judge.filter((r) => r.kept).length}, citing each one.`
-      : "Writing the answer, citing each card.",
+    translator: askTranslatorSays(),
+    scout: scoutSays(),
+    judge: judgeSays(scout ? scout.length : null, about?.judge.keep),
+    storyteller: storytellerSays(keptCount),
   };
   const clerkSays = error
     ? "Sorry, something went wrong. Try again?"
@@ -367,6 +380,8 @@ function AskOffice() {
             onOpenInViewer={openViewer}
             follow={animationsOn}
             overlay={overlay}
+            privateSent={privateSent}
+            sentPrompt={sentPrompt}
           />
         </div>
       </div>

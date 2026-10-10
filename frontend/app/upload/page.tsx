@@ -10,6 +10,7 @@ import SpeechBubble from "../../components/office/SpeechBubble";
 import EnvelopeForm from "../../components/upload/EnvelopeForm";
 import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHappened";
 import { backendUrl, readEvents } from "../../lib/backend";
+import { archivistSays, chopperSays, uploadTranslatorSays } from "../../lib/characters";
 import { useBackendHealth } from "../../lib/health";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
@@ -49,12 +50,10 @@ export default function UploadPage() {
   const [starterBooks, setStarterBooks] = useState<number | null>(null);
 
   const phase = (step: string): Phase => states[step] ?? "waiting";
-  const cards =
-    chunkCount === null ? "your cards" : `${chunkCount} ${chunkCount === 1 ? "card" : "cards"}`;
   const says = {
-    chopper: `Cutting "${title}" into cards.`,
-    translator: `Fingerprinting ${cards}.`,
-    archivist: "Filing it with your books.",
+    chopper: chopperSays(title),
+    translator: uploadTranslatorSays(chunkCount),
+    archivist: archivistSays(chunkCount),
   };
 
   /** Move the Archivist's phase and scene along (it has no backend step). */
@@ -70,7 +69,7 @@ export default function UploadPage() {
             update();
             setAnimating(false);
             setToast({
-              message: `"${title}" was filed in the cabinet: ${cardCount} ${cardCount === 1 ? "card" : "cards"}.`,
+              message: `"${title}" is in your folder: ${cardCount} ${cardCount === 1 ? "card" : "cards"}. Only this tab can see it.`,
               index,
             });
           },

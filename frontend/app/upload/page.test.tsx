@@ -8,9 +8,21 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { resetAboutCache } from "../../lib/about";
 import { resetHealthCache } from "../../lib/health";
 import { PrivateTextsProvider } from "../../lib/PrivateTexts";
 import UploadPage from "./page";
+
+const ABOUT = {
+  embedder: { provider: "Voyage AI", model: "voyage-4", dimensions: 1024 },
+  reranker: { provider: "Voyage AI", model: "rerank-3-lite" },
+  llm: { provider: "openai_compatible", model: "gemini-3.5-flash-lite", max_tokens: 1024 },
+  chopper: { chunk_tokens: 500, overlap_tokens: 50, chars_per_token: 4, max_text_chars: 20000 },
+  translator: { max_weighted_words: 40 },
+  scout: { candidates: 20, rrf_k: 60, max_private_chunks: 60 },
+  judge: { keep: 5 },
+  storyteller_prompt: "STUB SYSTEM PROMPT",
+};
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
@@ -38,6 +50,7 @@ vi.mock("../../lib/office/useSceneQueue", () => {
 beforeEach(() => {
   emitted.length = 0;
   resetHealthCache();
+  resetAboutCache();
 });
 
 afterEach(() => {
@@ -86,6 +99,7 @@ function stubBackend(events: object[] = UPLOAD_EVENTS) {
     "fetch",
     vi.fn((url: string) => {
       if (url.endsWith("/health")) return Promise.resolve(new Response("{}"));
+      if (url.endsWith("/about")) return Promise.resolve(new Response(JSON.stringify(ABOUT)));
       if (url.endsWith("/library")) {
         return Promise.resolve(
           new Response(
@@ -146,7 +160,9 @@ test("a speech bubble shows only while its character is working", async () => {
 
   const bubble = await screen.findByRole("group", { name: "Chopper" });
   expect(
-    within(bubble).getByText('Cutting "My note" into cards.'),
+    within(bubble).getByText(
+      'Cutting "My note" into cards…',
+    ),
   ).toBeInTheDocument();
   expect(within(bubble).queryByText("Working")).toBeNull();
   expect(screen.queryByRole("group", { name: "Translator" })).toBeNull();
@@ -182,10 +198,12 @@ test("a full upload plays the scenes in order, with the Archivist around adding 
   ]);
 });
 
-test("the What happened panel shows the real cards and fingerprints", async () => {
+test("the Meet the team panel shows the real cards and fingerprints", async () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
-  expect(screen.getByText("Send a text to see this step.")).toBeInTheDocument();
+  expect(
+    screen.getByText("Nothing yet. Send a text to see what I do with it."),
+  ).toBeInTheDocument();
   paste("My note", "hello");
 
   // the panel follows the newest step with results; go back to the Chopper's
@@ -203,7 +221,7 @@ test("the What happened panel shows the real cards and fingerprints", async () =
   expect(screen.getByText(/2 fingerprints/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Archivist" }));
   expect(
-    screen.getAllByText("Filed with your books, in this tab only.").length,
+    screen.getAllByText("Filed in your folder. Only this tab can see it.").length,
   ).toBeGreaterThan(0);
 });
 
@@ -235,7 +253,7 @@ test("a successful upload shows a filed toast whose action opens the text in the
   paste("My note", "hello");
 
   expect(await screen.findByRole("status")).toHaveTextContent(
-    '"My note" was filed in the cabinet: 2 cards.',
+    '"My note" is in your folder: 2 cards. Only this tab can see it.',
   );
   fireEvent.click(screen.getByRole("button", { name: "Open it in the viewer" }));
   expect(screen.queryByRole("status")).toBeNull();
@@ -252,7 +270,7 @@ test("a failed upload shows no filed toast", async () => {
   paste("My note", "hello");
 
   await screen.findByRole("alert");
-  expect(screen.queryByText(/was filed in the cabinet/)).toBeNull();
+  expect(screen.queryByText(/is in your folder/)).toBeNull();
 });
 
 test("removing a book deletes it from the file cabinet", async () => {
@@ -302,7 +320,9 @@ test("once the Chopper tab is clicked mid-upload the panel stays there as later 
       Promise.resolve(
         url.endsWith("/health")
           ? new Response("{}")
-          : url.endsWith("/library")
+          : url.endsWith("/about")
+            ? new Response(JSON.stringify(ABOUT))
+            : url.endsWith("/library")
             ? new Response("[]")
             : new Response(body),
       ),
@@ -339,4 +359,42 @@ test("when the library is offline the send button is disabled and a note shows",
   fireEvent.change(screen.getByLabelText("Title"), { target: { value: "T" } });
   fireEvent.change(screen.getByLabelText("Text"), { target: { value: "x" } });
   expect(screen.getByRole("button", { name: "Add text" })).toBeDisabled();
+});
+
+test("every character tab is clickable before any upload, each with a Nothing yet line", () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.getByRole("heading", { name: "Meet the team" })).toBeInTheDocument();
+  for (const name of ["Chopper", "Translator", "Archivist"]) {
+    const tab = screen.getByRole("button", { name });
+    expect(tab).toBeEnabled();
+    fireEvent.click(tab);
+    expect(tab).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByText("Nothing yet. Send a text to see what I do with it."),
+    ).toBeInTheDocument();
+  }
+});
+
+test("the Under the hood section names the real model from /about", async () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect((await screen.findAllByText(/voyage-4/)).length).toBeGreaterThan(0);
+});
+
+test("the speech bubble says what the Translator is doing with the real card count", async () => {
+  stubBackend([
+    UPLOAD_EVENTS[0],
+    UPLOAD_EVENTS[1],
+    { step: "translator", status: "start" },
+  ]);
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  paste("My note", "hello");
+  const bubble = await screen.findByRole("group", { name: "Translator" });
+  expect(
+    within(bubble).getByText(
+      "Fingerprinting 2 cards…",
+    ),
+  ).toBeInTheDocument();
 });

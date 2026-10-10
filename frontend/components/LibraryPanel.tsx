@@ -17,7 +17,7 @@ type View = "docs" | "map" | "viewer";
 const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
 
 /**
- * The File cabinet: the visitor's own books (this tab only) and the starter collection from
+ * The File cabinet: the visitor's own folder (this tab only, not part of the shared library) and the shared library from
  * GET /library. The Vector map tab draws GET /map (fetched the first time it opens), with the
  * question and the Scout's candidates from `overlay` on top. With `onOpen` (the Ask page) it also
  * has a Viewer tab that reads the passage in `viewer` in full.
@@ -54,7 +54,7 @@ export default function LibraryPanel({
 
   const starter = [...(library ?? [])].sort((a, b) => a.title.localeCompare(b.title));
   const summary =
-    library === null ? "Loading…" : `${library.length} starter books, ${texts.length} of yours`;
+    library === null ? "Loading…" : `${library.length} shared books, ${texts.length} in your folder`;
 
   return (
     <section id="library" aria-labelledby="lib-h" className="panel">
@@ -103,12 +103,12 @@ export default function LibraryPanel({
         <div className={styles.docs}>
           <div className={styles.group}>
             <div className={styles.groupHead}>
-              <h3>Your books</h3>
-              <span className={styles.tag}>Private · this tab only</span>
+              <h3>Your folder</h3>
+              <span className={styles.tag}>Private · this tab only · not in the shared library</span>
             </div>
             {texts.length === 0 ? (
               <p className={styles.empty}>
-                Nothing of yours yet. Send a text and it shows up here.
+                Nothing in your folder yet. Send a text and it shows up here.
               </p>
             ) : (
               <ul className={styles.books}>
@@ -160,7 +160,7 @@ export default function LibraryPanel({
 
           <div className={styles.group}>
             <div className={styles.groupHead}>
-              <h3>Starter collection</h3>
+              <h3>Shared library</h3>
               <span className={styles.tag}>Picked by the owner · read-only</span>
             </div>
             {library === null ? (

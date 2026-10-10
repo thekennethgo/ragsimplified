@@ -74,7 +74,10 @@ test("lists the starter collection by title, each linking to its document", asyn
   expect(links.map((link) => link.textContent)).toEqual(["Apple Inc.", "Vector database"]);
   expect(links[0]).toHaveAttribute("href", "/library/1");
   expect(screen.getByText("22 cards")).toBeInTheDocument();
-  expect(screen.getByText("2 starter books, 0 of yours")).toBeInTheDocument();
+  expect(screen.getByText("2 shared books, 0 in your folder")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Your folder" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Shared library" })).toBeInTheDocument();
+  expect(screen.getByText(/not in the shared library/)).toBeInTheDocument();
   expect(onCount).toHaveBeenCalledWith(2);
 });
 
@@ -83,19 +86,19 @@ test("shows the visitor's books live and removes one", async () => {
   renderPanel();
   openDocuments();
   expect(
-    await screen.findByText("Nothing of yours yet. Send a text and it shows up here."),
+    await screen.findByText("Nothing in your folder yet. Send a text and it shows up here."),
   ).toBeInTheDocument();
 
   fireEvent.click(screen.getByText("seed"));
   const mine = screen.getByRole("link", { name: "My note" });
   expect(mine).toHaveAttribute("href", "/texts/0");
   expect(screen.getByText("1 card · 11 characters")).toBeInTheDocument();
-  expect(screen.getByText("2 starter books, 1 of yours")).toBeInTheDocument();
+  expect(screen.getByText("2 shared books, 1 in your folder")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Remove My note" }));
   expect(screen.queryByRole("link", { name: "My note" })).toBeNull();
   expect(
-    screen.getByText("Nothing of yours yet. Send a text and it shows up here."),
+    screen.getByText("Nothing in your folder yet. Send a text and it shows up here."),
   ).toBeInTheDocument();
 });
 
