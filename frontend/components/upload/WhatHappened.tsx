@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { useAbout } from "../../lib/about";
+import {
+  archivistCopy,
+  chopperCopy,
+  NOTHING_YET_UPLOAD,
+  uploadTranslatorCopy,
+} from "../../lib/characters";
 import type { Phase } from "../../lib/sceneState";
+import CharacterCard from "../characters/CharacterCard";
 import styles from "./WhatHappened.module.css";
 
 export type ChunkDetail = {
@@ -13,33 +21,15 @@ export type ChunkDetail = {
 };
 type StepId = "chopper" | "translator" | "archivist";
 
-const STEPS: { id: StepId; name: string; title: string; text: string; term: string }[] = [
-  {
-    id: "chopper",
-    name: "Chopper",
-    title: "cuts your text into cards",
-    text: "Long text is hard to search, so it's cut into cards about a page long. Each card repeats a little of the one before, so no idea gets split in half.",
-    term: "chunking",
-  },
-  {
-    id: "translator",
-    name: "Translator",
-    title: "gives each card a fingerprint",
-    text: "Each card becomes a list of 1,024 numbers that captures what it means. Cards about similar things get similar numbers.",
-    term: "embedding",
-  },
-  {
-    id: "archivist",
-    name: "Archivist",
-    title: "files the cards",
-    text: "The cards go into the cabinet next to the starter books, ready to be searched. Yours stay in this browser tab only.",
-    term: "indexing",
-  },
+const STEPS: { id: StepId; name: string; part: string }[] = [
+  { id: "chopper", name: "Chopper", part: "ch" },
+  { id: "translator", name: "Translator", part: "tr" },
+  { id: "archivist", name: "Archivist", part: "ar" },
 ];
 
 const n = (value: number) => value.toLocaleString("en-US");
 
-/** The steps that filed the visitor's text, filled with what the backend really returned. */
+/** One tab per character that filed the visitor's text, filled with what the backend really returned. */
 export default function WhatHappened({
   states,
   chunks,
@@ -62,7 +52,12 @@ export default function WhatHappened({
     if (touched) return;
     if (latest) setStep(latest);
   }, [latest, touched]);
-  const current = STEPS.find((s) => s.id === step)!;
+  const about = useAbout();
+  const copy = {
+    chopper: chopperCopy(about),
+    translator: uploadTranslatorCopy(about),
+    archivist: archivistCopy(),
+  }[step];
   const phase = states[step] ?? "waiting";
   const ready = phase === "done";
 
@@ -78,16 +73,15 @@ export default function WhatHappened({
     <section className={`panel ${styles.panel}`}>
       <details open className={styles.details}>
         <summary className={styles.summary}>
-          <h2>What happened</h2>
+          <h2>Meet the team</h2>
         </summary>
         <div className={styles.inner}>
-          <div role="group" aria-label="The steps that filed your text" className={styles.tabs}>
+          <div role="group" aria-label="The characters that filed your text" className={styles.tabs}>
             {STEPS.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 aria-pressed={step === s.id}
-                disabled={s.id !== "chopper" && (states[s.id] ?? "waiting") === "waiting"}
                 onClick={() => {
                   setTouched(true);
                   setStep(s.id);
@@ -102,111 +96,112 @@ export default function WhatHappened({
             ))}
           </div>
           <div className={styles.body}>
-            <div className={styles.card}>
-              <p className={styles.cardTitle}>
-                {current.name} · {current.title}
-              </p>
-              <p>{current.text}</p>
-              <p className={styles.term}>
-                In RAG terms: <strong>{current.term}</strong>
-              </p>
-            </div>
+            <CharacterCard
+              name={STEPS.find((s) => s.id === step)!.name}
+              room="/office/upload-room.svg"
+              part={STEPS.find((s) => s.id === step)!.part}
+              role={copy.role}
+              phase={phase}
+              plain={copy.plain}
+              tech={copy.tech}
+              how={copy.how}
+              settings={copy.settings}
+              thisRun={
+                <>
+                  {!ready && (
+                    <p className={styles.empty}>
+                      {phase === "working"
+                        ? "Working on it…"
+                        : phase === "error"
+                          ? "This step did not finish."
+                          : NOTHING_YET_UPLOAD}
+                    </p>
+                  )}
 
-            {!ready && (
-              <p className={styles.empty}>
-                {phase === "working"
-                  ? "Working on it…"
-                  : phase === "error"
-                    ? "This step did not finish."
-                    : "Send a text to see this step."}
-              </p>
-            )}
-
-            {ready && step === "chopper" && (
-              <div className={styles.list}>
-                <h3>
-                  {cards.length} cards from {n(total)} characters{" "}
-                  <span>· gold = shared with the next card</span>
-                </h3>
-                <ol>
-                  {cards.map((card, i) => {
-                    const next = cards[i + 1]?.overlap ?? 0;
-                    return (
-                      <li key={card.position}>
-                        <span className={styles.num}>{i + 1}</span>
-                        <span className={styles.name}>
-                          {card.heading ?? `Card ${i + 1}`}{" "}
-                          <span className={styles.mono}>
-                            · {n(card.from + 1)}–{n(card.to)}
-                          </span>
-                        </span>
-                        <div
-                          className={styles.range}
-                          title={`Characters ${n(card.from + 1)}–${n(card.to)}`}
-                        >
-                          <div
-                            className={styles.span}
-                            style={{
-                              left: `${(card.from / total) * 100}%`,
-                              width: `${(card.length / total) * 100}%`,
-                            }}
-                          />
-                          {next > 0 && (
-                            <div
-                              className={styles.shared}
-                              style={{
-                                left: `${((card.to - next) / total) * 100}%`,
-                                width: `${(next / total) * 100}%`,
-                              }}
-                            />
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            )}
-
-            {ready && step === "translator" && (
-              <div className={styles.list}>
-                <h3>
-                  {vectors?.length ?? 0} fingerprints{" "}
-                  <span>· the first 32 of 1,024 numbers each</span>
-                </h3>
-                <ol>
-                  {(vectors ?? []).map((vector, i) => (
-                    <li key={i}>
-                      <span className={styles.num}>{i + 1}</span>
-                      <span className={styles.name}>{cards[i]?.heading ?? `Card ${i + 1}`}</span>
-                      <div aria-hidden="true" className={styles.print}>
-                        {vector.slice(0, 32).map((v, k, first) => {
-                          const peak = Math.max(...first.map(Math.abs), 1e-9);
-                          const h = Math.max(2, Math.round((Math.abs(v) / peak) * 13));
-                          return (
-                            <span
-                              key={k}
-                              style={{
-                                height: h,
-                                marginTop: v < 0 ? h : 0,
-                                marginBottom: v >= 0 ? h : 0,
-                                background: v >= 0 ? "#7A5236" : "#C2AE92",
-                              }}
-                            />
-                          );
-                        })}
+                    {ready && step === "chopper" && (
+                      <div className={styles.list}>
+                        <h3>
+                          {cards.length} cards from {n(total)} characters{" "}
+                          <span>· gold = shared with the next card</span>
+                        </h3>
+                        <ol>
+                          {cards.map((card, i) => {
+                            const next = cards[i + 1]?.overlap ?? 0;
+                            return (
+                              <li key={card.position}>
+                                <span className={styles.num}>{i + 1}</span>
+                                <span className={styles.name}>
+                                  {card.heading ?? `Card ${i + 1}`}{" "}
+                                  <span className={styles.mono}>
+                                    · {n(card.from + 1)}–{n(card.to)}
+                                  </span>
+                                </span>
+                                <div
+                                  className={styles.range}
+                                  title={`Characters ${n(card.from + 1)}–${n(card.to)}`}
+                                >
+                                  <div
+                                    className={styles.span}
+                                    style={{
+                                      left: `${(card.from / total) * 100}%`,
+                                      width: `${(card.length / total) * 100}%`,
+                                    }}
+                                  />
+                                  {next > 0 && (
+                                    <div
+                                      className={styles.shared}
+                                      style={{
+                                        left: `${((card.to - next) / total) * 100}%`,
+                                        width: `${(next / total) * 100}%`,
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ol>
                       </div>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
+                    )}
 
-            {ready && step === "archivist" && (
-              <div className={styles.card}>
-                <p>Filed with your books, in this tab only.</p>
-              </div>
-            )}
+                    {ready && step === "translator" && (
+                      <div className={styles.list}>
+                        <h3>
+                          {vectors?.length ?? 0} fingerprints{" "}
+                          <span>· the first 32 of 1,024 numbers each</span>
+                        </h3>
+                        <ol>
+                          {(vectors ?? []).map((vector, i) => (
+                            <li key={i}>
+                              <span className={styles.num}>{i + 1}</span>
+                              <span className={styles.name}>{cards[i]?.heading ?? `Card ${i + 1}`}</span>
+                              <div aria-hidden="true" className={styles.print}>
+                                {vector.slice(0, 32).map((v, k, first) => {
+                                  const peak = Math.max(...first.map(Math.abs), 1e-9);
+                                  const h = Math.max(2, Math.round((Math.abs(v) / peak) * 13));
+                                  return (
+                                    <span
+                                      key={k}
+                                      style={{
+                                        height: h,
+                                        marginTop: v < 0 ? h : 0,
+                                        marginBottom: v >= 0 ? h : 0,
+                                        background: v >= 0 ? "#7A5236" : "#C2AE92",
+                                      }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    {ready && step === "archivist" && <p>Filed in your folder. Only this tab can see it.</p>}
+                </>
+              }
+            />
           </div>
         </div>
       </details>

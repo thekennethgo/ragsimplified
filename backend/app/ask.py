@@ -131,13 +131,15 @@ def run_ask(
         },
     )
 
-    yield StepEvent(step="storyteller", status="start")
     if not results:
+        yield StepEvent(step="storyteller", status="start")
         # Nothing to answer from: refuse without spending an LLM call.
         yield DeltaEvent(delta=NOTHING_FOUND)
         answer = NOTHING_FOUND
     else:
         system, messages = build_prompt(request.question, results)
+        # The visitor can read the exact message the model is about to get.
+        yield StepEvent(step="storyteller", status="start", data={"prompt": messages[0]["content"]})
         pieces: list[str] = []
         for piece in llm.stream(system, messages):
             pieces.append(piece)

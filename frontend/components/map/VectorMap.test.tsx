@@ -61,10 +61,10 @@ test("draws a dot per library card coloured by document, the visitor's squares a
   expect(dots).toHaveLength(3);
   expect(new Set([...dots].map((d) => d.getAttribute("fill"))).size).toBe(2);
   expect(container.querySelectorAll("rect[data-key^='p:']")).toHaveLength(1);
-  const legend = screen.getByRole("list", { name: "Map legend" });
+  const legend = screen.getByRole("list", { name: "Documents on the map" });
   expect(legend).toHaveTextContent("Apple Inc.");
   expect(legend).toHaveTextContent("Vector database");
-  expect(legend).toHaveTextContent("Your text");
+  expect(screen.getByRole("list", { name: "Map key" })).toHaveTextContent("Your text");
 });
 
 test("draws the question, a line per candidate and two rings for a both candidate", () => {
@@ -153,8 +153,8 @@ test("compact starts fitted to the question and candidates, and Reset view retur
   const fitted = svg().getAttribute("viewBox");
   const width = (box: string | null) => Number(box!.split(" ")[2]);
   expect(width(fitted)).toBeLessThan(width(whole));
-  const legend = screen.getByRole("list", { name: "Map legend" });
-  expect(legend).not.toHaveTextContent("Apple Inc.");
+  expect(screen.queryByRole("list", { name: "Documents on the map" })).toBeNull();
+  const legend = screen.getByRole("list", { name: "Map key" });
   expect(legend).toHaveTextContent("Your question");
   expect(legend).toHaveTextContent("Found by meaning");
   fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));

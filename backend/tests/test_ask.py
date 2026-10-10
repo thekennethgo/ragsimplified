@@ -98,6 +98,17 @@ def test_streams_steps_then_answer_from_the_library(client, llm, library_chunk):
 
 
 @needs_db
+def test_storyteller_start_event_carries_the_prompt_sent(client, llm, library_chunk):
+    got = events(client.post("/ask", json={"question": QUESTION}))
+    start = next(e for e in got if e["step"] == "storyteller" and e["status"] == "start")
+    prompt = start["data"]["prompt"]
+    assert prompt == llm.calls[0][1][0]["content"]
+    assert QUESTION in prompt
+    assert 'n="1"' in prompt
+    assert "Library text for the ask test." in prompt
+
+
+@needs_db
 def test_private_chunks_are_searched_and_sent_to_the_storyteller(client, llm):
     chunk = private_chunk(QUESTION)  # identical text, so cosine similarity 1.0
     got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
@@ -137,6 +148,8 @@ def test_empty_library_and_no_private_chunks_refuses_without_calling_the_llm(cli
     got = events(client.post("/ask", json={"question": "anything"}))
     assert got[-1]["data"]["answer"] == NOTHING_FOUND
     assert llm.calls == []
+    start = next(e for e in got if e["step"] == "storyteller" and e["status"] == "start")
+    assert "data" not in start
 
 
 def test_llm_failure_ends_with_an_error_event(client):

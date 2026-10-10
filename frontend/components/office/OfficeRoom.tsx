@@ -51,6 +51,7 @@ export default function OfficeRoom({
       if (!loaded || !svg) return;
       const set = build(svg);
       set.reset();
+      window.dispatchEvent(new CustomEvent("office-ready", { detail: src }));
       const unregister = queue.register(set);
       return unregister;
     },
@@ -58,7 +59,7 @@ export default function OfficeRoom({
   );
 
   return (
-    <div className={`${styles.wrap} ${className ?? ""}`}>
+    <div className={`${styles.wrap} ${className ?? ""}`} data-room={src}>
       <div ref={ref} className={styles.room} aria-hidden="true" />
       <span className={styles.caption}>{label}</span>
     </div>
