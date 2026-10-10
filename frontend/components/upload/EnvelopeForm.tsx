@@ -11,10 +11,13 @@ const ACCEPTED = /\.(md|txt)$/i;
 export default function EnvelopeForm({
   onSubmit,
   busy,
+  offline,
 }: {
   /** Resolves true when the text was added, so the form can empty itself. */
   onSubmit: (title: string, text: string) => Promise<boolean | void>;
   busy: boolean;
+  /** The backend can't be reached, so nothing can be filed. */
+  offline: boolean;
 }) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -123,6 +126,11 @@ export default function EnvelopeForm({
               {text.length.toLocaleString("en-US")} / {MAX_TEXT_CHARS.toLocaleString("en-US")}
             </p>
           </div>
+          {offline && (
+            <p role="status" className={styles.offline}>
+              The library is offline right now, so texts can't be filed. Try again in a minute.
+            </p>
+          )}
           <div className={styles.actions}>
             <label className={styles.drop} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
               <input
@@ -135,13 +143,14 @@ export default function EnvelopeForm({
                   e.target.value = "";
                 }}
               />
-              Pick or drop a file <span>(.md or .txt)</span>
+              Pick or drop a file
+              <span className={styles.hint}>.md or .txt</span>
             </label>
             <button
               type="submit"
               aria-label="Add text"
               className={styles.send}
-              disabled={busy || !title.trim() || !text.trim()}
+              disabled={busy || offline || !title.trim() || !text.trim()}
             >
               <svg
                 width="16"

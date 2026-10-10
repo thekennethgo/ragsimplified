@@ -50,11 +50,18 @@ export default function WhatHappened({
   vectors: number[][] | null;
 }) {
   const [step, setStep] = useState<StepId>("chopper");
+  // Once the visitor picks a tab, the panel stops following the steps until the next run.
+  const [touched, setTouched] = useState(false);
+  const fresh = Object.keys(states).length === 0;
+  useEffect(() => {
+    setTouched(false);
+  }, [fresh]);
   // Show a step's results as soon as they arrive.
   const latest = [...STEPS].reverse().find((s) => states[s.id] === "done")?.id;
   useEffect(() => {
+    if (touched) return;
     if (latest) setStep(latest);
-  }, [latest]);
+  }, [latest, touched]);
   const current = STEPS.find((s) => s.id === step)!;
   const phase = states[step] ?? "waiting";
   const ready = phase === "done";
@@ -81,7 +88,10 @@ export default function WhatHappened({
                 type="button"
                 aria-pressed={step === s.id}
                 disabled={s.id !== "chopper" && (states[s.id] ?? "waiting") === "waiting"}
-                onClick={() => setStep(s.id)}
+                onClick={() => {
+                  setTouched(true);
+                  setStep(s.id);
+                }}
               >
                 <span
                   className={`${styles.dot} ${styles[states[s.id] ?? "waiting"]}`}

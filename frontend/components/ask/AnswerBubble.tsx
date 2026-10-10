@@ -19,26 +19,42 @@ export function AnswerText({
 }) {
   const known = new Set(citations.map((c) => c.n));
   return (
-    <p className={styles.text}>
-      {answer.split(/(\[\d+\])/).map((part, index) => {
-        const match = /^\[(\d+)\]$/.exec(part);
-        if (!match || !known.has(Number(match[1]))) {
-          return <Fragment key={index}>{part}</Fragment>;
-        }
-        const n = Number(match[1]);
-        return (
-          <button
-            key={index}
-            type="button"
-            className={styles.cite}
-            aria-label={`Source ${n}`}
-            onClick={(e) => onOpen(n, e.currentTarget)}
-          >
-            [{n}]
-          </button>
-        );
-      })}
-    </p>
+    <div className={styles.text}>
+      {answer
+        .trim()
+        .split(/\n\s*\n/)
+        .map((paragraph, p) => (
+          <p key={p}>
+            {paragraph.split(/(\[\d+\])/).map((part, index) => {
+              const match = /^\[(\d+)\]$/.exec(part);
+              if (!match || !known.has(Number(match[1]))) {
+                return (
+                  <Fragment key={index}>
+                    {part.split("\n").map((line, i) => (
+                      <Fragment key={i}>
+                        {i > 0 && <br />}
+                        {line}
+                      </Fragment>
+                    ))}
+                  </Fragment>
+                );
+              }
+              const n = Number(match[1]);
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  className={styles.cite}
+                  aria-label={`Source ${n}`}
+                  onClick={(e) => onOpen(n, e.currentTarget)}
+                >
+                  [{n}]
+                </button>
+              );
+            })}
+          </p>
+        ))}
+    </div>
   );
 }
 

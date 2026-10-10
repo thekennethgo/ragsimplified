@@ -63,3 +63,33 @@
   padding: 4px 7px;
   border-radius: 3px;
 }
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.examples button {
+  font: inherit;
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.examples button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.offline {
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--chip-error-bg);
+  color: var(--chip-error-fg);
+}

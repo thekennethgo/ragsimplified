@@ -128,7 +128,7 @@ def test_get_map_returns_each_chunks_document_and_point(seeded):
         app.dependency_overrides.clear()
     points = response.json()
     assert response.status_code == 200 and len(points) == 12
-    assert set(points[0]) == {"chunk_id", "document_id", "title", "x", "y"}
+    assert set(points[0]) == {"chunk_id", "document_id", "title", "position", "heading", "x", "y"}
     assert {p["title"] for p in points} == {"Doc 0", "Doc 1", "Doc 2"}
 
 

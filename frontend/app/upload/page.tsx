@@ -10,6 +10,7 @@ import SpeechBubble from "../../components/office/SpeechBubble";
 import EnvelopeForm from "../../components/upload/EnvelopeForm";
 import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHappened";
 import { backendUrl, readEvents } from "../../lib/backend";
+import { useBackendHealth } from "../../lib/health";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
 import { buildUploadScenes } from "../../lib/office/scenes/upload";
@@ -17,6 +18,7 @@ import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { type PrivateText, usePrivateTexts } from "../../lib/PrivateTexts";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
+import type { ViewTarget } from "../../lib/viewer";
 import styles from "./page.module.css";
 
 const ROOM_LABEL = "The Upload office: the Chopper, the Translator and the Archivist at work.";
@@ -32,6 +34,7 @@ export default function UploadPage() {
   const officeRef = useRef<HTMLElement>(null);
   // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
   const { texts, add } = usePrivateTexts();
+  const offline = useBackendHealth() === "offline";
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +43,8 @@ export default function UploadPage() {
   const [chunkCount, setChunkCount] = useState<number | null>(null);
   const [chunkDetails, setChunkDetails] = useState<ChunkDetail[] | null>(null);
   const [vectors, setVectors] = useState<number[][] | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; index: number } | null>(null);
+  const [viewer, setViewer] = useState<ViewTarget | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
   const [starterBooks, setStarterBooks] = useState<number | null>(null);
 
@@ -54,7 +58,7 @@ export default function UploadPage() {
   };
 
   /** Move the Archivist's phase and scene along (it has no backend step). */
-  function archivist(status: "start" | "done", title?: string, cardCount?: number) {
+  function archivist(status: "start" | "done", title?: string, cardCount?: number, index = 0) {
     const update = () => setStates((now) => sceneReducer(now, { step: "archivist", status }));
     if (status === "start") {
       queue.emit({ name: "archivist_start" }, { onStart: update });
@@ -65,9 +69,10 @@ export default function UploadPage() {
           onEnd: () => {
             update();
             setAnimating(false);
-            setToast(
-              `"${title}" was filed in the cabinet: ${cardCount} ${cardCount === 1 ? "card" : "cards"}.`,
-            );
+            setToast({
+              message: `"${title}" was filed in the cabinet: ${cardCount} ${cardCount === 1 ? "card" : "cards"}.`,
+              index,
+            });
           },
         },
       );
@@ -115,7 +120,11 @@ export default function UploadPage() {
             },
           });
         } else if (e.step === "translator" && e.status === "done" && e.data) {
-          const { chunks, vectors: made } = e.data as Pick<PrivateText, "chunks" | "vectors">;
+          const {
+            chunks,
+            vectors: made,
+            points,
+          } = e.data as Pick<PrivateText, "chunks" | "vectors" | "points">;
           queue.emit(sceneEvent, {
             onEnd: () => {
               update();
@@ -123,8 +132,9 @@ export default function UploadPage() {
             },
           });
           archivist("start");
-          add({ title: newTitle, text, chunks, vectors: made });
-          archivist("done", newTitle, chunks.length);
+          const index = texts.length;
+          add({ title: newTitle, text, chunks, vectors: made, points });
+          archivist("done", newTitle, chunks.length, index);
           added = true;
         } else {
           queue.emit(sceneEvent, e.status === "start" ? { onStart: update } : { onEnd: update });
@@ -152,6 +162,11 @@ export default function UploadPage() {
     "archivist",
     animationsOn && phase("archivist") === "working",
   );
+  function openViewer(target: ViewTarget) {
+    setViewer(target);
+    document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const documents = starterBooks === null ? null : starterBooks + texts.length;
 
   return (
@@ -171,7 +186,10 @@ export default function UploadPage() {
           {documents !== null && (
             <span
               className={styles.count}
-              style={{ left: `${UPLOAD_DOC_COUNT.left}%`, top: `${UPLOAD_DOC_COUNT.top}%` }}
+              style={{
+                left: `${UPLOAD_DOC_COUNT.left}%`,
+                top: `${UPLOAD_DOC_COUNT.top}%`,
+              }}
               aria-hidden="true"
             >
               {documents}
@@ -180,7 +198,9 @@ export default function UploadPage() {
         </div>
         <div className={styles.bubbles}>
           {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
-          {translatorAt && <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />}
+          {translatorAt && (
+            <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />
+          )}
           {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
         </div>
       </section>
@@ -192,20 +212,20 @@ export default function UploadPage() {
       )}
 
       <div className={styles.row}>
-        <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} />
+        <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />
         <WhatHappened states={states} chunks={chunkDetails} vectors={vectors} />
       </div>
 
-      <LibraryPanel onCount={setStarterBooks} />
+      <LibraryPanel onCount={setStarterBooks} onOpen={openViewer} viewer={viewer} />
 
       {toast && (
         <Toast
-          message={toast}
+          message={toast.message}
           action={{
-            label: "See it in the file cabinet",
+            label: "Open it in the viewer",
             onClick: () => {
               setToast(null);
-              document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              openViewer({ kind: "private", index: toast.index, chunk: null });
             },
           }}
           onClose={closeToast}

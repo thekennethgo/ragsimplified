@@ -173,28 +173,6 @@
   border-radius: 6px;
 }
 
-.soon {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 18px;
-  border: 1px dashed var(--border-strong);
-  border-radius: 6px;
-  background: #f2efe8;
-}
-
-.soon h3 {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.soon p {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-  max-width: 60ch;
-}
-
 .open {
   background: none;
   border: 0;

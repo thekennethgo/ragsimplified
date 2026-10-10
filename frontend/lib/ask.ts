@@ -18,7 +18,9 @@ export type StepState = "waiting" | "working" | "done" | "error";
 export type ScoutResult = {
   rank: number;
   source: "library" | "private";
+  document_id: number | null;
   title: string;
+  position: number;
   page: number | null;
   heading: string | null;
   score: number;

@@ -1,24 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type Health, useBackendHealth } from "../lib/health";
 
-type Status = "checking" | "online" | "offline";
-
-const LABELS: Record<Status, string> = {
+const LABELS: Record<Health, string> = {
   checking: "Checking library…",
   online: "Library online",
   offline: "Library offline",
 };
 
 export default function HealthBadge() {
-  const [status, setStatus] = useState<Status>("checking");
-
-  useEffect(() => {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-    fetch(`${backendUrl}/health`, { signal: AbortSignal.timeout(60_000) })
-      .then((response) => setStatus(response.ok ? "online" : "offline"))
-      .catch(() => setStatus("offline"));
-  }, []);
+  const status = useBackendHealth();
 
   return <span className={`badge badge-${status}`}>{LABELS[status]}</span>;
 }

@@ -310,3 +310,140 @@
   border-radius: 6px;
   font-size: 13px;
 }
+
+.chipDot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.scoutRows {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.scoutRows li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.scoutRows li:hover,
+.scoutRows li:focus-visible {
+  border-color: var(--accent-dark);
+}
+
+.scoutRows .num {
+  min-width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+.scoutRows .name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .scoutRows {
+    grid-auto-flow: row;
+    grid-template-columns: 1fr;
+    grid-template-rows: none !important;
+  }
+}
+
+.translator {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: flex-start;
+}
+
+.questionWords {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.topBlock {
+  flex: 0 1 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topBlock h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topBlock h3 span {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.topWords {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.topWords li {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.topWord {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--tab-soft);
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  background: rgb(122, 82, 54);
+}
+
+.asked {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+.asked span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
