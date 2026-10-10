@@ -15,7 +15,7 @@ function pick(input: HTMLElement, f: File) {
 test("the send button is named Add text and waits for a title and text", () => {
   render(<EnvelopeForm onSubmit={vi.fn()} busy={false} offline={false} />);
   expect(screen.getByRole("button", { name: "Add text" })).toBeDisabled();
-  expect(screen.getByText("Send to file cabinet")).toBeInTheDocument();
+  expect(screen.getByText("Send to your folder")).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Note" } });
   fireEvent.change(screen.getByLabelText("Text"), { target: { value: "hello" } });
   expect(screen.getByRole("button", { name: "Add text" })).toBeEnabled();

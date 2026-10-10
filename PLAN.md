@@ -241,8 +241,8 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: the data-driven parts of the Ask scenes in `frontend/lib/office/scenes/ask.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, and the "nothing found" scene. The Translator highlights the question's words by their real influence weights and stamps a fingerprint on the question; the question then appears as a marker on the vector map; the Scout walks into the library with the lantern, whose light spreads over the map and lights the candidates it found, with words-based finds in a different colour from meaning-based finds; the Archivist points at the shelves (documents) they belong to; the Judge reorders the candidates and fades the rejected ones, using the real old and new ranks; the Storyteller's badges fly to the cited cards.
   - Done when: a good question and an unanswerable one both play correctly.
   - Out of scope: character detail panels.
-- [ ] 5.10 Character detail panels
-  - Do: click a character to see what it did: the Chopper's chunks and overlaps, the Translator's word weights, the Scout's matches with vector and keyword scores and matched words, the Judge's rank changes.
+- [x] 5.10 Character detail panels (moved up, expanded)
+  - Do: a tab for every character on the Upload and Ask pages, openable at any time, each with plain words, this run's real data, and an 'Under the hood' section naming the real models and settings from `GET /about`; the Storyteller's shows the system prompt and the exact message sent; the speech bubbles say in plain words what each character is doing.
   - Done when: each panel shows real data from that question.
   - Out of scope: accessibility work.
 - [ ] 5.11 Accessibility

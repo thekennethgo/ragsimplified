@@ -95,7 +95,7 @@ export default function EnvelopeForm({
         </div>
         <form className={styles.body} onSubmit={submit}>
           <div className={styles.heading}>
-            <span className={styles.kicker}>Interoffice mail · To: File cabinet</span>
+            <span className={styles.kicker}>Interoffice mail · To: your folder in the file cabinet</span>
             <h2 id="env-h">Add a text</h2>
           </div>
           <label className={styles.field}>
@@ -128,7 +128,7 @@ export default function EnvelopeForm({
           </div>
           {offline && (
             <p role="status" className={styles.offline}>
-              The library is offline right now, so texts can't be filed. Try again in a minute.
+              The library is offline right now, so texts can't be added. Try again in a minute.
             </p>
           )}
           <div className={styles.actions}>
@@ -166,7 +166,7 @@ export default function EnvelopeForm({
                 <path d="M22 2L11 13" />
                 <path d="M22 2l-7 20-4-9-9-4z" />
               </svg>
-              {busy ? "Sending…" : "Send to file cabinet"}
+              {busy ? "Sending…" : "Send to your folder"}
             </button>
           </div>
           {note && <p className={styles.note}>{note}</p>}

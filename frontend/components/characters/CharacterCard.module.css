@@ -1,0 +1,171 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.intro {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.who {
+  flex: 0 0 78px;
+  text-align: center;
+}
+
+.who h3 {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.says {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+}
+
+.says p {
+  margin: 0;
+}
+
+.role {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.tail {
+  position: absolute;
+  left: -6px;
+  top: 26px;
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-left: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  transform: rotate(45deg);
+}
+
+.thisRun {
+  margin-top: 12px;
+}
+
+@media (max-width: 360px) {
+  .intro {
+    flex-direction: column;
+  }
+
+  .tail {
+    display: none;
+  }
+}
+
+.chip {
+  float: right;
+  margin: 0 0 4px 8px;
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.waiting {
+  background: var(--chip-waiting-bg);
+  color: var(--chip-waiting-fg);
+}
+
+.working {
+  background: var(--chip-working-bg);
+  color: var(--chip-working-fg);
+}
+
+.done {
+  background: var(--chip-done-bg);
+  color: var(--chip-done-fg);
+}
+
+.error {
+  background: var(--chip-error-bg);
+  color: var(--chip-error-fg);
+}
+
+.hood {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.hood summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hoodBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.tech {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tech li {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.settings div {
+  display: contents;
+}
+
+.settings dt {
+  color: var(--muted);
+}
+
+.settings dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.hood pre {
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+  background: #fbf8f1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}

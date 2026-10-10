@@ -16,69 +16,42 @@ const STEPS = [
 ];
 
 const WHY = [
-  {
-    title: "Far fewer hallucinations",
-    text: "Answers come from real passages, which cuts made-up facts a lot. Not to zero.",
-  },
-  {
-    title: "Up to date, no retraining",
-    text: "Change a document and the answers change. Fine-tuning would mean training again.",
-  },
-  {
-    title: "You can check it",
-    text: "Every claim points to its source. Nothing on file? It says so.",
-  },
+  { title: "Fewer made-up facts", text: "Answers come from real passages." },
+  { title: "Always up to date", text: "Change a document and the answers change." },
+  { title: "You can check it", text: "Every claim links to its source." },
 ];
 
 const BUILT = [
   {
-    q: "How big are the cards?",
-    a: "[YOUR CARD SIZE AND OVERLAP, AND WHY THEY FIT YOUR DOCUMENTS].",
-    link: "See the Chopper",
-    href: "/upload",
-  },
-  {
     q: "How does it search?",
-    a: "Two ways at once: by meaning (vector search) and by matching words (keyword search). A reranker then keeps the best 5.",
+    a: "By meaning and by words at once; a reranker then keeps the best 5.",
     link: "See the Scout",
     href: "/ask",
   },
   {
-    q: "How do you know the search works?",
-    a: "A set of test questions with known answers, scored on whether the right card was found and the citations are valid.",
+    q: "Does the search work?",
+    a: "It's scored on test questions with known answers.",
     link: "See the evals",
     href: `${REPO}/tree/main/evals`,
   },
   {
-    q: "How does it avoid making things up?",
-    a: "The Judge keeps only cards that answer the question; the Storyteller may use only those and must cite each one.",
+    q: "Can it make things up?",
+    a: "It may only use the cards it found, and must cite each one.",
     link: "See the Judge",
     href: "/ask",
   },
   {
-    q: "What if the right card isn't found?",
-    a: "It says “nothing on file” instead of guessing. It doesn't rewrite the question and retry yet.",
+    q: "What if nothing fits?",
+    a: "It says “nothing on file” instead of guessing.",
     link: "Try it",
     href: "/ask",
   },
   {
-    q: "How do you debug a wrong answer?",
-    a: "Every step is shown on its own: the question's fingerprint, the finds, the ranking, the answer. Find the step where it went wrong.",
-    link: "See the steps",
-    href: "/ask",
-  },
-  {
     q: "What is it built with?",
-    a: "Next.js, FastAPI, Postgres with pgvector, Voyage AI for fingerprints and reranking, and Claude Haiku for the answers. Open source: fork it for your own documents.",
+    a: "Next.js, FastAPI, Postgres with pgvector, Voyage AI and Claude Haiku. Open source.",
     link: "GitHub",
     href: REPO,
   },
-];
-
-const FAQ = [
-  { q: "Why did you build ragsimplified?", a: "[WHY YOU BUILT IT, IN YOUR WORDS]." },
-  { q: "What are you working on now?", a: "[WHAT YOU'RE WORKING ON OR LOOKING FOR]." },
-  { q: "How can I reach you?", a: "[HOW TO REACH YOU]." },
 ];
 
 export default function Home() {
@@ -86,10 +59,7 @@ export default function Home() {
     <>
       <section aria-labelledby="hero-h" className={styles.hero}>
         <h1 id="hero-h">A language model that looks things up before it answers.</h1>
-        <p>
-          That&apos;s RAG. This site shows it step by step, as an office of characters: ask a
-          question, or file your own text and watch it get used.
-        </p>
+        <p>That&apos;s RAG. Watch an office of characters do it, step by step.</p>
         <div className={styles.buttons}>
           <Link href="/ask" className={styles.primary}>
             Ask a question
@@ -110,7 +80,7 @@ export default function Home() {
         />
         <div className={styles.clerk}>
           <p>Clerk</p>
-          <p>New here? Ask me anything at the front desk.</p>
+          <p>New here? Ask me anything.</p>
         </div>
       </section>
 
@@ -118,9 +88,8 @@ export default function Home() {
         <div className={styles.whatLeft}>
           <h2 id="what-h">What is RAG?</h2>
           <p className={styles.lead}>
-            <strong>Retrieval-augmented generation.</strong> A model on its own answers from memory,
-            which can be out of date or simply wrong. With RAG it first finds the right passages in
-            a library you trust, then answers only from those, and shows where each part came from.
+            <strong>Retrieval-augmented generation:</strong> find the right passages first, then
+            answer only from them, with sources.
           </p>
           <ol className={styles.steps}>
             {STEPS.map((step) => (
@@ -131,9 +100,7 @@ export default function Home() {
               </li>
             ))}
           </ol>
-          <p className={styles.small}>
-            Perplexity, Microsoft 365 Copilot and Notion AI work this way.
-          </p>
+          <p className={styles.small}>Perplexity and Microsoft 365 Copilot work this way.</p>
         </div>
         <div className={styles.whatRight}>
           <p className={styles.small}>
@@ -145,9 +112,7 @@ export default function Home() {
               <span className={styles.bad}>No source</span>
             </div>
             <p>“Up to 100 a day.”</p>
-            <p className={styles.small}>
-              Confident, and made up: it never saw this site&apos;s rules.
-            </p>
+            <p className={styles.small}>Confident, and made up.</p>
           </div>
           <div className={`${styles.answerBox} ${styles.withRag}`}>
             <div>
@@ -168,11 +133,11 @@ export default function Home() {
       <section aria-labelledby="why-h" className={`${styles.card} ${styles.column}`}>
         <h2 id="why-h">Why not just ask the model?</h2>
         <p className={styles.lead}>
-          Models make things up, and it costs real money:{" "}
+          Models make things up, and it can cost real money:{" "}
           <a href="https://www.cbc.ca/news/canada/british-columbia/air-canada-chatbot-lawsuit-1.7116416">
-            Air Canada had to pay out after its chatbot invented a refund policy
-          </a>{" "}
-          (CBC News).
+            Air Canada paid out after its chatbot invented a refund policy
+          </a>
+          .
         </p>
         <ul className={styles.points}>
           {WHY.map((point) => (
@@ -182,19 +147,11 @@ export default function Home() {
             </li>
           ))}
         </ul>
-        <p className={styles.small}>
-          The catch: it&apos;s only as good as its library and its search. That&apos;s why the
-          sources are always shown.
-        </p>
+        <p className={styles.small}>The catch: it&apos;s only as good as its library.</p>
       </section>
 
       <section aria-labelledby="built-h" className={`${styles.card} ${styles.column}`}>
-        <div className={styles.column}>
-          <h2 id="built-h">How this one is built</h2>
-          <p className={styles.small}>
-            The questions people ask about a RAG system, answered for this one.
-          </p>
-        </div>
+        <h2 id="built-h">How this one is built</h2>
         <ul className={styles.built}>
           {BUILT.map((row) => (
             <li key={row.q}>
@@ -210,57 +167,28 @@ export default function Home() {
         </ul>
       </section>
 
-      <section aria-labelledby="me-h" className={`${styles.card} ${styles.me}`}>
-        <div className={styles.meTop}>
-          <div className={styles.column}>
-            <h2 id="me-h">About the creator</h2>
-            <p className={styles.lead}>[YOUR NAME]: [ONE OR TWO SENTENCES ABOUT YOU].</p>
-          </div>
-          <div className={styles.askMe}>
-            <Link href={`/ask?q=${encodeURIComponent(ABOUT_QUESTION)}`} className={styles.primary}>
-              Ask the office about me
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5 12h14" />
-                <path d="M13 6l6 6-6 6" />
-              </svg>
-            </Link>
-            <span className={styles.small}>It answers from my own documents, with sources.</span>
-          </div>
-        </div>
-        <div className={styles.faq}>
-          {FAQ.map((item) => (
-            <details key={item.q}>
-              <summary>
-                <svg
-                  className={styles.chev}
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-                {item.q}
-              </summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
-        </div>
+      <section aria-label="About the creator" className={styles.creator}>
+        <p>
+          <strong>[YOUR NAME]</strong> · [ONE-LINE BIO]
+        </p>
+        <Link href={`/ask?q=${encodeURIComponent(ABOUT_QUESTION)}`} className={styles.primary}>
+          Ask the office about me
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="M13 6l6 6-6 6" />
+          </svg>
+        </Link>
+        <a href={REPO}>GitHub</a>
       </section>
     </>
   );

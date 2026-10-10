@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.about import router as about_router
 from app.ask import router as ask_router
 from app.library import router as library_router
 from app.map import router as map_router
@@ -21,6 +22,7 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+app.include_router(about_router)
 app.include_router(upload_router)
 app.include_router(ask_router)
 app.include_router(library_router)
