@@ -233,6 +233,18 @@ Office animation convention (ADR 004; added to `CLAUDE.md` in step 5.1): each ro
   - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
 Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were removed by ADR 004.
 
+- [ ] 5.7b Page polish
+  - Do: polish the pages with the owner, Home first (layout, copy, spacing, visuals), then make Upload and Ask consistent with it. Each round is agreed with the owner in the browser before it is built.
+  - Done when: the owner signs off on Home, Upload and Ask.
+  - Out of scope: new features, the launch corpus, the scenes in 5.8 and 5.9.
+- [ ] 5.7c Choose the launch corpus (moved up from 6.0a)
+  - Do: with the owner, decide which starter documents stay in the live library; move the rest from `corpus/` to `evals/corpus/` so `make eval` still uses them; reseed locally and check the File cabinet, the vector map and the example questions still make sense.
+  - Done when: `corpus/` holds only the chosen launch documents and the local library matches it.
+  - Out of scope: the owner's own documents (6.0), seeding Supabase and new eval questions (6.0a).
+- [ ] 6.0 (You) Write the launch documents (moved up)
+  - Do: put the owner's own documents in `corpus/`: a FAQ about yourself (the questions a recruiter or collaborator would ask, with your real answers), CV, experience, projects and public contact details; plus 2 or 3 short made-up demo documents (for example a fictional company handbook) so visitors can try questions whose answers no model could know. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
+  - Done when: the files are in `corpus/`.
+
 - [ ] 5.8 Full Upload scene
   - Do: the data-driven parts of the Upload scenes in `frontend/lib/office/scenes/upload.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
   - Done when: one upload plays the whole scene.
@@ -256,11 +268,8 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 
 ## Phase 6: Launch
 
-- [ ] 6.0 (You) Write the launch documents
-  - Do: put the owner's own documents in `corpus/`: a FAQ about yourself (the questions a recruiter or collaborator would ask, with your real answers), CV, experience, projects and public contact details; plus 2 or 3 short made-up demo documents (for example a fictional company handbook) so visitors can try questions whose answers no model could know. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
-  - Done when: the files are in `corpus/`.
-- [ ] 6.0a Launch corpus and owner evals
-  - Do: move the placeholder Wikipedia documents that do not fit the launch (Apple, Android, Microsoft, Samsung, Star Wars, Cyberpunk) from `corpus/` to `evals/corpus/`, so `make eval` still uses them but the live library does not; keep the RAG-related ones (RAG, information retrieval, vector database, large language model, search engine) as a small explainer set; add at least 8 eval questions about the owner's documents (the requirement deferred from 3.7) and 3 about the demo documents; run `make seed` against Supabase and remove the placeholder rows from it; run `make eval` and save a new baseline.
+- [ ] 6.0a Owner evals and launch seed
+  - Do: add at least 8 eval questions about the owner's documents (the requirement deferred from 3.7) and 3 about the demo documents; run `make seed` against Supabase and remove the placeholder rows from it; run `make eval` and save a new baseline.
   - Done when: the live library lists the launch documents and `make eval` includes the owner questions.
   - Out of scope: new code.
 - [ ] 6.1 Limits
