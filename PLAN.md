@@ -109,9 +109,6 @@ The shared library is owner-curated and read-only at runtime: only `make seed` w
   - Do: `make seed` loads the starter corpus from `corpus/` so the library is never empty: the owner's own documents (CV, experience, projects, public contact details) plus a few openly licensed documents. It also copies the original files to `frontend/public/corpus/` so citations can open them.
   - Done when: the live library lists the starter documents.
   - Out of scope: evals, new endpoints.
-- [ ] 2.10 (You) Spend limit
-  - Do: set a monthly spend limit (about $10) in the Anthropic Console, before any endpoint that calls Claude goes live.
-  - Done when: the limit shows in the Console.
 
 ## Phase 3: The Ask page with citations
 
@@ -249,7 +246,7 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: the data-driven parts of the Upload scenes in `frontend/lib/office/scenes/upload.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
   - Done when: one upload plays the whole scene.
   - Out of scope: the Ask page.
-- [ ] 5.9 Full Ask scene
+- [~] 5.9 Full Ask scene (SKIPPED for now by the owner; moving straight to launch, revisit after v1.0.0)
   - Do: the data-driven parts of the Ask scenes in `frontend/lib/office/scenes/ask.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): Translator, Scout with the Archivist pointing, Judge, Storyteller pinning badges, and the "nothing found" scene. The Translator highlights the question's words by their real influence weights and stamps a fingerprint on the question; the question then appears as a marker on the vector map; the Scout walks into the library with the lantern, whose light spreads over the map and lights the candidates it found, with words-based finds in a different colour from meaning-based finds; the Archivist points at the shelves (documents) they belong to; the Judge reorders the candidates and fades the rejected ones, using the real old and new ranks; the Storyteller's badges fly to the cited cards.
   - Done when: a good question and an unanswerable one both play correctly.
   - Out of scope: character detail panels.
@@ -257,11 +254,11 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: a tab for every character on the Upload and Ask pages, openable at any time, each with plain words, this run's real data, and an 'Under the hood' section naming the real models and settings from `GET /about`; the Storyteller's shows the system prompt and the exact message sent; the speech bubbles say in plain words what each character is doing.
   - Done when: each panel shows real data from that question.
   - Out of scope: accessibility work.
-- [ ] 5.11 Accessibility
+- [~] 5.11 Accessibility (SKIPPED for now by the owner; moving straight to launch, revisit after v1.0.0)
   - Do: reduce-motion mode that swaps animations for a step list, alt text, keyboard access, and a text alternative for the vector map (a table of the nearest chunks with their scores).
   - Done when: the site is usable with motion off and with keyboard only.
   - Out of scope: new features.
-- [ ] 5.12 Source side panel
+- [~] 5.12 Source side panel (SKIPPED for now by the owner; moving straight to launch, revisit after v1.0.0)
   - Do: clicking a `[n]` marker or "Open source" on the Ask page opens a side panel next to the answer, without leaving the page. The panel shows the whole original so the visitor can scroll around and check it: a library Markdown or text document as text, a library PDF in the browser's PDF viewer opened at the cited page, and a pasted text from the browser's memory. In a text source the cited passage is highlighted and scrolled into view, as in step 3.6. The panel has next and previous buttons to move between the answer's citations, a close button, and a link to the full page (`/library/[id]`, `/texts/[index]`).
   - Done when: on the live site, every kind of source (Markdown, PDF, pasted text) opens in the panel with its cited passage visible, the answer stays on screen, and the panel can be opened, moved between citations and closed with the keyboard only.
   - Out of scope: highlighting the exact passage inside a PDF (ADR 002), editing or deleting documents, new backend endpoints.
@@ -295,5 +292,5 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
-- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and a source side panel
+- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map (data-driven scenes, detail panels, accessibility and source side panel skipped)
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
