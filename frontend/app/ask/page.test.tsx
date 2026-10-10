@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { resetHealthCache } from "../../lib/health";
+import { resetMapCache } from "../../lib/map";
 import { PrivateTextsProvider, usePrivateTexts } from "../../lib/PrivateTexts";
 import AskPage from "./page";
 
@@ -37,6 +39,8 @@ vi.mock("../../lib/office/useSceneQueue", () => {
 });
 
 beforeEach(() => {
+  resetMapCache();
+  resetHealthCache();
   emitted.length = 0;
   search.params = new URLSearchParams();
 });
@@ -77,6 +81,8 @@ const EVENTS = [
           rank: 1,
           source: "library",
           title: "Apple Inc.",
+          document_id: 1,
+          position: 0,
           page: null,
           heading: "Founding",
           score: 0.0328,
@@ -174,7 +180,13 @@ const EVENTS = [
 function stubFetch(askResponse: () => Response) {
   const fetchMock = vi.fn((url: string) =>
     Promise.resolve(
-      url.endsWith("/library") ? new Response("[]") : askResponse(),
+      url.endsWith("/health")
+        ? new Response("{}")
+        : url.endsWith("/library")
+          ? new Response("[]")
+          : url.endsWith("/map")
+            ? new Response("[]")
+            : askResponse(),
     ),
   );
   vi.stubGlobal("fetch", fetchMock);
@@ -289,6 +301,7 @@ function stubWithDocument(events: object[]) {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
+      if (url.endsWith("/health")) return Promise.resolve(new Response("{}"));
       if (url.endsWith("/library")) {
         return Promise.resolve(
           new Response(
@@ -352,6 +365,7 @@ test("on the Ask page a cabinet title opens the viewer instead of a page", async
   Element.prototype.scrollIntoView = vi.fn();
   stubWithDocument(EVENTS);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Documents" }));
   const title = await screen.findByRole("button", { name: "Cabinet doc" });
   expect(screen.queryByRole("link", { name: "Cabinet doc" })).toBeNull();
   fireEvent.click(title);
@@ -490,8 +504,8 @@ test("markup in a question's words is shown as text, not rendered", async () => 
   );
   fireEvent.click(screen.getByRole("button", { name: "Translator" }));
   expect(
-    await screen.findByText("<img src=x onerror=alert(1)>"),
-  ).toBeInTheDocument();
+    (await screen.findAllByText("<img src=x onerror=alert(1)>")).length,
+  ).toBeGreaterThan(0);
   expect(container.querySelector("img")).toBeNull();
 });
 
@@ -502,7 +516,7 @@ test("each step tab shows its status and what the step found", async () => {
   expect(screen.getByRole("button", { name: "Scout" })).toBeDisabled();
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  for (const name of ["Translator", "Scout", "Judge", "Storyteller"]) {
+  for (const name of ["Translator", "Scout", "Judge"]) {
     const tab = screen.getByRole("button", { name });
     expect(tab).toBeEnabled();
     expect(within(tab).getByTitle("done")).toBeInTheDocument();
@@ -512,15 +526,92 @@ test("each step tab shows its status and what the step found", async () => {
   expect(screen.getByText("3 cards found")).toBeInTheDocument();
   expect(screen.getByText("2 by meaning")).toBeInTheDocument();
   expect(screen.getByText("2 by matching words")).toBeInTheDocument();
-  expect(screen.getByText("1 found both ways")).toBeInTheDocument();
+  expect(screen.getByText("1 both")).toBeInTheDocument();
   expect(screen.getByText(/Apple Inc\. · Founding/)).toBeInTheDocument();
+  expect(screen.queryByText(/found by/i)).toBeNull();
+  expect(screen.getByTitle("Found by both")).toHaveTextContent("1");
+  expect(screen.getByTitle("Found by meaning")).toHaveTextContent("2");
+  expect(screen.getByTitle("Found by words")).toHaveTextContent("3");
 
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Kept: the best 1 of 3")).toBeInTheDocument();
   expect(screen.getByText("Set aside: 2 cards")).toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
-  expect(screen.getByText("cited as [1]")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Storyteller" })).toBeNull();
+});
+
+test("the Scout tab shows a vector map of the candidates", async () => {
+  resetMapCache();
+  const fetchMock = vi.fn((url: string) =>
+    Promise.resolve(
+      url.endsWith("/health")
+        ? new Response("{}")
+        : url.endsWith("/library")
+        ? new Response("[]")
+        : url.endsWith("/map")
+          ? new Response(
+              JSON.stringify([
+                { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: null, x: 0, y: 0 },
+                { chunk_id: 2, document_id: 1, title: "Apple Inc.", position: 1, heading: null, x: 1, y: 1 },
+              ]),
+            )
+          : ndjson(EVENTS),
+    ),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(await screen.findByRole("img", { name: /^Vector map/ })).toBeInTheDocument();
+});
+
+test("hovering a Scout row thickens that candidate's ring on the map", async () => {
+  const fetchMock = vi.fn((url: string) =>
+    Promise.resolve(
+      url.endsWith("/health")
+        ? new Response("{}")
+        : url.endsWith("/library")
+        ? new Response("[]")
+        : url.endsWith("/map")
+          ? new Response(
+              JSON.stringify([
+                { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: null, x: 0, y: 0 },
+                { chunk_id: 2, document_id: 1, title: "Apple Inc.", position: 1, heading: null, x: 1, y: 1 },
+              ]),
+            )
+          : ndjson(EVENTS),
+    ),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  await screen.findByRole("img", { name: /^Vector map/ });
+  const width = () =>
+    Number(
+      screen
+        .getAllByTestId("candidate-ring")[0]
+        .querySelector("circle")!
+        .getAttribute("stroke-width"),
+    );
+  const before = width();
+  fireEvent.mouseEnter(screen.getByTitle("Found by both").closest("li")!);
+  expect(width()).toBeGreaterThan(before);
+  fireEvent.mouseLeave(screen.getByTitle("Found by both").closest("li")!);
+  expect(width()).toBe(before);
+});
+
+test("the Translator tab ranks the top words by influence", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect(screen.getByText(/Top 5 words/)).toBeInTheDocument();
+  const items = screen.getAllByRole("listitem").filter((li) => li.textContent?.match(/^\w+\d\.\d\d$/));
+  expect(items.map((li) => li.textContent)).toEqual(["Apple1.00"]);
 });
 
 test("a failed step shows the running step as an error", async () => {
@@ -808,4 +899,200 @@ test("the Animations switch toggles and remembers its setting", () => {
   expect(toggle).toHaveAttribute("aria-checked", "true");
   expect(localStorage.getItem("ragsimplified.animations")).toBe("on");
   localStorage.removeItem("ragsimplified.animations");
+});
+
+const PARAGRAPHS = [
+  { step: "storyteller", status: "start" },
+  {
+    step: "storyteller",
+    status: "done",
+    data: {
+      answer: "First.\n\nSecond [1].",
+      citations: [
+        {
+          n: 1,
+          source: "library",
+          title: "Apple Inc.",
+          page: null,
+          heading: null,
+          snippet: "Snippet.",
+          document_id: 7,
+          position: 3,
+        },
+      ],
+    },
+  },
+];
+
+test("an answer is shown one paragraph per blank line, with [n] still a button", async () => {
+  stubAsk(PARAGRAPHS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("Hi?");
+  const button = await screen.findByRole("button", { name: "Source 1" });
+  const paragraphs = screen.getByRole("region", { name: "Answer" }).querySelectorAll("p");
+  expect([...paragraphs].map((p) => p.textContent)).toEqual(["First.", "Second [1]."]);
+  expect(button.closest("p")).toBe(paragraphs[1]);
+});
+
+test("after the answer the question box is empty and the question is echoed", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(screen.getByLabelText("Your question")).toHaveValue("");
+  expect(screen.getByText("You asked")).toBeInTheDocument();
+  expect(screen.getByText("You asked").closest("p")).toHaveTextContent(
+    "When was Apple founded?",
+  );
+});
+
+test("after an error the question box keeps its text", async () => {
+  stubAsk([{ step: "error", status: "done", data: { message: "Ask failed" } }]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("Keep me");
+  await screen.findByRole("alert");
+  expect(screen.getByLabelText("Your question")).toHaveValue("Keep me");
+});
+
+test("once a tab is clicked the panel stops switching on its own, until a new question", async () => {
+  const encoder = new TextEncoder();
+  const bodies: { push: (event: object) => void; close: () => void }[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) => {
+      if (url.endsWith("/health") || url.endsWith("/library") || url.endsWith("/map")) {
+        return Promise.resolve(new Response(url.endsWith("/health") ? "{}" : "[]"));
+      }
+      let controller!: ReadableStreamDefaultController<Uint8Array>;
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          controller = c;
+        },
+      });
+      bodies.push({
+        push: (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n")),
+        close: () => controller.close(),
+      });
+      return Promise.resolve(new Response(body));
+    }),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(bodies).toHaveLength(1));
+  const first = bodies[0];
+  const pressed = (name: string) => screen.getByRole("button", { name });
+
+  first.push({ step: "translator", status: "start" });
+  await waitFor(() => expect(pressed("Translator")).toBeEnabled());
+  fireEvent.click(pressed("Translator"));
+
+  first.push({ step: "translator", status: "done", data: { words: [] } });
+  first.push({ step: "scout", status: "start" });
+  first.push({ step: "scout", status: "done", data: { results: [] } });
+  await waitFor(() =>
+    expect(within(pressed("Scout")).getByTitle("done")).toBeInTheDocument(),
+  );
+  expect(pressed("Translator")).toHaveAttribute("aria-pressed", "true");
+  expect(pressed("Scout")).toHaveAttribute("aria-pressed", "false");
+
+  first.push({ step: "storyteller", status: "start" });
+  first.push({
+    step: "storyteller",
+    status: "done",
+    data: { answer: "Done.", citations: [] },
+  });
+  first.close();
+  await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
+  expect(pressed("Translator")).toHaveAttribute("aria-pressed", "true");
+  expect(pressed("Answer")).toHaveAttribute("aria-pressed", "false");
+
+  // a new question starts following again
+  ask("Again?");
+  await waitFor(() => expect(bodies).toHaveLength(2));
+  bodies[1].push({ step: "translator", status: "start" });
+  bodies[1].push({ step: "translator", status: "done", data: { words: [] } });
+  bodies[1].push({ step: "scout", status: "start" });
+  bodies[1].push({ step: "scout", status: "done", data: { results: [] } });
+  await waitFor(() => expect(pressed("Scout")).toHaveAttribute("aria-pressed", "true"));
+  bodies[1].close();
+});
+
+test("the Top 5 leaves filler words out", async () => {
+  stubAsk([
+    { step: "translator", status: "start" },
+    {
+      step: "translator",
+      status: "done",
+      data: {
+        words: [
+          { text: "What", influence: 0.9 },
+          { text: "is", influence: 0.8 },
+          { text: "Apple", influence: 0.7 },
+          { text: "silicon", influence: 0.95 },
+        ],
+      },
+    },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Apple silicon");
+  await waitFor(() => expect(screen.getByText(/Top 5 words/)).toBeInTheDocument());
+  const items = screen.getAllByRole("listitem").filter((li) => li.textContent?.match(/^\w+\d\.\d\d$/));
+  expect(items.map((li) => li.textContent)).toEqual(["silicon0.95", "Apple0.70"]);
+});
+
+test("clicking an example question fills the box and sends nothing", async () => {
+  const fetchMock = stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(
+    screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
+  );
+  expect(screen.getByLabelText("Your question")).toHaveValue(
+    "What is retrieval-augmented generation?",
+  );
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(
+    fetchMock.mock.calls.some(([url]) => String(url).endsWith("/ask")),
+  ).toBe(false);
+});
+
+test("when the library is offline the Ask button is disabled and a note shows", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      String(url).endsWith("/health")
+        ? Promise.reject(new Error("down"))
+        : Promise.resolve(new Response("[]")),
+    ),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(await screen.findByRole("status")).toHaveTextContent(/library is offline/);
+  fireEvent.change(screen.getByLabelText("Your question"), { target: { value: "Hi?" } });
+  expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
+});
+
+test("a tab clicked before asking does not stop the panel following the run", async () => {
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) =>
+        controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  ask("When was Apple founded?");
+
+  push({ step: "translator", status: "start" });
+  push({ step: "translator", status: "done", data: { words: [] } });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    ),
+  );
+  close();
 });

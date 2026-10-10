@@ -62,7 +62,9 @@ def describe_candidates(results: list[Result]) -> list[dict]:
         {
             "rank": rank,
             "source": r.source,
+            "document_id": r.document_id,
             "title": r.title,
+            "position": r.position,
             "page": r.page,
             "heading": r.heading,
             "score": round(r.score, 4),

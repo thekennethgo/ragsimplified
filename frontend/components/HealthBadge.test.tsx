@@ -1,7 +1,12 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { resetHealthCache } from "../lib/health";
 import HealthBadge from "./HealthBadge";
+
+beforeEach(() => {
+  resetHealthCache();
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();

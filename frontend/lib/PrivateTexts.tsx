@@ -7,6 +7,8 @@ export type PrivateText = {
   text: string;
   chunks: { position: number; heading: string | null; text: string }[];
   vectors: number[][];
+  /** Each chunk's place on the vector map (missing when the backend has no map). */
+  points?: { x: number; y: number }[];
 };
 
 type PrivateTexts = {

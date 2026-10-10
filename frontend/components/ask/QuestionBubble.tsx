@@ -39,11 +39,16 @@ export function QuestionBubble({
   onChange,
   onSubmit,
   busy,
+  offline,
+  examples,
 }: {
   question: string;
   onChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   busy: boolean;
+  /** The backend can't be reached, so nothing can be answered. */
+  offline: boolean;
+  examples?: string[];
 }) {
   return (
     <form className={styles.form} onSubmit={onSubmit}>
@@ -57,10 +62,29 @@ export function QuestionBubble({
           placeholder="e.g. How did the M1 chip change MacBook battery life?"
         />
       </label>
+      {examples && examples.length > 0 && (
+        <div className={styles.examples}>
+          <span>Try:</span>
+          {examples.map((q) => (
+            <button type="button" key={q} onClick={() => onChange(q)} disabled={busy || offline}>
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
       <p className={styles.count} aria-live="polite">
         {question.length} / {MAX_QUESTION_CHARS}
       </p>
-      <button type="submit" className={styles.send} disabled={busy || !question.trim()}>
+      {offline && (
+        <p role="status" className={styles.offline}>
+          The library is offline right now, so questions can't be answered. Try again in a minute.
+        </p>
+      )}
+      <button
+        type="submit"
+        className={styles.send}
+        disabled={busy || offline || !question.trim()}
+      >
         {busy ? "Asking…" : "Ask"}
       </button>
       <p className={styles.privacy}>Sent to Voyage AI (fingerprint) and Anthropic (answer).</p>

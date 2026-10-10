@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { backendUrl } from "../lib/backend";
+import { useMapPoints, type MapOverlay } from "../lib/map";
 import { usePrivateTexts } from "../lib/PrivateTexts";
 import type { ViewTarget } from "../lib/viewer";
+import VectorMap from "./map/VectorMap";
 import DocViewer from "./viewer/DocViewer";
 import styles from "./LibraryPanel.module.css";
 
@@ -16,21 +18,25 @@ const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
 
 /**
  * The File cabinet: the visitor's own books (this tab only) and the starter collection from
- * GET /library. The vector map arrives in step 5.0g. With `onOpen` (the Ask page) it also has a
- * Viewer tab that reads the passage in `viewer` in full.
+ * GET /library. The Vector map tab draws GET /map (fetched the first time it opens), with the
+ * question and the Scout's candidates from `overlay` on top. With `onOpen` (the Ask page) it also
+ * has a Viewer tab that reads the passage in `viewer` in full.
  */
 export default function LibraryPanel({
   onCount,
   onOpen,
   viewer,
+  overlay,
 }: {
   onCount?: (starterBooks: number) => void;
   onOpen?: (target: ViewTarget) => void;
   viewer?: ViewTarget | null;
+  overlay?: MapOverlay;
 }) {
   const { texts, remove } = usePrivateTexts();
-  const [view, setView] = useState<View>("docs");
+  const [view, setView] = useState<View>("map");
   const [library, setLibrary] = useState<LibraryDocument[] | null>(null);
+  const { points: mapPoints, error: mapError } = useMapPoints(view === "map");
 
   useEffect(() => {
     fetch(`${backendUrl()}/library`)
@@ -74,11 +80,11 @@ export default function LibraryPanel({
           <span>{summary}</span>
         </div>
         <div role="group" aria-label="File cabinet view" className={styles.toggle}>
-          <button type="button" aria-pressed={view === "docs"} onClick={() => setView("docs")}>
-            Documents
-          </button>
           <button type="button" aria-pressed={view === "map"} onClick={() => setView("map")}>
             Vector map
+          </button>
+          <button type="button" aria-pressed={view === "docs"} onClick={() => setView("docs")}>
+            Documents
           </button>
           {onOpen && (
             <button
@@ -191,15 +197,7 @@ export default function LibraryPanel({
         </div>
       )}
 
-      {view === "map" && (
-        <div className={styles.soon}>
-          <h3>Coming soon</h3>
-          <p>
-            A map of every card in the cabinet: similar cards sit close together. It is a flattened
-            2-D picture of the 1,024-number fingerprints, so distances are rough.
-          </p>
-        </div>
-      )}
+      {view === "map" && <VectorMap points={mapPoints} error={mapError} overlay={overlay} />}
     </section>
   );
 }

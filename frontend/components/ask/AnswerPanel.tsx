@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 
 import type { Citation, JudgeResult, ScoutResult, Word } from "../../lib/ask";
+import { FOUND_BY_COLOR, keyOf, useMapPoints, type MapOverlay } from "../../lib/map";
 import type { Phase } from "../../lib/sceneState";
 import type { ViewTarget } from "../../lib/viewer";
+import VectorMap from "../map/VectorMap";
 import { AnswerBubble } from "./AnswerBubble";
 import styles from "./AnswerPanel.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
-type TabId = "translator" | "scout" | "judge" | "storyteller" | "answer";
+type TabId = "translator" | "scout" | "judge" | "answer";
 
 const STEPS = [
   {
@@ -24,7 +26,7 @@ const STEPS = [
     name: "Scout",
     title: "finds likely cards",
     text: "Looks two ways at once: cards whose fingerprints are closest to your question, and cards that use the same words. It brings back the best matches.",
-    term: "hybrid search",
+    term: "hybrid search over chunks",
   },
   {
     id: "judge",
@@ -33,14 +35,9 @@ const STEPS = [
     text: "Reads each card next to your question and scores how well it really answers it. Weak cards are set aside.",
     term: "reranking",
   },
-  {
-    id: "storyteller",
-    name: "Storyteller",
-    title: "writes the answer",
-    text: "Writes using only the kept cards, and marks each fact with its card number, like [1]. If the cards don't cover it, it says so.",
-    term: "grounded generation with citations",
-  },
 ] as const;
+
+const FILLER = new Set(["a","an","the","is","are","was","were","be","been","of","in","on","at","to","for","and","or","but","with","by","from","as","it","its","this","that","these","those","what","which","who","whom","whose","when","where","why","how","do","does","did","can","could","should","would","will","i","you","he","she","we","they","me","my","your","our","their","about","into","than","then","there","so","if","not","no","any","some"]);
 
 const where = (r: { title: string; heading: string | null; page: number | null }) =>
   [r.title, r.heading, r.page !== null ? `page ${r.page}` : null].filter(Boolean).join(" · ");
@@ -53,10 +50,11 @@ export default function AnswerPanel({
   words,
   scout,
   judge,
-  nothingFound,
+  askedQuestion,
   targetFor,
   onOpenInViewer,
   follow,
+  overlay,
 }: {
   states: Record<string, Phase>;
   answer: string;
@@ -64,26 +62,49 @@ export default function AnswerPanel({
   words: Word[];
   scout: ScoutResult[] | null;
   judge: JudgeResult[] | null;
-  nothingFound: boolean;
+  askedQuestion: string;
   targetFor: (citation: Citation) => ViewTarget | null;
   onOpenInViewer: (target: ViewTarget) => void;
   /** Jump to each step as its results arrive (off when the animations are off). */
   follow: boolean;
+  /** The question and the Scout's candidates, drawn on the Scout tab's map. */
+  overlay?: MapOverlay;
 }) {
   const [tab, setTab] = useState<TabId>("answer");
+  // Once the visitor picks a tab, the panel stops switching on its own until the next run.
+  const [touched, setTouched] = useState(false);
+  const [focus, setFocus] = useState<string | null>(null);
+  const { points, error } = useMapPoints(tab === "scout");
   const phase = (id: string): Phase => states[id] ?? "waiting";
   // Follow the newest step whose results are in, and show the answer when it first appears.
   const latest = [...STEPS].reverse().find((s) => phase(s.id) === "done")?.id;
+  const fresh = Object.keys(states).length === 0;
   useEffect(() => {
+    setTouched(false);
+  }, [fresh]);
+  useEffect(() => {
+    if (touched) return;
     if (follow && latest) setTab(latest);
-  }, [follow, latest]);
+  }, [follow, latest, touched]);
   const hasAnswer = Boolean(answer);
   useEffect(() => {
+    if (touched) return;
     if (hasAnswer) setTab("answer");
-  }, [hasAnswer]);
+  }, [hasAnswer, touched]);
   const step = STEPS.find((s) => s.id === tab);
   const kept = (judge ?? []).filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const setAside = (judge ?? []).filter((r) => !r.kept);
+  const bestByWord = new Map<string, { text: string; influence: number }>();
+  for (const w of words) {
+    const key = w.text.toLowerCase();
+    if (w.influence !== null && w.influence > (bestByWord.get(key)?.influence ?? -1)) {
+      bestByWord.set(key, { text: w.text, influence: w.influence });
+    }
+  }
+  const top = [...bestByWord.values()]
+    .filter((w) => !FILLER.has(w.text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "")))
+    .sort((a, b) => b.influence - a.influence)
+    .slice(0, 5);
   const foundBy = (way: ScoutResult["found_by"]) =>
     (scout ?? []).filter((r) => r.found_by === way).length;
 
@@ -102,13 +123,23 @@ export default function AnswerPanel({
               type="button"
               aria-pressed={tab === s.id}
               disabled={phase(s.id) === "waiting"}
-              onClick={() => setTab(s.id)}
+              onClick={() => {
+                setTouched(true);
+                setTab(s.id);
+              }}
             >
               <span className={`${styles.dot} ${styles[phase(s.id)]}`} title={phase(s.id)} />
               {s.name}
             </button>
           ))}
-          <button type="button" aria-pressed={tab === "answer"} onClick={() => setTab("answer")}>
+          <button
+            type="button"
+            aria-pressed={tab === "answer"}
+            onClick={() => {
+              setTouched(true);
+              setTab("answer");
+            }}
+          >
             Answer
           </button>
         </div>
@@ -119,12 +150,18 @@ export default function AnswerPanel({
           <div className={styles.answerTab}>
             <div className={styles.answerCol}>
               {answer ? (
-                <AnswerBubble
-                  answer={answer}
-                  citations={citations}
-                  targetFor={targetFor}
-                  onOpenInViewer={onOpenInViewer}
-                />
+                <>
+                  <p className={styles.asked}>
+                    <span>You asked</span>
+                    {askedQuestion}
+                  </p>
+                  <AnswerBubble
+                    answer={answer}
+                    citations={citations}
+                    targetFor={targetFor}
+                    onOpenInViewer={onOpenInViewer}
+                  />
+                </>
               ) : phase("translator") !== "waiting" ? (
                 <p className={styles.empty}>Working on it. Open a step above to watch.</p>
               ) : (
@@ -184,7 +221,29 @@ export default function AnswerPanel({
                 <h3>
                   Which words mattered <span>· darker = shaped the meaning more</span>
                 </h3>
-                <HighlightedWords words={words} />
+                <div className={styles.translator}>
+                  <div className={styles.questionWords}>
+                    <HighlightedWords words={words} />
+                  </div>
+                  {top.length > 0 && (
+                    <div className={styles.topBlock}>
+                      <h3>
+                        Top 5 words <span>· filler words left out</span>
+                      </h3>
+                      <ol className={styles.topWords}>
+                        {top.map((w) => (
+                          <li key={w.text.toLowerCase()}>
+                            <span className={styles.topWord}>{w.text}</span>
+                            <span className={styles.track}>
+                              <span className={styles.bar} style={{ width: `${w.influence * 100}%` }} />
+                            </span>
+                            <span className={styles.mono}>{w.influence.toFixed(2)}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -193,26 +252,53 @@ export default function AnswerPanel({
                 <div className={styles.chips}>
                   <span className={styles.chipDark}>{scout?.length ?? 0} cards found</span>
                   <span className={styles.chipMeaning}>
+                    <i className={styles.chipDot} style={{ background: FOUND_BY_COLOR.vector }} />
                     {foundBy("vector") + foundBy("both")} by meaning
                   </span>
                   <span className={styles.chipWords}>
+                    <i className={styles.chipDot} style={{ background: FOUND_BY_COLOR.keyword }} />
                     {foundBy("keyword") + foundBy("both")} by matching words
                   </span>
-                  <span className={styles.chipSoft}>{foundBy("both")} found both ways</span>
+                  <span className={styles.chipSoft}>
+                    <i className={styles.chipDot} style={{ background: FOUND_BY_COLOR.both }} />
+                    {foundBy("both")} both
+                  </span>
                 </div>
-                <ol className={styles.rows}>
+                <VectorMap
+                  points={points}
+                  error={error}
+                  overlay={overlay}
+                  variant="compact"
+                  focus={focus}
+                />
+                <ol
+                  className={styles.scoutRows}
+                  style={{ gridTemplateRows: `repeat(${Math.ceil((scout?.length ?? 0) / 2)}, auto)` }}
+                >
                   {(scout ?? []).map((r) => (
-                    <li key={r.rank}>
-                      <span className={styles.num}>{r.rank}</span>
-                      <span className={styles.name}>{where(r)}</span>
-                      <span className={styles.mono}>
-                        {r.score.toFixed(3)} · found by{" "}
-                        {r.found_by === "vector"
-                          ? "meaning"
-                          : r.found_by === "keyword"
-                            ? "words"
-                            : "both"}
+                    <li
+                      key={r.rank}
+                      tabIndex={0}
+                      onMouseEnter={() => setFocus(keyOf(r))}
+                      onFocus={() => setFocus(keyOf(r))}
+                      onMouseLeave={() => setFocus(null)}
+                      onBlur={() => setFocus(null)}
+                    >
+                      <span
+                        className={styles.num}
+                        style={{ background: FOUND_BY_COLOR[r.found_by], color: "#fff" }}
+                        title={`Found by ${
+                          r.found_by === "vector"
+                            ? "meaning"
+                            : r.found_by === "keyword"
+                              ? "words"
+                              : "both"
+                        }`}
+                      >
+                        {r.rank}
                       </span>
+                      <span className={styles.name}>{where(r)}</span>
+                      <span className={styles.mono}>{r.score.toFixed(3)}</span>
                     </li>
                   ))}
                 </ol>
@@ -249,24 +335,6 @@ export default function AnswerPanel({
                     ))}
                   </ul>
                 </div>
-              </div>
-            )}
-
-            {phase(tab) === "done" && tab === "storyteller" && (
-              <div className={styles.block}>
-                {nothingFound ? (
-                  <p className={styles.empty}>Nothing to write from, so no answer.</p>
-                ) : (
-                  <ol className={styles.rows}>
-                    {citations.map((c) => (
-                      <li key={c.n}>
-                        <span className={styles.num}>{c.n}</span>
-                        <span className={styles.name}>{where(c)}</span>
-                        <span className={styles.cited}>cited as [{c.n}]</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
               </div>
             )}
           </div>

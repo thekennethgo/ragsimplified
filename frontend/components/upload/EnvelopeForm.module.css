@@ -177,9 +177,11 @@
 
 .drop {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
+  text-align: center;
   min-height: 44px;
   border: 1px dashed #a9a396;
   border-radius: 4px;
@@ -189,9 +191,19 @@
   cursor: pointer;
 }
 
-.drop span {
+.hint {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
   font-weight: 400;
-  color: #5f5644;
+}
+
+.offline {
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--chip-error-bg);
+  color: var(--chip-error-fg);
 }
 
 .drop:focus-within {

@@ -101,6 +101,8 @@ class MapPoint(BaseModel):
     chunk_id: int
     document_id: int
     title: str
+    position: int
+    heading: str | None
     x: float
     y: float
 
@@ -113,11 +115,13 @@ def _conn() -> Iterator[psycopg.Connection]:
 @router.get("/map")
 def get_map(conn: psycopg.Connection = Depends(_conn)) -> list[MapPoint]:
     rows = conn.execute(
-        "SELECT p.chunk_id, d.id, d.title, p.x, p.y "
+        "SELECT p.chunk_id, d.id, d.title, c.position, c.heading, p.x, p.y "
         "FROM map_points p JOIN chunks c ON c.id = p.chunk_id "
         "JOIN documents d ON d.id = c.document_id ORDER BY p.chunk_id"
     ).fetchall()
     return [
-        MapPoint(chunk_id=cid, document_id=did, title=title, x=x, y=y)
-        for cid, did, title, x, y in rows
+        MapPoint(
+            chunk_id=cid, document_id=did, title=title, position=position, heading=heading, x=x, y=y
+        )
+        for cid, did, title, position, heading, x, y in rows
     ]

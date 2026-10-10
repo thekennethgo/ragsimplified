@@ -11,11 +11,13 @@ import OfficeRoom from "../../components/office/OfficeRoom";
 import SpeechBubble from "../../components/office/SpeechBubble";
 import { type Citation, type JudgeResult, type ScoutResult, type Word } from "../../lib/ask";
 import { backendUrl, readEvents } from "../../lib/backend";
+import type { MapOverlay, Point } from "../../lib/map";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { buildAskScenes } from "../../lib/office/scenes/ask";
 import { buildQueryScenes } from "../../lib/office/scenes/query";
 import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
+import { useBackendHealth } from "../../lib/health";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
 import type { ViewTarget } from "../../lib/viewer";
@@ -26,6 +28,13 @@ const MAX_PRIVATE_CHUNKS = 60;
 
 const ASK_LABEL = "The Ask office: the Clerk, Translator, Scout, Judge and Storyteller at work.";
 const QUERY_LABEL = "The Query room, where the Clerk takes your question.";
+
+const EXAMPLES = [
+  "What is retrieval-augmented generation?",
+  "Who founded Apple and in what year?",
+  "What is Apple silicon and which Macs first used it?",
+  "What does TREC stand for and when was it started?",
+];
 
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;
 const NAMES = {
@@ -59,6 +68,8 @@ function AskOffice() {
   // /ask?q=... opens with the question filled in (the Home page's "Ask the office about me").
   const prefilled = useSearchParams().get("q") ?? "";
   const [question, setQuestion] = useState(prefilled);
+  const offline = useBackendHealth() === "offline";
+  const [askedQuestion, setAskedQuestion] = useState("");
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
@@ -70,6 +81,7 @@ function AskOffice() {
   const [scout, setScout] = useState<ScoutResult[] | null>(null);
   const [judge, setJudge] = useState<JudgeResult[] | null>(null);
   const [asked, setAsked] = useState(false);
+  const [overlay, setOverlay] = useState<MapOverlay>({});
 
   const privateChunks = texts
     .flatMap((item) =>
@@ -112,6 +124,7 @@ function AskOffice() {
     setBusy(true);
     setAnimating(true);
     setAsked(true);
+    setAskedQuestion(question.trim());
     setError("");
     setAnswer("");
     setCitations([]);
@@ -119,6 +132,7 @@ function AskOffice() {
     setWords([]);
     setScout(null);
     setJudge(null);
+    setOverlay({});
     pending.current = "";
     if (!onRef.current) {
       answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -157,10 +171,12 @@ function AskOffice() {
           queue.emit(sceneEvent, { onStart: update });
         } else if (e.step === "translator") {
           const found = (e.data?.words ?? []) as Word[];
+          const point = e.data?.point as Point | undefined;
           queue.emit(sceneEvent, {
             onEnd: () => {
               update();
               setWords(found);
+              if (point) setOverlay((now) => ({ ...now, question: point }));
             },
           });
         } else if (e.step === "scout") {
@@ -169,6 +185,17 @@ function AskOffice() {
             onEnd: () => {
               update();
               setScout(found);
+              setOverlay((now) => ({
+                ...now,
+                candidates: found.map((r) => ({
+                  source: r.source,
+                  document_id: r.document_id,
+                  title: r.title,
+                  position: r.position,
+                  rank: r.rank,
+                  found_by: r.found_by,
+                })),
+              }));
             },
           });
         } else if (e.step === "judge") {
@@ -191,6 +218,7 @@ function AskOffice() {
             {
               onEnd: () => {
                 setAnswer(final);
+                setQuestion("");
                 setCitations(sources);
                 setAnimating(false);
               },
@@ -316,6 +344,8 @@ function AskOffice() {
             onChange={setQuestion}
             onSubmit={onSubmit}
             busy={running}
+            offline={offline}
+            examples={EXAMPLES}
           />
           {error && (
             <p role="alert" className={styles.error}>
@@ -332,15 +362,16 @@ function AskOffice() {
             words={words}
             scout={scout}
             judge={judge}
-            nothingFound={nothingFound}
+            askedQuestion={askedQuestion}
             targetFor={targetFor}
             onOpenInViewer={openViewer}
             follow={animationsOn}
+            overlay={overlay}
           />
         </div>
       </div>
 
-      <LibraryPanel onOpen={openViewer} viewer={viewer} />
+      <LibraryPanel onOpen={openViewer} viewer={viewer} overlay={overlay} />
     </>
   );
 }

@@ -210,6 +210,18 @@ def test_scout_event_lists_the_candidates_before_the_judge(client, library_chunk
 
 
 @needs_db
+def test_scout_results_carry_document_id_and_position(client, library_chunk):
+    chunk = private_chunk(QUESTION)
+    got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
+    scout_done = next(e for e in got if e.get("step") == "scout" and e["status"] == "done")
+    results = scout_done["data"]["results"]
+    assert all(isinstance(r["position"], int) for r in results)
+    assert all(isinstance(r["document_id"], int) for r in results if r["source"] == "library")
+    assert all(r["document_id"] is None for r in results if r["source"] == "private")
+    assert {r["source"] for r in results} == {"library", "private"}
+
+
+@needs_db
 def test_a_reranker_failure_still_answers(client, llm, library_chunk):
     class Broken:
         def rerank(self, query, documents):
