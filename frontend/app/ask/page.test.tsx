@@ -1059,6 +1059,13 @@ test("the Top 5 leaves filler words out", async () => {
 test("clicking an example question fills the box and sends nothing", async () => {
   const fetchMock = stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
+  for (const example of [
+    "Where did Kenneth grow up?",
+    "How does the Judge pick the best sources?",
+    "What does the RAG.co staff handbook say about lunch breaks?",
+  ]) {
+    expect(screen.getByRole("button", { name: example })).toBeInTheDocument();
+  }
   fireEvent.click(
     screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
   );
