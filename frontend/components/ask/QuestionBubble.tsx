@@ -48,7 +48,7 @@ export function QuestionBubble({
   busy: boolean;
   /** The backend can't be reached, so nothing can be answered. */
   offline: boolean;
-  examples?: string[];
+  examples?: { shelf: string; questions: string[] }[];
 }) {
   return (
     <form className={styles.form} onSubmit={onSubmit}>
@@ -65,10 +65,15 @@ export function QuestionBubble({
       {examples && examples.length > 0 && (
         <div className={styles.examples}>
           <span>Try:</span>
-          {examples.map((q) => (
-            <button type="button" key={q} onClick={() => onChange(q)} disabled={busy || offline}>
-              {q}
-            </button>
+          {examples.map((group) => (
+            <div key={group.shelf} className={styles.shelf}>
+              <span className={styles.shelfName}>{group.shelf}</span>
+              {group.questions.map((q) => (
+                <button type="button" key={q} onClick={() => onChange(q)} disabled={busy || offline}>
+                  {q}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

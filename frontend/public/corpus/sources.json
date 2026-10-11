@@ -1,0 +1,352 @@
+{
+  "about-kenneth/cv.pdf": {
+    "source": "Written by Kenneth Go",
+    "licence": "All rights reserved"
+  },
+  "about-kenneth/experience-and-projects.md": {
+    "source": "Written by Kenneth Go",
+    "licence": "All rights reserved"
+  },
+  "about-kenneth/faq-about-kenneth.md": {
+    "source": "Written by Kenneth Go",
+    "licence": "All rights reserved"
+  },
+  "about-kenneth/personal.md": {
+    "source": "Written by Kenneth Go",
+    "licence": "All rights reserved"
+  },
+  "ai-and-society/algorithmic-bias.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Algorithmic_bias",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378983208"
+  },
+  "ai-and-society/deepfake.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Deepfake",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378619504"
+  },
+  "ai-and-society/environmental-impact-of-ai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Environmental_impact_of_AI",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1374551616"
+  },
+  "ai-and-society/ethics-of-ai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Ethics_of_artificial_intelligence",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1376885476"
+  },
+  "ai-and-society/existential-risk-from-ai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Existential_risk_from_artificial_intelligence",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379618364"
+  },
+  "ai-and-society/regulation-of-ai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Regulation_of_artificial_intelligence",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379609230"
+  },
+  "ai-and-society/technological-unemployment.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Technological_unemployment",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379254483"
+  },
+  "ai-history/ai-winter.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/AI_winter",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1374895630"
+  },
+  "ai-history/alan-turing.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Alan_Turing",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379625434"
+  },
+  "ai-history/alphago.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/AlphaGo",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379648512"
+  },
+  "ai-history/chatgpt.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/ChatGPT",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379160224"
+  },
+  "ai-history/dartmouth-workshop.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Dartmouth_workshop",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1360638286"
+  },
+  "ai-history/deep-blue.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Deep_Blue_(chess_computer)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1375427728"
+  },
+  "ai-history/history-of-ai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/History_of_artificial_intelligence",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379292185"
+  },
+  "ai-history/turing-test.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Turing_test",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1374125371"
+  },
+  "general/apollo-11.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Apollo_11",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1371120273"
+  },
+  "general/chess.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Chess",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379113904"
+  },
+  "general/go-game.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Go_(game)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1377627768"
+  },
+  "general/great-barrier-reef.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Great_Barrier_Reef",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1375964325"
+  },
+  "how-ai-works/ai-hallucination.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Hallucination_(artificial_intelligence)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379554048"
+  },
+  "how-ai-works/artificial-intelligence.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Artificial_intelligence",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379547094"
+  },
+  "how-ai-works/generative-pre-trained-transformer.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Generative_pre-trained_transformer",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378421575"
+  },
+  "how-ai-works/large-language-model.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Large_language_model",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379150649"
+  },
+  "how-ai-works/machine-learning.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Machine_learning",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378799175"
+  },
+  "how-ai-works/neural-network.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Neural_network_(machine_learning)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379190744"
+  },
+  "how-ai-works/prompt-engineering.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Prompt_engineering",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378888502"
+  },
+  "how-ai-works/transformer.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Transformer_(deep_learning)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379435465"
+  },
+  "how-ai-works/word-embedding.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Word_embedding",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1374850731"
+  },
+  "lore/about-rag-co.md": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "lore/coffee-club-terms.md": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "lore/meeting-minutes.md": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "lore/newsletter-october-2026.md": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "lore/query-desk-terms.pdf": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "lore/staff-handbook.pdf": {
+    "source": "Written for this project (fictional)",
+    "licence": "MIT"
+  },
+  "movies-and-games/batman-arkham.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Batman:_Arkham",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379028636"
+  },
+  "movies-and-games/blade-runner-2049.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Blade_Runner_2049",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378967903"
+  },
+  "movies-and-games/cyberpunk-2077.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Cyberpunk_2077",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379482087"
+  },
+  "movies-and-games/ex-machina.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Ex_Machina_(film)",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379232955"
+  },
+  "movies-and-games/resident-evil.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Resident_Evil",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378723785"
+  },
+  "movies-and-games/the-last-of-us.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/The_Last_of_Us",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1377335469"
+  },
+  "movies-and-games/the-social-network.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/The_Social_Network",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379637144"
+  },
+  "movies-and-games/watch-dogs.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Watch_Dogs",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1373736027"
+  },
+  "places-and-interests/batam.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Batam",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379635846"
+  },
+  "places-and-interests/mixed-martial-arts.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Mixed_martial_arts",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379554519"
+  },
+  "places-and-interests/muay-thai.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Muay_Thai",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1377864957"
+  },
+  "places-and-interests/singapore.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Singapore",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379468381"
+  },
+  "places-and-interests/sydney.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Sydney",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378421585"
+  },
+  "places-and-interests/ufc.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Ultimate_Fighting_Championship",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379470854"
+  },
+  "places-and-interests/unsw.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/University_of_New_South_Wales",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1378296134"
+  },
+  "rag-basics/full-text-search.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Full-text_search",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1364195936"
+  },
+  "rag-basics/information-retrieval.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Information_retrieval",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1375036430"
+  },
+  "rag-basics/learning-to-rank.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Learning_to_rank",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1360702101"
+  },
+  "rag-basics/retrieval-augmented-generation.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Retrieval-augmented_generation",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1377227095"
+  },
+  "rag-basics/semantic-search.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Semantic_search",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1376135669"
+  },
+  "rag-basics/vector-database.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Vector_database",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1374243120"
+  },
+  "this-project/build-log.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
+  },
+  "this-project/design-decisions.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
+  },
+  "this-project/how-this-office-works.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
+  },
+  "this-project/site-faq.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
+  }
+}

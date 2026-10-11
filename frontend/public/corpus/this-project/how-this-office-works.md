@@ -42,7 +42,7 @@ The real setting: each search returns its best 20 cards. The two lists are merge
 
 The Judge reads the Scout's candidates next to the question and decides which ones really help. The Scout is fast but rough, and the Judge is slower and more careful.
 
-The real setting: the Judge uses Voyage AI's reranker model `rerank-3-lite`. It scores all 20 candidates against the question and keeps the best 5. If the reranker fails, the Judge falls back to the first 5 of the Scout's order, and the question still gets an answer.
+The real setting: the Judge uses Voyage AI's reranker model `rerank-3-lite`. It scores all 20 candidates against the question and keeps the best 5, with at most 2 cards from any one document so that one document cannot fill every place. If the reranker fails, the Judge falls back to the first 5 of the Scout's order, and the question still gets an answer.
 
 ## The Storyteller
 

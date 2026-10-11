@@ -10,8 +10,10 @@ import {
   keyOf,
 } from "../../lib/map";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
+import { SHELVES, shelfFor, shelfOf } from "../../lib/shelves";
 import styles from "./VectorMap.module.css";
 
+const SHELF_ORDER = new Map(SHELVES.map((shelf, index) => [shelf.id, index]));
 const NOTE =
   "Every card is a dot. Cards about similar things sit close together. This is a flat 2-D picture of 1,024-number fingerprints, so distances are only rough.";
 const ASPECT = 1.6;
@@ -44,8 +46,6 @@ type Hover = {
   extra: string[];
 };
 
-export const PALETTE = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#b07aa1","#ff9da7","#9c755f","#86bcb6","#d37295","#8cd17d","#b6992d","#499894","#79706e","#d4a6c8","#a0cbe8","#fabfd2","#bab0ac","#f1ce63"];
-const paletteColor = (index: number) => PALETTE[index % PALETTE.length];
 
 /** The outline of a 5-point star centred on (cx, cy), the first point straight up. */
 function starPath(cx: number, cy: number, outer: number, inner: number) {
@@ -93,7 +93,7 @@ function fittedTo(pts: Point[], bounds: View): View {
  * Every card as a dot, from GET /map, with the visitor's own cards, the question and the Scout's
  * candidates on top. The wheel or the buttons zoom, dragging pans. The map plays no animation.
  * The `compact` variant (the Scout tab) starts zoomed onto the question and its candidates,
- * numbers them by rank and drops the note and the per-document legend. `focus` is the `keyOf`
+ * numbers them by rank and drops the note and the per-shelf legend. `focus` is the `keyOf`
  * key of a candidate to highlight.
  */
 export default function VectorMap({
@@ -215,8 +215,13 @@ export default function VectorMap({
     );
   }
 
-  const titles = [...new Set(points.map((p) => p.title))].sort((a, b) => a.localeCompare(b));
-  const colorOf = (title: string) => paletteColor(titles.indexOf(title));
+  const shelves = [...new Set(points.map((p) => shelfOf(p.filename)))]
+    .map(shelfFor)
+    .sort(
+      (a, b) =>
+        (SHELF_ORDER.get(a.id) ?? SHELF_ORDER.size) - (SHELF_ORDER.get(b.id) ?? SHELF_ORDER.size) ||
+        a.name.localeCompare(b.name),
+    );
   const candidates = overlay?.candidates ?? [];
   const question = overlay?.question;
   const foundBy = new Map(candidates.map((c) => [keyOf(c), c.found_by]));
@@ -262,6 +267,7 @@ export default function VectorMap({
     heading: string | null,
     position: number,
     mine: boolean,
+    shelf?: string,
   ) {
     const rect = wrapRef.current?.getBoundingClientRect();
     const found = foundBy.get(key);
@@ -270,7 +276,7 @@ export default function VectorMap({
       top: (event.clientY || 0) - (rect?.top ?? 0),
       title,
       heading: heading ?? `Card ${position + 1}`,
-      extra: [...(mine ? ["Your text"] : []), ...(found ? [`Found by ${FOUND_LABEL[found]}`] : [])],
+      extra: [...(mine ? ["Your text"] : []), ...(shelf ? [`Shelf: ${shelf}`] : []), ...(found ? [`Found by ${FOUND_LABEL[found]}`] : [])],
     });
   }
 
@@ -311,11 +317,13 @@ export default function VectorMap({
                   cx={p.x}
                   cy={-p.y}
                   r={r}
-                  fill={colorOf(p.title)}
+                  fill={shelfFor(shelfOf(p.filename)).color}
                   opacity={dotOpacity(key)}
                   data-key={key}
                   data-doc={p.document_id}
-                  onPointerEnter={(e) => show(e, key, p.title, p.heading, p.position, false)}
+                  onPointerEnter={(e) =>
+                    show(e, key, p.title, p.heading, p.position, false, shelfFor(shelfOf(p.filename)).name)
+                  }
                   onPointerLeave={() => setHover(null)}
                 />
               );
@@ -475,11 +483,11 @@ export default function VectorMap({
         </div>
         <div className={styles.legendCol}>
           {!compact && (
-            <ul className={styles.legend} aria-label="Documents on the map">
-              {titles.map((title) => (
-                <li key={title}>
-                  <span className={styles.swatch} style={{ background: colorOf(title) }} />
-                  {title}
+            <ul className={styles.legend} aria-label="Shelves on the map">
+              {shelves.map((shelf) => (
+                <li key={shelf.id}>
+                  <span className={styles.swatch} style={{ background: shelf.color }} />
+                  {shelf.name}
                 </li>
               ))}
             </ul>

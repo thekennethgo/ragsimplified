@@ -17,7 +17,7 @@ export type About = {
   };
   translator: { max_weighted_words: number };
   scout: { candidates: number; rrf_k: number; max_private_chunks: number };
-  judge: { keep: number };
+  judge: { keep: number; max_per_document: number };
   storyteller_prompt: string;
 };
 

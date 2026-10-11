@@ -1,0 +1,171 @@
+.reader {
+  max-width: 72ch;
+  margin: 0 auto;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0 0 20px;
+}
+
+.card h1 {
+  margin: 0 0 6px;
+  font-size: 1.6em;
+}
+
+.card p {
+  margin: 0 0 10px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--accent-dark);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.chunk {
+  margin: 0;
+  padding: 0;
+}
+
+.cited {
+  position: relative;
+  background: #fff6d6;
+  border-left: 3px solid #e0b84a;
+  padding-left: 12px;
+  border-radius: 4px;
+}
+
+.tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  background: #e0b84a;
+  color: var(--accent-dark);
+  border-radius: 0 4px 0 4px;
+}
+
+.body h1 {
+  font-size: 1.6em;
+  margin: 1.2em 0 0.5em;
+}
+
+.body h2 {
+  font-size: 1.3em;
+  margin: 1.2em 0 0.5em;
+  border-bottom: 1px solid var(--border);
+}
+
+.body h3 {
+  font-size: 1.1em;
+  margin: 1.2em 0 0.5em;
+}
+
+.body h4,
+.body h5,
+.body h6 {
+  margin: 1.2em 0 0.5em;
+}
+
+.body p,
+.body ul,
+.body ol {
+  margin: 0 0 0.9em;
+}
+
+.body ul,
+.body ol {
+  padding-left: 1.5em;
+}
+
+.body blockquote {
+  margin: 0 0 0.9em;
+  padding-left: 12px;
+  border-left: 3px solid var(--border-strong);
+  color: var(--muted);
+}
+
+.body code {
+  font-family: var(--font-mono);
+  background: var(--tab-soft);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.body pre {
+  margin: 0 0 0.9em;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  background: var(--tab-soft);
+  border-radius: 4px;
+}
+
+.body pre code {
+  padding: 0;
+  background: none;
+}
+
+.body table {
+  width: 100%;
+  margin: 0 0 0.9em;
+  border-collapse: collapse;
+}
+
+.body th,
+.body td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
+
+.body th {
+  background: var(--tab-soft);
+}
+
+.body img {
+  max-width: 100%;
+}
+
+.pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.pdfPage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pageLabel {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 4px;
+}

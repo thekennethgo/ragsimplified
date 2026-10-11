@@ -133,7 +133,7 @@ export function judgeCopy(about: About | null): CharacterCopy {
   return {
     role: "keeps only the best",
     plain: `Search is quick but rough. I read each card next to your question, score how well it really answers it, and keep only the best ${keep}.`,
-    how: `The question and the ${v(about?.scout.candidates)} candidates go to ${v(r?.provider)}'s ${v(r?.model)} reranker. It reads the question and each card together (a cross-encoder), which is more accurate than comparing fingerprints but too slow to run over the whole library. The ${keep} highest-scoring cards are kept, in their new order. If the reranker fails, the Scout's order is used instead.`,
+    how: `The question and the ${v(about?.scout.candidates)} candidates go to ${v(r?.provider)}'s ${v(r?.model)} reranker. It reads the question and each card together (a cross-encoder), which is more accurate than comparing fingerprints but too slow to run over the whole library. The ${keep} highest-scoring cards are kept, in their new order. No more than ${v(about?.judge.max_per_document)} cards come from the same document, so one document cannot fill every place. If the reranker fails, the Scout's order is used instead.`,
     tech: [`${v(r?.provider)} · ${v(r?.model)}`, "Cross-encoder reranking"],
     settings: [
       ["Model", v(r?.model)],

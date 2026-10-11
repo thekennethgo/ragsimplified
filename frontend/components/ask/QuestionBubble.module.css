@@ -93,3 +93,16 @@
   background: var(--chip-error-bg);
   color: var(--chip-error-fg);
 }
+
+.shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  flex-basis: 100%;
+}
+
+.shelfName {
+  font-weight: 600;
+  color: var(--muted);
+}

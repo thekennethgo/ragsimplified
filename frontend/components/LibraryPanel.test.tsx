@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { resetMapCache } from "../lib/map";
+import { SHELVES } from "../lib/shelves";
 import { PrivateTextsProvider, usePrivateTexts } from "../lib/PrivateTexts";
 import LibraryPanel from "./LibraryPanel";
 
@@ -13,8 +14,8 @@ afterEach(() => {
 });
 
 const MAP_POINTS = [
-  { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: "History", x: 0, y: 0 },
-  { chunk_id: 2, document_id: 2, title: "Vector database", position: 0, heading: null, x: 1, y: 1 },
+  { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: "History", x: 0, y: 0 },
+  { chunk_id: 2, document_id: 2, title: "Vector database", filename: "how-ai-works/vector-database.md", position: 0, heading: null, x: 1, y: 1 },
 ];
 
 function stubLibrary() {
@@ -25,8 +26,8 @@ function stubLibrary() {
           url.endsWith("/map")
             ? MAP_POINTS
             : [
-                { id: 2, title: "Vector database", chunk_count: 9 },
-                { id: 1, title: "Apple Inc.", chunk_count: 22 },
+                { id: 2, title: "Vector database", filename: "how-ai-works/vector-database.md", chunk_count: 9 },
+                { id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", chunk_count: 22 },
               ],
         ),
       ),
@@ -79,6 +80,25 @@ test("lists the starter collection by title, each linking to its document", asyn
   expect(screen.getByRole("heading", { name: "Shared library" })).toBeInTheDocument();
   expect(screen.getByText(/not in the shared library/)).toBeInTheDocument();
   expect(onCount).toHaveBeenCalledWith(2);
+});
+
+test("groups the shared library under one heading per shelf, in shelf order", async () => {
+  stubLibrary();
+  renderPanel();
+  openDocuments();
+  await screen.findByRole("link", { name: "Apple Inc." });
+  const headings = screen.getAllByRole("heading", { level: 4 });
+  expect(headings.map((h) => h.textContent)).toEqual(["RAG basics1", "How AI works1"]);
+});
+
+test("each shelf wrapper carries its map colour", async () => {
+  stubLibrary();
+  renderPanel();
+  openDocuments();
+  await screen.findByRole("link", { name: "Apple Inc." });
+  const wrapper = screen.getByRole("heading", { level: 4, name: /RAG basics/ }).parentElement!;
+  const rag = SHELVES.find((s) => s.name === "RAG basics")!;
+  expect(wrapper.style.getPropertyValue("--shelf")).toBe(rag.color);
 });
 
 test("shows the visitor's books live and removes one", async () => {

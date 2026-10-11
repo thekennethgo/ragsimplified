@@ -188,3 +188,38 @@
   overflow: auto;
   padding: 4px 2px;
 }
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* the group's own 10px gap plus 2px: about 12px between shelves */
+.shelf + .shelf {
+  margin-top: 2px;
+}
+
+.shelf .starter {
+  border-left: 3px solid var(--shelf);
+  padding-left: 8px;
+}
+
+.shelfHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+.shelfDot {
+  align-self: center;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--shelf);
+}
