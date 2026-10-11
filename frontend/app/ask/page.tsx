@@ -38,9 +38,9 @@ const QUERY_LABEL = "The Query room, where the Clerk takes your question.";
 
 const EXAMPLES = [
   "What is retrieval-augmented generation?",
-  "Who founded Apple and in what year?",
-  "What is Apple silicon and which Macs first used it?",
-  "What does TREC stand for and when was it started?",
+  "Where did Kenneth grow up?",
+  "How does the Judge pick the best sources?",
+  "What does the RAG.co staff handbook say about lunch breaks?",
 ];
 
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;

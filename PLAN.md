@@ -234,15 +234,27 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: polish the pages with the owner, Home first (layout, copy, spacing, visuals), then make Upload and Ask consistent with it. Each round is agreed with the owner in the browser before it is built.
   - Done when: the owner signs off on Home, Upload and Ask.
   - Out of scope: new features, the launch corpus, the scenes in 5.8 and 5.9.
-- [ ] 5.7c Choose the launch corpus (moved up from 6.0a)
-  - Do: with the owner, decide which starter documents stay in the live library; move the rest from `corpus/` to `evals/corpus/` so `make eval` still uses them; reseed locally and check the File cabinet, the vector map and the example questions still make sense.
-  - Done when: `corpus/` holds only the chosen launch documents and the local library matches it.
-  - Out of scope: the owner's own documents (6.0), seeding Supabase and new eval questions (6.0a).
 - [ ] 6.0 (You) Write the launch documents (moved up)
-  - Do: put the owner's own documents in `corpus/`: a FAQ about yourself (the questions a recruiter or collaborator would ask, with your real answers), CV, experience, projects and public contact details; plus 2 or 3 short made-up demo documents (for example a fictional company handbook) so visitors can try questions whose answers no model could know. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
-  - Done when: the files are in `corpus/`.
+  - Do: review and finish the drafts of your own documents in `corpus-drafts/about-me/` (`personal.md`, `experience-and-projects.md`, `faq-about-kenneth.md`), written from your answers and CV. The CV itself is not added while it is a work in progress, and the phone number never goes in. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
+  - Done when: you sign off the three drafts, ready for step 5.7c (L8).
+- [ ] 5.7c Launch corpus (moved up from 6.0a, expanded)
+  - Do: follow `docs/plans/launch-library.md` steps L1 to L9: prove subfolders work, move the kept documents into their new shelves and the placeholders to `evals/corpus/`, add about 62 documents on 11 shelves (About Kenneth, This project, Places & interests, Movies & games, RAG basics, How AI works, AI history, AI and society, General, Real reports, and the fictional RAG.co company in `lore/`), move in the owner's signed-off documents, add their eval questions, reseed locally and save a new baseline. One PR per L step.
+  - Done when: `corpus/` matches the layout in the plan, `make eval` includes the new questions with a saved baseline, and the local library and map show the new library.
+  - Out of scope: seeding Supabase (6.0a), the download button (5.7d), PDF highlighting (5.7e), shelves (5.7f).
+- [ ] 5.7d Download button
+  - Do: follow `docs/plans/launch-library.md` step L10: a Download link for library documents and a Download button for pasted texts in the viewer.
+  - Done when: both download the right file, with tests.
+  - Out of scope: PDF highlighting.
+- [ ] 5.7e Highlight the cited passage in PDFs
+  - Do: follow `docs/plans/launch-library.md` step L11: ADR 005, `react-pdf@9.2.1`, the cited page rendered in the viewer with the cited text marked, the extracted text kept as the fallback.
+  - Done when: a citation from a PDF shows its passage marked on the right page, with tests.
+  - Out of scope: highlighting inside the browser's own PDF viewer, the source side panel (5.12).
+- [ ] 5.7f Library shelves, starter questions and source lines
+  - Do: follow `docs/plans/library-polish.md` steps P1 to P4: the File cabinet grouped by folder as shelves, the Ask page's starter questions grouped by shelf, a source and licence line in the viewer from `corpus/sources.json`, and the vector map coloured by shelf.
+  - Done when: the plan's verification passes on localhost.
+  - Out of scope: new endpoints, migrations.
 
-- [ ] 5.8 Full Upload scene
+- [~] 5.8 Full Upload scene (SKIPPED for now by the owner; moving straight to launch, revisit after v1.0.0)
   - Do: the data-driven parts of the Upload scenes in `frontend/lib/office/scenes/upload.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
   - Done when: one upload plays the whole scene.
   - Out of scope: the Ask page.
@@ -265,10 +277,13 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 
 ## Phase 6: Launch
 
-- [ ] 6.0a Owner evals and launch seed
-  - Do: add at least 8 eval questions about the owner's documents (the requirement deferred from 3.7) and 3 about the demo documents; run `make seed` against Supabase and remove the placeholder rows from it; run `make eval` and save a new baseline.
-  - Done when: the live library lists the launch documents and `make eval` includes the owner questions.
-  - Out of scope: new code.
+- [ ] 2.10 (You) Spend limit (moved from Phase 2)
+  - Do: set a monthly spend limit (about $10) in the Anthropic Console, before any endpoint that calls Claude goes live.
+  - Done when: the limit shows in the Console.
+- [ ] 6.0a (You) Launch seed
+  - Do: with `DATABASE_URL` pointing at Supabase, run `make migrate` (the live database is missing migration 002, so `/map` fails today) and then `make seed`; remove the old placeholder documents from Supabase; check the live File cabinet and Map tab.
+  - Done when: the live library lists only the launch documents and the live map works.
+  - Out of scope: new code; the eval questions and baseline (done in 5.7c).
 - [ ] 6.1 Limits
   - Do: a 20,000-character limit on pasted text, a cap on the private chunks sent with one question, a per-IP daily quota for pastes and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
   - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
@@ -277,6 +292,13 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: run `python -m app.migrate` before the server in Render's start command.
   - Done when: a deploy with a new migration succeeds.
   - Out of scope: new migrations.
+- [ ] 6.2a Rename to RAG Visualised
+  - Do: rename the project from ragsimplified to RAG Visualised (`ragvisualised`) in code and docs: page titles and metadata, the header, `README.md`, `CLAUDE.md`, `docs/`, `corpus/` and `package.json` names; keep the eval database name and anything stored in the live database unchanged.
+  - Done when: `grep -rni ragsimplified --exclude-dir=node_modules --exclude-dir=.git .` only finds intended leftovers, listed in the PR.
+  - Out of scope: renaming the GitHub repo or the Vercel and Render projects (6.2b).
+- [ ] 6.2b (You) Rename the repo and the deploys
+  - Do: rename the GitHub repo to `ragvisualised`, rename the Vercel and Render projects, then update `CORS_ORIGINS` on Render and `NEXT_PUBLIC_BACKEND_URL` on Vercel to the new URLs, and `git remote set-url origin` locally.
+  - Done when: the live site works on the new URLs and the old GitHub URL redirects.
 - [ ] 6.3 Launch README
   - Do: live link, a GIF of both scenes, the architecture diagram, eval scores, "Run it yourself" and "Deploy your own".
   - Done when: a friend can run it locally from the README alone.
@@ -285,6 +307,17 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: tag release `v1.0.0` and share the link.
   - Done when: the release page lists the changelog.
 
+## Phase 7: After launch
+
+- [ ] 7.1 Second look (multi-hop retrieval)
+  - Do: after the Judge, one short LLM call through `llm.py` reads the question and the top 5 sources and replies `DONE` or one follow-up search query (for example "Batam Indonesia" for "What is Kenneth's hometown like?"); on a follow-up, the Scout searches again and the Judge picks the best 5 from both rounds, at most one extra round; new step events so the Scout can be shown making a second trip with the lantern. Write a small plan and an ADR first.
+  - Done when: the cross-document eval questions from step 5.7c (L4) improve over the saved baseline and no other score drops by more than 2 points.
+  - Out of scope: more than one extra round, query rewriting before the first search, the Fact-Checker.
+- [ ] 7.2 Meow, the office cat
+  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says.
+  - Done when: Meow shows in every room, the idle loop plays and stops with reduced motion, and the scene id tests still pass.
+  - Out of scope: making Meow react to the pipeline, a character tab for Meow.
+
 ## Milestones
 
 - [ ] Phase 0: public repo, step skills and protections in place
@@ -292,5 +325,5 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
-- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map (data-driven scenes, detail panels, accessibility and source side panel skipped)
+- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map with character tabs, the launch library, downloads and PDF highlighting (data-driven scenes, accessibility and source side panel skipped)
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released

@@ -59,7 +59,7 @@ export function QuestionBubble({
           onChange={(e) => onChange(e.target.value)}
           maxLength={MAX_QUESTION_CHARS}
           rows={3}
-          placeholder="e.g. How did the M1 chip change MacBook battery life?"
+          placeholder="e.g. Where did Kenneth grow up?"
         />
       </label>
       {examples && examples.length > 0 && (
