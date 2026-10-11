@@ -230,29 +230,52 @@ Office animation convention (ADR 004; added to `CLAUDE.md` in step 5.1): each ro
   - Out of scope: the scenes that use it (5.8, 5.9), 3-D.
 Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were removed by ADR 004.
 
-- [ ] 5.7b Page polish
-  - Do: polish the pages with the owner, Home first (layout, copy, spacing, visuals), then make Upload and Ask consistent with it. Each round is agreed with the owner in the browser before it is built.
-  - Done when: the owner signs off on Home, Upload and Ask.
-  - Out of scope: new features, the launch corpus, the scenes in 5.8 and 5.9.
-- [ ] 6.0 (You) Write the launch documents (moved up)
+- [x] 6.0 (You) Write the launch documents (moved up)
   - Do: review and finish the drafts of your own documents in `corpus-drafts/about-me/` (`personal.md`, `experience-and-projects.md`, `faq-about-kenneth.md`), written from your answers and CV. The CV itself is not added while it is a work in progress, and the phone number never goes in. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
   - Done when: you sign off the three drafts, ready for step 5.7c (L8).
-- [ ] 5.7c Launch corpus (moved up from 6.0a, expanded)
+- [x] 5.7c Launch corpus (moved up from 6.0a, expanded)
   - Do: follow `docs/plans/launch-library.md` steps L1 to L9: prove subfolders work, move the kept documents into their new shelves and the placeholders to `evals/corpus/`, add about 62 documents on 11 shelves (About Kenneth, This project, Places & interests, Movies & games, RAG basics, How AI works, AI history, AI and society, General, Real reports, and the fictional RAG.co company in `lore/`), move in the owner's signed-off documents, add their eval questions, reseed locally and save a new baseline. One PR per L step.
   - Done when: `corpus/` matches the layout in the plan, `make eval` includes the new questions with a saved baseline, and the local library and map show the new library.
   - Out of scope: seeding Supabase (6.0a), the download button (5.7d), PDF highlighting (5.7e), shelves (5.7f).
-- [ ] 5.7d Download button
-  - Do: follow `docs/plans/launch-library.md` step L10: a Download link for library documents and a Download button for pasted texts in the viewer.
-  - Done when: both download the right file, with tests.
-  - Out of scope: PDF highlighting.
-- [ ] 5.7e Highlight the cited passage in PDFs
-  - Do: follow `docs/plans/launch-library.md` step L11: ADR 005, `react-pdf@9.2.1`, the cited page rendered in the viewer with the cited text marked, the extracted text kept as the fallback.
-  - Done when: a citation from a PDF shows its passage marked on the right page, with tests.
-  - Out of scope: highlighting inside the browser's own PDF viewer, the source side panel (5.12).
+- [ ] 5.7g Per-document cap in the Judge
+  - Do: in `backend/app/pipeline/judge.py`, after reranking, keep at most 2 chunks from any one document in the final 5, filling the freed places with the next best candidates from other documents; the cap is a named constant shown in `GET /about`. Then run `make eval` and save the baseline.
+  - Done when: a unit test with fixed reranker scores shows a third chunk from the same document replaced by the next document, and the `indirect-*` eval questions (added before this step) do not get worse.
+  - Out of scope: the second look (5.7h), changing how many candidates the Scout passes on.
+  - Plan: `docs/plans/phase-5-features.md` (F1).
 - [ ] 5.7f Library shelves, starter questions and source lines
   - Do: follow `docs/plans/library-polish.md` steps P1 to P4: the File cabinet grouped by folder as shelves, the Ask page's starter questions grouped by shelf, a source and licence line in the viewer from `corpus/sources.json`, and the vector map coloured by shelf.
   - Done when: the plan's verification passes on localhost.
   - Out of scope: new endpoints, migrations.
+  - Plan: `docs/plans/phase-5-features.md` (F2).
+- [ ] 5.7h Second look (multi-hop retrieval, moved up from 7.1)
+  - Do: write ADR 006 first. After the Judge, a two-stage check: Mercury Decide (a free System 1 decision model on OpenRouter) gives the probability that the top 5 sources answer the question, and only when it is low does a short LLM call through `llm.py` write one follow-up search query (the LLM decides alone when no OpenRouter key is set or the sources include pasted text) (for example "Batam Indonesia" for "What is Kenneth's hometown like?"); on a follow-up, the Scout searches again and the Judge picks the best 5 from both rounds, at most one extra round. New step events (`second_look` start and done, with the follow-up query) so the office can show it: reuse the Scout's existing walk and lantern tweens in `frontend/lib/office/scenes/ask.ts` for a second trip, with the follow-up query in the Scout's speech bubble (DOM), and a line in the Scout's character tab; no new room art.
+  - Done when: the `indirect-*` and `cross-*` eval questions improve over the saved baseline, no other score drops by more than 2 points, and on localhost "What is Kenneth's hometown like?" shows the second trip and answers from the Batam document.
+  - Out of scope: more than one extra round, query rewriting before the first search, the Fact-Checker, new character art.
+  - Plan: `docs/plans/phase-5-features.md` (F3).
+- [ ] 5.7d Download button
+  - Do: follow `docs/plans/launch-library.md` step L10: a Download link for library documents and a Download button for pasted texts in the viewer.
+  - Done when: both download the right file, with tests.
+  - Out of scope: PDF highlighting.
+  - Plan: `docs/plans/phase-5-features.md` (F4).
+- [ ] 5.7e Highlight the cited passage in PDFs
+  - Do: follow `docs/plans/launch-library.md` step L11: ADR 005, `react-pdf@9.2.1`, the cited page rendered in the viewer with the cited text marked, the extracted text kept as the fallback.
+  - Done when: a citation from a PDF shows its passage marked on the right page, with tests.
+  - Out of scope: highlighting inside the browser's own PDF viewer, the source side panel (5.12).
+  - Plan: `docs/plans/phase-5-features.md` (F5).
+- [ ] 5.7i Second look animation
+  - Do: when a second look runs, the Judge walks to the Clerk at the whiteboard instead of handing the cards to the Storyteller, the Clerk rewrites the board with the follow-up query, and the Translator, Scout and Judge run again before the handover; no new room art.
+  - Done when: the hometown question plays the rewrite and the second round on localhost, and a question that needs no second look plays exactly as before.
+  - Out of scope: new characters, changes to how the second look decides.
+  - Plan: `docs/plans/phase-5-features.md` (F6).
+- [ ] 5.7j Meow, the office cat (moved up from 7.2)
+  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says.
+  - Done when: Meow shows in every room, the idle loop plays and stops with reduced motion, and the scene id tests still pass.
+  - Out of scope: making Meow react to the pipeline, a character tab for Meow.
+  - Plan: `docs/plans/phase-5-features.md` (F7).
+- [ ] 5.7b Page polish (moved after the features)
+  - Do: polish the pages with the owner, Home first (layout, copy, spacing, visuals), then make Upload and Ask consistent with it. Each round is agreed with the owner in the browser before it is built.
+  - Done when: the owner signs off on Home, Upload and Ask.
+  - Out of scope: new features, the launch corpus, the scenes in 5.8 and 5.9.
 
 - [~] 5.8 Full Upload scene (SKIPPED for now by the owner; moving straight to launch, revisit after v1.0.0)
   - Do: the data-driven parts of the Upload scenes in `frontend/lib/office/scenes/upload.ts` (shapes drawn from real data are `aria-hidden`; text stays in DOM overlays): all four handoffs, with the shelf counter rising as chunks come back to the visitor. The Chopper's cuts land at the real chunk boundaries and the shared overlap is shown on neighbouring cards; the Translator stamps each card with a fingerprint drawn from the first 32 numbers of its real vector; the stamped cards fly onto the vector map, into the visitor's own region.
@@ -307,17 +330,6 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: tag release `v1.0.0` and share the link.
   - Done when: the release page lists the changelog.
 
-## Phase 7: After launch
-
-- [ ] 7.1 Second look (multi-hop retrieval)
-  - Do: after the Judge, one short LLM call through `llm.py` reads the question and the top 5 sources and replies `DONE` or one follow-up search query (for example "Batam Indonesia" for "What is Kenneth's hometown like?"); on a follow-up, the Scout searches again and the Judge picks the best 5 from both rounds, at most one extra round; new step events so the Scout can be shown making a second trip with the lantern. Write a small plan and an ADR first.
-  - Done when: the cross-document eval questions from step 5.7c (L4) improve over the saved baseline and no other score drops by more than 2 points.
-  - Out of scope: more than one extra round, query rewriting before the first search, the Fact-Checker.
-- [ ] 7.2 Meow, the office cat
-  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says.
-  - Done when: Meow shows in every room, the idle loop plays and stops with reduced motion, and the scene id tests still pass.
-  - Out of scope: making Meow react to the pipeline, a character tab for Meow.
-
 ## Milestones
 
 - [ ] Phase 0: public repo, step skills and protections in place
@@ -325,5 +337,5 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 - [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
 - [ ] Phase 3: cited answers on the live site, with a baseline eval score
 - [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
-- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map with character tabs, the launch library, downloads and PDF highlighting (data-driven scenes, accessibility and source side panel skipped)
+- [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map with character tabs, the launch library, downloads, PDF highlighting and the second look (data-driven scenes, accessibility and source side panel skipped)
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released

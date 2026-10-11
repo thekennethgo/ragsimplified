@@ -38,7 +38,7 @@
 {"id": "near-3", "type": "answerable", "tier": "hard", "question": "What kind of database stores embeddings and uses approximate nearest neighbor algorithms?", "expected_file": "rag-basics/vector-database.md", "expected_keyword": "approximate nearest neighbor"}
 {"id": "near-4", "type": "answerable", "tier": "hard", "question": "Which family of language models is pre-trained to predict the next word?", "expected_file": "how-ai-works/large-language-model.md", "expected_keyword": "Generative pre-trained transformers"}
 {"id": "needle-1", "type": "answerable", "tier": "hard", "question": "What is Project Treble in Android?", "expected_file": "android.pdf", "expected_keyword": "Project Treble"}
-{"id": "needle-2", "type": "answerable", "tier": "hard", "question": "Who composed the original score of Cyberpunk 2077?", "expected_file": "movies-and-games/cyberpunk-2077.md", "expected_keyword": "Marcin Przybyłowicz"}
+{"id": "needle-2", "type": "answerable", "tier": "hard", "question": "Who composed the original score of Cyberpunk 2077?", "expected_file": "movies-and-games/cyberpunk-2077.md", "expected_keyword": "Marcin Przyby\u0142owicz"}
 {"id": "needle-3", "type": "answerable", "tier": "hard", "question": "How much money did The Empire Strikes Back earn worldwide?", "expected_file": "the-empire-strikes-back.md", "expected_keyword": "$401.5 million"}
 {"id": "needle-4", "type": "answerable", "tier": "hard", "question": "Who wrote the 1980 short story that gave cyberpunk its name?", "expected_file": "cyberpunk.md", "expected_keyword": "Bruce Bethke"}
 {"id": "code-1", "type": "answerable", "tier": "hard", "question": "What does error code E-4417 mean on the Zephyr R9 router?", "expected_file": "zephyr-router-manual.md", "expected_keyword": "E-4417"}
@@ -84,7 +84,7 @@
 {"id": "none-rag-co", "type": "unanswerable", "question": "What are the opening hours of Guesswork & Co.?"}
 {"id": "conflict-1", "type": "answerable", "tier": "hard", "question": "How many cups an hour can the RAG.co coffee machine Bean There make?", "expected_files": ["lore/about-rag-co.md", "lore/newsletter-october-2026.md"]}
 {"id": "conflict-2", "type": "answerable", "tier": "hard", "question": "When did Meow the cat arrive at RAG.co?", "expected_files": ["lore/about-rag-co.md", "lore/newsletter-october-2026.md"]}
-{"id": "cross-1", "type": "answerable", "tier": "hard", "question": "What country is the city where Kenneth grew up in?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/batam.md"]}
+{"id": "cross-1", "type": "answerable", "tier": "hard", "question": "Which province is the city where Kenneth grew up the largest city of?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/batam.md"], "expected_keyword": "Riau Islands"}
 {"id": "cross-2", "type": "answerable", "tier": "hard", "question": "When was the university Kenneth studied at founded?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/unsw.md"]}
 {"id": "cross-3", "type": "answerable", "tier": "hard", "question": "Who directed Kenneth's favourite movie about Facebook?", "expected_files": ["about-kenneth/personal.md", "movies-and-games/the-social-network.md"]}
 {"id": "cross-4", "type": "answerable", "tier": "hard", "question": "Which of Kenneth's favourite games is about hacking?", "expected_files": ["about-kenneth/personal.md", "movies-and-games/watch-dogs.md"]}
@@ -99,3 +99,7 @@
 {"id": "me-9", "type": "answerable", "question": "Can I see Kenneth's CV?", "expected_file": "about-kenneth/faq-about-kenneth.md", "expected_keyword": "CV"}
 {"id": "none-me-1", "type": "unanswerable", "question": "What salary does Kenneth expect?"}
 {"id": "none-6", "type": "unanswerable", "question": "What will the weather be in Sydney tomorrow?"}
+{"id": "indirect-1", "type": "answerable", "tier": "hard", "question": "What are Kenneth's favourite movies about?", "expected_files": ["about-kenneth/personal.md", "movies-and-games/blade-runner-2049.md", "movies-and-games/the-social-network.md", "movies-and-games/ex-machina.md"]}
+{"id": "indirect-2", "type": "answerable", "tier": "hard", "question": "What is Kenneth's hometown like?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/batam.md"]}
+{"id": "indirect-3", "type": "answerable", "tier": "hard", "question": "What is the sport of the university society Kenneth was a member of?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/muay-thai.md"]}
+{"id": "indirect-4", "type": "answerable", "tier": "hard", "question": "What is the city Kenneth lives in known for?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/sydney.md"]}
