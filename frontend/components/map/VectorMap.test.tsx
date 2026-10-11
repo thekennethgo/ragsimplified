@@ -3,14 +3,15 @@ import { afterEach, expect, test } from "vitest";
 
 import type { MapOverlay, MapPoint } from "../../lib/map";
 import { PrivateTextsProvider, usePrivateTexts } from "../../lib/PrivateTexts";
-import VectorMap, { PALETTE } from "./VectorMap";
+import { OTHER_COLOR, SHELVES } from "../../lib/shelves";
+import VectorMap from "./VectorMap";
 
 afterEach(cleanup);
 
 const POINTS: MapPoint[] = [
-  { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: "History", x: 0, y: 0 },
-  { chunk_id: 2, document_id: 1, title: "Apple Inc.", position: 1, heading: null, x: 1, y: 1 },
-  { chunk_id: 3, document_id: 2, title: "Vector database", position: 0, heading: "Index", x: 2, y: 0 },
+  { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: "History", x: 0, y: 0 },
+  { chunk_id: 2, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 1, heading: null, x: 1, y: 1 },
+  { chunk_id: 3, document_id: 2, title: "Vector database", filename: "how-ai-works/vector-database.md", position: 0, heading: "Index", x: 2, y: 0 },
 ];
 
 function Seed() {
@@ -61,9 +62,10 @@ test("draws a dot per library card coloured by document, the visitor's squares a
   expect(dots).toHaveLength(3);
   expect(new Set([...dots].map((d) => d.getAttribute("fill"))).size).toBe(2);
   expect(container.querySelectorAll("rect[data-key^='p:']")).toHaveLength(1);
-  const legend = screen.getByRole("list", { name: "Documents on the map" });
-  expect(legend).toHaveTextContent("Apple Inc.");
-  expect(legend).toHaveTextContent("Vector database");
+  const legend = screen.getByRole("list", { name: "Shelves on the map" });
+  expect(legend).toHaveTextContent("RAG basics");
+  expect(legend).toHaveTextContent("How AI works");
+  expect(legend).not.toHaveTextContent("Apple Inc.");
   expect(screen.getByRole("list", { name: "Map key" })).toHaveTextContent("Your text");
 });
 
@@ -112,13 +114,30 @@ test("a plain wheel does not zoom the map, Ctrl + wheel does", () => {
   expect(svg().getAttribute("viewBox")).not.toBe(first);
 });
 
-test("two documents get two different colours from the palette", () => {
-  const { container } = renderMap({});
-  const fills = [...container.querySelectorAll("circle[data-key^='l:']")].map((d) =>
-    d.getAttribute("fill"),
-  );
-  expect(new Set(fills).size).toBe(2);
-  for (const fill of fills) expect(PALETTE).toContain(fill);
+test("documents on the same shelf share a colour and documents on different shelves do not", () => {
+  const points: MapPoint[] = [
+    ...POINTS,
+    { chunk_id: 4, document_id: 3, title: "Other rag doc", filename: "rag-basics/other.md", position: 0, heading: null, x: 3, y: 1 },
+  ];
+  const { container } = renderMap({ points });
+  const fill = (id: number) =>
+    container.querySelector(`circle[data-doc='${id}']`)?.getAttribute("fill");
+  expect(fill(1)).toBe(fill(3));
+  expect(fill(1)).not.toBe(fill(2));
+  expect(fill(1)).toBe(SHELVES.find((s) => s.id === "rag-basics")?.color);
+});
+
+test("an unknown shelf is grey and the hover card names the shelf", () => {
+  const points: MapPoint[] = [
+    { chunk_id: 1, document_id: 1, title: "Loose", filename: "loose.md", position: 0, heading: null, x: 0, y: 0 },
+    { chunk_id: 2, document_id: 2, title: "Mine", filename: "new-shelf/mine.md", position: 0, heading: null, x: 1, y: 1 },
+  ];
+  const { container } = renderMap({ points });
+  expect(container.querySelector("circle[data-doc='1']")).toHaveAttribute("fill", OTHER_COLOR);
+  expect(screen.getByRole("list", { name: "Shelves on the map" })).toHaveTextContent("New shelf");
+  fireEvent.pointerEnter(container.querySelector("circle[data-doc='2']")!);
+  expect(screen.getByRole("tooltip")).toHaveTextContent("Mine");
+  expect(screen.getByRole("tooltip")).toHaveTextContent("Shelf: New shelf");
 });
 
 test("shows loading, error and empty states", () => {
@@ -153,7 +172,7 @@ test("compact starts fitted to the question and candidates, and Reset view retur
   const fitted = svg().getAttribute("viewBox");
   const width = (box: string | null) => Number(box!.split(" ")[2]);
   expect(width(fitted)).toBeLessThan(width(whole));
-  expect(screen.queryByRole("list", { name: "Documents on the map" })).toBeNull();
+  expect(screen.queryByRole("list", { name: "Shelves on the map" })).toBeNull();
   const legend = screen.getByRole("list", { name: "Map key" });
   expect(legend).toHaveTextContent("Your question");
   expect(legend).toHaveTextContent("Found by meaning");

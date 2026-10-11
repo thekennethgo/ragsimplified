@@ -107,7 +107,36 @@ Docs and evals:
 
 ### F5. Highlight the cited passage in PDFs (PLAN 5.7e)
 
-- Follow `docs/plans/launch-library.md` step L11 exactly. For the hand check use `corpus/lore/staff-handbook.pdf` (for example "How many days of paid leave do RAG.co staff get a year?").
+- Follow `docs/plans/launch-library.md` step L11 exactly, with the changes below (added by the owner on 2026-10-12). For the hand check use `corpus/lore/staff-handbook.pdf` (for example "How many days of paid leave do RAG.co staff get a year?").
+
+#### F5 additions: a readable viewer (owner, 2026-10-12)
+
+Goal: documents read like VS Code's Markdown preview, and every PDF shows as the real PDF. These replace the matching parts of L11 where they differ.
+
+PDFs (replaces L11's single page with Previous/Next buttons):
+
+- `PdfPageView.tsx` is renamed `PdfView.tsx` and renders **every page** of `/corpus/<filename>` in one scrolling column (`<Document>` with one `<Page renderTextLayer renderAnnotationLayer={false} width={…}>` per page, `numPages` from `onLoadSuccess`). Page width follows the viewer column (measure the container with a `ResizeObserver`, at most 720 px). Each page has a small "Page N" label above it.
+- `LibraryDocView.tsx`: **every** PDF shows `PdfView`, cited or not (also when opened from the File cabinet). When a chunk is cited and has a page, scroll that page into view, then the first `<mark>` on it; mark only text on the cited page, using L11's `customTextRenderer` rule. With no cited chunk, start at page 1.
+- No Previous/Next buttons. The extracted-text view stays as the fallback when the PDF fails to load (`onLoadError`), rendered with the Markdown rules below.
+
+Text documents (Markdown and pasted text):
+
+- `npm install --save-exact react-markdown@10.1.0 remark-gfm@4.0.1` in `frontend/`. Render with `<ReactMarkdown remarkPlugins={[remarkGfm]}>`. Raw HTML stays off (the default; never add `rehype-raw`). Links get `target="_blank" rel="noopener noreferrer"` through the `components={{ a: … }}` prop.
+- One continuous document, no box per chunk. For each chunk in order, render only its new text, dropping the overlap with the previous chunk:
+  - Pasted texts (`PrivateTextView.tsx`) already have `overlap`: use `text.slice(overlap)`.
+  - Library chunks have no `overlap` field. Add `function newText(prev: string | undefined, text: string): string` in a new `frontend/lib/overlap.ts`: when `prev` is set, find the longest `k` (at most `min(prev.length, text.length, 400)`) where `text.startsWith(prev.slice(-k))`; if `k >= 20` or `k === prev.length`, return `text.slice(k).trimStart()`; otherwise return `text`. Do not change the backend.
+  - The first chunk of a library document: drop its first line when it is a level-1 heading (`/^# /`), because the header card shows the title.
+- Each chunk's Markdown is its own `<div>` with no border, padding or margin of its own, so the seams do not show. The cited chunk's `<div>` gets `aria-current="true"`, a soft highlight (`background: #fff6d6`, a 3 px `#e0b84a` left border, 12 px left padding, 4 px radius) and a small "Cited" tag at its top right. It is scrolled into view as today.
+- Styles in a new `frontend/components/viewer/DocViewer.module.css`, VS Code preview style: reading column `max-width: 72ch`, centred; body 16 px, `line-height: 1.6`, ink colour `var(--ink)`; `h1` 1.6em, `h2` 1.3em with a 1 px `var(--border)` bottom rule, `h3` 1.1em, headings `margin: 1.2em 0 0.5em`; paragraphs and lists `margin: 0 0 0.9em`; lists `padding-left: 1.5em`; `blockquote` with a 3 px `var(--border-strong)` left border, 12 px left padding, `var(--muted)` colour; inline code and code blocks in `var(--font-mono)` on `var(--tab-soft)` with 4 px radius (code blocks 12 px padding, `overflow-x: auto`); tables full width, collapsed 1 px `var(--border)` borders, 6 px 10 px cell padding, header row on `var(--tab-soft)`; images `max-width: 100%`.
+- Header card at the top of both views (white background, 1 px `var(--border)` border, 8 px radius, 16 px padding): the title as `<h1>`, the source line from F2 (library only) under it, then a row of buttons: "Open the original" (with " at page N" for a cited PDF page, as today) and "Download" (from F4). The buttons are the `<a>` elements styled as buttons (40 px min height, 1 px border, 6 px radius, `var(--accent-dark)` text); keep their `href` and `download` attributes exactly as F4 wrote them.
+- Pasted texts get the same reading layout and header card (title, then the Download button from F4; no source line, no "Open the original").
+
+Tests (in addition to L11's, adjusted for the full-PDF view):
+
+- `frontend/lib/overlap.test.ts`: overlap removed, no overlap kept, short `prev` fully contained, a 3-character accidental match kept.
+- `LibraryDocView.test.tsx`: Markdown renders as elements (an `h2`, a list item, a link with `target="_blank"`), not as `<pre>`; the leading `# Title` line is not rendered twice; the overlapping text appears once; the cited chunk has `aria-current="true"` and the "Cited" tag; a PDF (mock `react-pdf`) renders one `Page` per page and does so also with no cited chunk; the PDF load error falls back to the text view.
+- A `PrivateTextView` test: the reading layout renders Markdown and drops `overlap`.
+- Check by hand: open a Wikipedia document from the File cabinet (headings, lists and links look like VS Code's preview, no chunk boxes); click a citation (soft highlight with "Cited", scrolled into view); open `cv.pdf` from the File cabinet (all pages show); open a staff handbook citation (all pages show, it jumps to the cited page with the passage marked).
 
 ### F6. Second look animation: the Judge asks the Clerk to rewrite the question (PLAN 5.7i)
 

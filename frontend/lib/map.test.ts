@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { resetMapCache, useMapPoints } from "./map";
 
 const POINTS = [
-  { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: null, x: 0, y: 0 },
+  { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: null, x: 0, y: 0 },
 ];
 
 beforeEach(() => resetMapCache());

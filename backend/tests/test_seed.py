@@ -61,3 +61,17 @@ def test_seed_handles_subfolders(conn, tmp_path):
         assert not (public / "sub" / "README.md").exists()
     finally:
         conn.execute("DELETE FROM documents WHERE filename IN ('seed-top-note.md', 'sub/note.md')")
+
+
+def test_seed_copies_sources_json_but_does_not_load_it(conn, tmp_path):
+    corpus = tmp_path / "corpus"
+    public = tmp_path / "public"
+    corpus.mkdir()
+    (corpus / "seed-sources-note.md").write_text("# Sources note\n\nUnique sources content 7731.")
+    (corpus / "sources.json").write_text('{"seed-sources-note.md": {"source": "x"}}')
+    try:
+        results = seed(conn, FakeEmbedder(), corpus, public)
+        assert results == {"seed-sources-note.md": "saved"}
+        assert (public / "sources.json").read_text() == (corpus / "sources.json").read_text()
+    finally:
+        conn.execute("DELETE FROM documents WHERE filename = 'seed-sources-note.md'")

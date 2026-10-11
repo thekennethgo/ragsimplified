@@ -6,12 +6,13 @@ import { useEffect, useState } from "react";
 import { backendUrl } from "../lib/backend";
 import { useMapPoints, type MapOverlay } from "../lib/map";
 import { usePrivateTexts } from "../lib/PrivateTexts";
+import { groupByShelf } from "../lib/shelves";
 import type { ViewTarget } from "../lib/viewer";
 import VectorMap from "./map/VectorMap";
 import DocViewer from "./viewer/DocViewer";
 import styles from "./LibraryPanel.module.css";
 
-type LibraryDocument = { id: number; title: string; chunk_count: number };
+export type LibraryDocument = { id: number; title: string; filename: string; chunk_count: number };
 type View = "docs" | "map" | "viewer";
 
 const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
@@ -24,11 +25,14 @@ const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
  */
 export default function LibraryPanel({
   onCount,
+  onLoad,
   onOpen,
   viewer,
   overlay,
 }: {
   onCount?: (starterBooks: number) => void;
+  /** Called with the shared library's documents once they are loaded. */
+  onLoad?: (docs: LibraryDocument[]) => void;
   onOpen?: (target: ViewTarget) => void;
   viewer?: ViewTarget | null;
   overlay?: MapOverlay;
@@ -44,6 +48,7 @@ export default function LibraryPanel({
       .then((docs: LibraryDocument[]) => {
         setLibrary(docs);
         onCount?.(docs.length);
+        onLoad?.(docs);
       })
       .catch(() => setLibrary([]));
   }, []);
@@ -168,24 +173,37 @@ export default function LibraryPanel({
             ) : starter.length === 0 ? (
               <p className={styles.empty}>No documents yet.</p>
             ) : (
-              <ul className={styles.starter}>
-                {starter.map((doc) => (
-                  <li key={doc.id}>
-                    {onOpen ? (
-                      <button
-                        type="button"
-                        className={styles.open}
-                        onClick={() => onOpen({ kind: "library", id: doc.id, chunk: null })}
-                      >
-                        {doc.title}
-                      </button>
-                    ) : (
-                      <Link href={`/library/${doc.id}`}>{doc.title}</Link>
-                    )}
-                    <span className={styles.mono}>{cards(doc.chunk_count)}</span>
-                  </li>
-                ))}
-              </ul>
+              groupByShelf(starter).map(({ shelf, docs }) => (
+                <div
+                  key={shelf.id}
+                  className={styles.shelf}
+                  style={{ "--shelf": shelf.color } as React.CSSProperties}
+                >
+                  <h4 className={styles.shelfHead}>
+                    <span className={styles.shelfDot} aria-hidden="true" />
+                    {shelf.name}
+                    <span className={styles.mono}>{docs.length}</span>
+                  </h4>
+                  <ul className={styles.starter}>
+                    {docs.map((doc) => (
+                      <li key={doc.id}>
+                        {onOpen ? (
+                          <button
+                            type="button"
+                            className={styles.open}
+                            onClick={() => onOpen({ kind: "library", id: doc.id, chunk: null })}
+                          >
+                            {doc.title}
+                          </button>
+                        ) : (
+                          <Link href={`/library/${doc.id}`}>{doc.title}</Link>
+                        )}
+                        <span className={styles.mono}>{cards(doc.chunk_count)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
             )}
           </div>
         </div>

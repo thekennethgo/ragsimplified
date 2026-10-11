@@ -6,6 +6,7 @@ export type MapPoint = {
   chunk_id: number;
   document_id: number;
   title: string;
+  filename: string;
   position: number;
   heading: string | null;
   x: number;

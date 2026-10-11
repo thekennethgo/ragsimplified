@@ -11,6 +11,7 @@ from app.pipeline.scout import DEFAULT_K, Result
 VOYAGE_RERANK_URL = "https://api.voyageai.com/v1/rerank"
 MODEL = "rerank-3-lite"
 MAX_RETRIES = 4
+MAX_PER_DOCUMENT = 2
 
 
 class Reranker(Protocol):
@@ -73,10 +74,27 @@ class Judgement:
     fallback: bool  # True when the reranker failed and the fused order was kept
 
 
+def _cap(ranked: list[Result], keep: int, per_document: int) -> list[Result]:
+    """Take results in order, skipping any whose document already has `per_document` results."""
+    taken: list[Result] = []
+    counts: dict[tuple, int] = {}
+    for result in ranked:
+        if len(taken) >= keep:
+            break
+        key = (result.source, result.document_id if result.source == "library" else result.title)
+        if counts.get(key, 0) >= per_document:
+            continue
+        counts[key] = counts.get(key, 0) + 1
+        taken.append(result)
+    return taken
+
+
 def judge(
     question: str, candidates: list[Result], reranker: Reranker, keep: int = DEFAULT_K
 ) -> Judgement:
     """Rerank the Scout's candidates and keep the best `keep`.
+
+    At most MAX_PER_DOCUMENT results come from any one document.
 
     If the reranker fails, the first `keep` candidates in fused order are kept, so a reranker
     outage degrades the answer instead of breaking it.
@@ -88,9 +106,9 @@ def judge(
         ranked = reranker.rerank(question, [r.text for r in numbered])
     except Exception:
         shown = [replace(r, new_rank=r.old_rank) for r in numbered]
-        return Judgement(shown, shown[:keep], True)
+        return Judgement(shown, _cap(shown, keep, MAX_PER_DOCUMENT), True)
     reordered = [
         replace(numbered[index], new_rank=new_rank, rerank_score=score)
         for new_rank, (index, score) in enumerate(ranked, start=1)
     ]
-    return Judgement(reordered, reordered[:keep], False)
+    return Judgement(reordered, _cap(reordered, keep, MAX_PER_DOCUMENT), False)

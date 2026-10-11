@@ -20,7 +20,7 @@ const ABOUT = {
   chopper: { chunk_tokens: 500, overlap_tokens: 50, chars_per_token: 4, max_text_chars: 20000 },
   translator: { max_weighted_words: 40 },
   scout: { candidates: 20, rrf_k: 60, max_private_chunks: 60 },
-  judge: { keep: 5 },
+  judge: { keep: 5, max_per_document: 2 },
   storyteller_prompt: "STUB SYSTEM PROMPT",
 };
 
@@ -103,7 +103,7 @@ function stubBackend(events: object[] = UPLOAD_EVENTS) {
       if (url.endsWith("/library")) {
         return Promise.resolve(
           new Response(
-            JSON.stringify([{ id: 1, title: "Starter doc", chunk_count: 4 }]),
+            JSON.stringify([{ id: 1, title: "Starter doc", filename: "rag-basics/starter.md", chunk_count: 4 }]),
           ),
         );
       }

@@ -66,6 +66,9 @@ def seed(
         destination = public_dir / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, destination)
+    sources = corpus_dir / "sources.json"
+    if sources.is_file():
+        shutil.copyfile(sources, public_dir / "sources.json")
     return results
 
 

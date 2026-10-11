@@ -100,3 +100,45 @@ def test_voyage_reranker_raises_after_too_many_failures(monkeypatch):
     monkeypatch.setattr(judge_module.time, "sleep", lambda seconds: None)
     with pytest.raises(httpx.HTTPStatusError):
         make_reranker(lambda request: httpx.Response(503)).rerank("q", ["a"])
+
+
+def chunk(title: str, position: int, text: str, document_id=None, source="library") -> Result:
+    return Result(source, 0.01, title, position, None, None, text, document_id)
+
+
+def test_cap_keeps_two_per_document_and_fills_from_the_next_documents():
+    pool = [
+        chunk("A", 0, "quokka quokka code one", 1),
+        chunk("A", 1, "quokka code two", 1),
+        chunk("A", 2, "quokka third", 1),
+        chunk("B", 0, "quokka b", 2),
+        chunk("C", 0, "quokka c", 3),
+    ]
+    # Ranks A0 > A1 > A2 > B > C by number of matching query words.
+    ranker = FakeReranker()
+    outcome = judge("quokka code one", pool, ranker, keep=4)
+    assert [(r.title, r.position) for r in outcome.kept] == [("A", 0), ("A", 1), ("B", 0), ("C", 0)]
+    ids = {id(r) for r in outcome.candidates}
+    assert all(id(r) in ids for r in outcome.kept)
+
+
+def test_cap_applies_in_the_reranker_fallback():
+    class Broken:
+        def rerank(self, query, documents):
+            raise RuntimeError("down")
+
+    pool = [chunk("A", i, f"t{i}", 1) for i in range(3)] + [chunk("B", 0, "b", 2)]
+    outcome = judge("q", pool, Broken(), keep=3)
+    assert outcome.fallback
+    assert [(r.title, r.position) for r in outcome.kept] == [("A", 0), ("A", 1), ("B", 0)]
+
+
+def test_private_results_are_capped_by_title():
+    pool = [
+        chunk("Note", 0, "quokka quokka", None, "private"),
+        chunk("Note", 1, "quokka code", None, "private"),
+        chunk("Note", 2, "quokka", None, "private"),
+        chunk("Other", 0, "unrelated", None, "private"),
+    ]
+    outcome = judge("quokka code", pool, FakeReranker(), keep=3)
+    assert [(r.title, r.position) for r in outcome.kept] == [("Note", 1), ("Note", 0), ("Other", 0)]

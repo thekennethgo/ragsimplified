@@ -21,7 +21,7 @@ const ABOUT = {
   chopper: { chunk_tokens: 500, overlap_tokens: 50, chars_per_token: 4, max_text_chars: 20000 },
   translator: { max_weighted_words: 40 },
   scout: { candidates: 20, rrf_k: 60, max_private_chunks: 60 },
-  judge: { keep: 5 },
+  judge: { keep: 5, max_per_document: 2 },
   storyteller_prompt: "STUB SYSTEM PROMPT",
 };
 
@@ -190,7 +190,7 @@ const EVENTS = [
 ];
 
 /** Answers GET /library with an empty library and POST /ask with the events. */
-function stubFetch(askResponse: () => Response) {
+function stubFetch(askResponse: () => Response, library: object[] = []) {
   const fetchMock = vi.fn((url: string) =>
     Promise.resolve(
       url.endsWith("/health")
@@ -198,7 +198,7 @@ function stubFetch(askResponse: () => Response) {
         : url.endsWith("/about")
           ? new Response(JSON.stringify(ABOUT))
           : url.endsWith("/library")
-            ? new Response("[]")
+            ? new Response(JSON.stringify(library))
           : url.endsWith("/map")
             ? new Response("[]")
             : askResponse(),
@@ -208,8 +208,8 @@ function stubFetch(askResponse: () => Response) {
   return fetchMock;
 }
 
-function stubAsk(events: object[] = EVENTS) {
-  return stubFetch(() => ndjson(events));
+function stubAsk(events: object[] = EVENTS, library: object[] = []) {
+  return stubFetch(() => ndjson(events), library);
 }
 
 /** The arguments of the POST /ask call. */
@@ -320,7 +320,7 @@ function stubWithDocument(events: object[]) {
       if (url.endsWith("/library")) {
         return Promise.resolve(
           new Response(
-            JSON.stringify([{ id: 5, title: "Cabinet doc", chunk_count: 1 }]),
+            JSON.stringify([{ id: 5, title: "Cabinet doc", filename: "general/cabinet.md", chunk_count: 1 }]),
           ),
         );
       }
@@ -564,8 +564,8 @@ test("the Scout tab shows a vector map of the candidates", async () => {
         : url.endsWith("/map")
           ? new Response(
               JSON.stringify([
-                { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: null, x: 0, y: 0 },
-                { chunk_id: 2, document_id: 1, title: "Apple Inc.", position: 1, heading: null, x: 1, y: 1 },
+                { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: null, x: 0, y: 0 },
+                { chunk_id: 2, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 1, heading: null, x: 1, y: 1 },
               ]),
             )
           : ndjson(EVENTS),
@@ -589,8 +589,8 @@ test("hovering a Scout row thickens that candidate's ring on the map", async () 
         : url.endsWith("/map")
           ? new Response(
               JSON.stringify([
-                { chunk_id: 1, document_id: 1, title: "Apple Inc.", position: 0, heading: null, x: 0, y: 0 },
-                { chunk_id: 2, document_id: 1, title: "Apple Inc.", position: 1, heading: null, x: 1, y: 1 },
+                { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: null, x: 0, y: 0 },
+                { chunk_id: 2, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 1, heading: null, x: 1, y: 1 },
               ]),
             )
           : ndjson(EVENTS),
@@ -1056,16 +1056,22 @@ test("the Top 5 leaves filler words out", async () => {
   expect(items.map((li) => li.textContent)).toEqual(["silicon0.95", "Apple0.70"]);
 });
 
-test("clicking an example question fills the box and sends nothing", async () => {
-  const fetchMock = stubAsk();
+test("example questions come from the shelves in the library, with the shelf names", async () => {
+  const fetchMock = stubAsk(EVENTS, [
+    { id: 1, title: "Personal", filename: "about-kenneth/personal.md", chunk_count: 1 },
+    { id: 2, title: "Vector database", filename: "rag-basics/vector-database.md", chunk_count: 1 },
+  ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  for (const example of [
-    "Where did Kenneth grow up?",
-    "How does the Judge pick the best sources?",
-    "What does the RAG.co staff handbook say about lunch breaks?",
-  ]) {
-    expect(screen.getByRole("button", { name: example })).toBeInTheDocument();
+  const examples = await screen.findByRole("button", { name: "Where did Kenneth grow up?" });
+  expect(examples).toBeInTheDocument();
+  for (const label of ["About Kenneth", "RAG basics"]) {
+    expect(screen.getByText(label, { selector: "span" })).toBeInTheDocument();
   }
+  expect(screen.getByRole("button", { name: "What is a vector database?" })).toBeInTheDocument();
+  // No documents on these shelves, so no questions for them.
+  expect(screen.queryByRole("button", { name: "How does the Judge pick the best sources?" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "What is Ex Machina about?" })).toBeNull();
+
   fireEvent.click(
     screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
   );
@@ -1076,6 +1082,13 @@ test("clicking an example question fills the box and sends nothing", async () =>
   expect(
     fetchMock.mock.calls.some(([url]) => String(url).endsWith("/ask")),
   ).toBe(false);
+});
+
+test("shows no example questions while the library is empty", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  await screen.findByRole("button", { name: "Ask" });
+  expect(screen.queryByText("Try:")).toBeNull();
 });
 
 test("when the library is offline the Ask button is disabled and a note shows", async () => {

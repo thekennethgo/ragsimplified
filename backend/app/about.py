@@ -39,6 +39,6 @@ def about() -> dict:
             "rrf_k": scout.RRF_K,
             "max_private_chunks": MAX_PRIVATE_CHUNKS,
         },
-        "judge": {"keep": scout.DEFAULT_K},
+        "judge": {"keep": scout.DEFAULT_K, "max_per_document": judge.MAX_PER_DOCUMENT},
         "storyteller_prompt": storyteller.SYSTEM_PROMPT,
     }

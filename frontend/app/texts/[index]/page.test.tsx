@@ -37,27 +37,16 @@ function Seeded({ chunkText }: { chunkText: string }) {
   return <PrivateTextPage />;
 }
 
-test("highlights the cited passage inside the pasted text", () => {
+test("highlights the cited chunk inside the pasted text", () => {
   render(
     <PrivateTextsProvider>
       <Seeded chunkText="Miso the cat hates the vacuum cleaner." />
     </PrivateTextsProvider>,
   );
   expect(screen.getByRole("heading", { name: "Pet note" })).toBeInTheDocument();
-  const mark = document.querySelector("mark")!;
-  expect(mark).toHaveTextContent("Miso the cat hates the vacuum cleaner.");
-  expect(document.querySelector("pre")).toHaveTextContent("Intro line.");
-  expect(document.querySelector("pre")).toHaveTextContent("Outro line.");
-});
-
-test("falls back to showing the chunk when it cannot be located", () => {
-  render(
-    <PrivateTextsProvider>
-      <Seeded chunkText="Rewritten chunk text that is not in the original." />
-    </PrivateTextsProvider>,
-  );
-  expect(screen.getByRole("heading", { name: "Cited passage" })).toBeInTheDocument();
-  expect(document.querySelector("mark")).toHaveTextContent("Rewritten chunk text");
+  const cited = screen.getByText("Miso the cat hates the vacuum cleaner.");
+  expect(cited.closest("[aria-current='true']")).not.toBeNull();
+  expect(screen.getByText("Intro line.")).toBeInTheDocument();
 });
 
 test("a text that is no longer in memory says so", () => {

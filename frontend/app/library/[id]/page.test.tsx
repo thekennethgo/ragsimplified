@@ -40,12 +40,9 @@ function stubDocument(filename: string) {
 test("highlights and scrolls to the cited chunk", async () => {
   stubDocument("apple-inc.md");
   render(<LibraryDocumentPage />);
-  const cited = (await screen.findByText("Cited chunk.")).closest("section")!;
+  const cited = (await screen.findByText("Cited chunk.")).closest("[aria-current]")!;
   expect(cited).toHaveAttribute("aria-current", "true");
-  expect(screen.getByText("First chunk.").closest("section")).toHaveAttribute(
-    "aria-current",
-    "false",
-  );
+  expect(screen.getByText("First chunk.").closest("[aria-current]")).toBeNull();
   await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
 });
 
