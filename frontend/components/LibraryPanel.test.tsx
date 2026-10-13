@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { resetMapCache } from "../lib/map";
@@ -144,4 +144,53 @@ test("opens on the Vector map, fetching /map on mount, and switches to Documents
   await screen.findByRole("img", { name: "Vector map of 2 cards" });
   const mapCalls = fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/map"));
   expect(mapCalls).toHaveLength(1);
+});
+
+test("a failed /library is retried and never reported as an empty library", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    const docs = [{ id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", chunk_count: 22 }];
+    let calls = 0;
+    const fetchMock = vi.fn((url: string) => {
+      if (url.endsWith("/map")) return Promise.resolve(new Response("[]"));
+      calls += 1;
+      return Promise.resolve(
+        calls < 3 ? new Response("bad gateway", { status: 502 }) : new Response(JSON.stringify(docs)),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const onCount = vi.fn();
+    renderPanel(onCount);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(onCount).not.toHaveBeenCalled();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(onCount).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(5000);
+    await waitFor(() => expect(onCount).toHaveBeenCalledWith(1));
+    expect(calls).toBe(3);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a library that stays down is not shown as empty", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        url.endsWith("/map")
+          ? Promise.resolve(new Response("[]"))
+          : Promise.reject(new Error("network")),
+      ),
+    );
+    const onCount = vi.fn();
+    renderPanel(onCount);
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(onCount).not.toHaveBeenCalled();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });
