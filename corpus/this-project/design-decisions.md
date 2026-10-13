@@ -36,7 +36,7 @@ The first version of the Scout compared fingerprints only. Kenneth then added ke
 
 ## A second look for questions that need two searches (ADR 006)
 
-Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. One search cannot do both, because the name that links the documents is only found by reading the first results. After the Judge, a free decision model checks whether the sources answer the question, and only when it doubts does a short language model call write one follow-up search. It runs at most once. The reasons and consequences are in ADR 006.
+Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. One search cannot do both, because the name that links the documents is only found by reading the first results. After the Judge, a free decision model checks whether the sources answer the question, and only when it doubts does a short language model call write one follow-up search. The check reads the whole cards, and the second look only adds cards to the Judge's five; it never removes one. It runs at most once. The reasons and consequences are in ADR 006.
 
 ## The Fact-Checker was dropped to ship
 

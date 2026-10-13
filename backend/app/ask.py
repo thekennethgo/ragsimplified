@@ -14,7 +14,7 @@ from app.pipeline import second_look
 from app.pipeline.citations import extract_citations
 from app.pipeline.decider import Decider, get_decider
 from app.pipeline.judge import Reranker, get_reranker, judge
-from app.pipeline.scout import CANDIDATES, DEFAULT_K, PrivateChunk, Result, scout
+from app.pipeline.scout import CANDIDATES, PrivateChunk, Result, scout
 from app.pipeline.storyteller import build_prompt
 from app.pipeline.translator import DIMENSION, Embedder, translate_question
 from app.upload import get_embedder
@@ -125,10 +125,9 @@ def _key(result: Result) -> tuple:
 
 
 def _combine(first_round: list[Result], second_round: list[Result]) -> list[Result]:
-    """The first round's best few, then the second round's best, topped up from the first."""
-    head = first_round[: DEFAULT_K - second_look.SECOND_LOOK_SLOTS]
-    rest = first_round[len(head) :]
-    return (head + second_round + rest)[:DEFAULT_K]
+    """All of the first round's cards, then the second round's cards that are new."""
+    seen = {_key(r) for r in first_round}
+    return first_round + [r for r in second_round if _key(r) not in seen]
 
 
 def run_ask(

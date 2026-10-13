@@ -22,7 +22,7 @@ export type About = {
     enabled: boolean;
     decider: string | null;
     threshold: number;
-    excerpt_chars: number;
+    max_cards: number;
     slots: number;
     prompt: string;
   };

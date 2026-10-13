@@ -26,7 +26,7 @@ const ABOUT = {
     enabled: true,
     decider: "inception/mercury-decide:free",
     threshold: 0.5,
-    excerpt_chars: 400,
+    max_cards: 7,
     slots: 2,
     prompt: "STUB",
   },
@@ -1472,7 +1472,7 @@ test("the Judge's tab says how the second look works, from GET /about", async ()
 test("the question box says what is sent to OpenRouter's Mercury Decide", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  expect(screen.getByText(/OpenRouter's Mercury Decide \(a yes\/no check on library excerpts\)/)).toBeInTheDocument();
+  expect(screen.getByText(/OpenRouter's Mercury Decide \(a yes\/no check on the library passages found\)/)).toBeInTheDocument();
 });
 
 test("while the Clerk rewrites the question the Judge and the Clerk say so", async () => {

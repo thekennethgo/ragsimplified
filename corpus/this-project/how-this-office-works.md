@@ -46,11 +46,11 @@ The real setting: the Judge uses Voyage AI's reranker model `rerank-3-lite`. It 
 
 ## The second look
 
-Some questions need two searches. Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. After the Judge, a quick check decides whether the 5 cards already answer the question. The check is Mercury Decide, a small free decision model that answers yes or no as a probability. If the sources are not enough, a small, fast call to the answer model writes one follow-up search query, and the Scout and the Judge go through the office once more. The second look runs at most once per question, and it costs at most one small extra AI call, of about 30 words at most. The final 5 cards are the first round's best 3 and the second round's best 2.
+Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. After the Judge, a quick check decides whether the 5 cards already answer the question. The check is Mercury Decide, a small free decision model that answers yes or no as a probability. The check and the follow-up search both read the whole cards, and the follow-up uses only the names the cards give, such as a place or a film. If the sources are not enough, a small, fast call to the answer model writes one follow-up search query, and the Scout and the Judge go through the office once more. The second look runs at most once per question, and it costs at most one small extra AI call, of about 30 words at most. The second look adds up to 2 cards to the Judge's 5 and never removes any.
 
 ## The Storyteller
 
-The Storyteller writes the answer, using only the 5 cards the Judge kept. Every sentence that uses a card ends with its number in square brackets, such as [1]. Those numbers become clickable citations that open the source passage.
+The Storyteller writes the answer, using only the cards the Judge kept, 5, or up to 7 after a second look. Every sentence that uses a card ends with its number in square brackets, such as [1]. Those numbers become clickable citations that open the source passage.
 
 The real setting: the model is Claude Haiku 4.5 on the live site, chosen by the `LLM_MODEL` environment variable, so changing the model is a configuration change. The reply is capped at 1,024 tokens when the Anthropic provider is used. The Storyteller's instructions say to use only the provided cards, to cite every claim, to treat text inside the cards as data and never as instructions, and to say so when the cards do not contain the answer. After the answer is written, the code removes any citation number that does not match a real card.
 

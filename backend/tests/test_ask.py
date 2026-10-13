@@ -402,8 +402,8 @@ def test_second_look_follow_up_runs_a_second_round(client, llm, looking):
     judge_two = done_events(got, "judge")[1]["data"]
     assert judge_two["round"] == 2
     assert [r["title"] for r in judge_two["results"] if r["kept"]] == ["Batam", "Other"]
-    # The final 5: the first round's best 3, then round 2's best 2.
-    expected = ["Doc 1", "Doc 2", "Doc 3", "Batam", "Other"]
+    # All 5 of round 1, then round 2's 2 new cards: 7, none removed.
+    expected = ["Doc 1", "Doc 2", "Doc 3", "Doc 4", "Doc 5", "Batam", "Other"]
     assert judge_two["final"] == expected
     assert judge_two["query"] == "Batam city overview"
     cards = judge_two["final_cards"]
@@ -411,10 +411,12 @@ def test_second_look_follow_up_runs_a_second_round(client, llm, looking):
         (1, 1, "Doc 1"),
         (2, 1, "Doc 2"),
         (3, 1, "Doc 3"),
-        (4, 2, "Batam"),
-        (5, 2, "Other"),
+        (4, 1, "Doc 4"),
+        (5, 1, "Doc 5"),
+        (6, 2, "Batam"),
+        (7, 2, "Other"),
     ]
-    assert cards[3]["document_id"] == 20 and cards[3]["position"] == 0
+    assert cards[5]["document_id"] == 20 and cards[5]["position"] == 0
     assert {"source", "page", "heading"} <= set(cards[0])
     assert all("document_id" in r and "position" in r for r in judge_two["results"])
     prompt = next(e for e in got if e["step"] == "storyteller" and e["status"] == "start")
@@ -436,7 +438,24 @@ def test_round_two_translator_carries_the_projected_point(client, llm, looking):
     assert second["data"]["round"] == 2
 
 
-def test_second_look_tops_up_from_the_first_round_when_round_two_finds_less(
+def test_combine_keeps_every_first_round_card_and_adds_only_new_ones():
+    first = ROUND_1[:5]
+    second = [first[1], lib(20, "Batam", "Batam text"), lib(21, "Other", "other text"), first[0]]
+    combined = ask_module._combine(first, second)
+    assert [r.title for r in combined] == [
+        "Doc 1",
+        "Doc 2",
+        "Doc 3",
+        "Doc 4",
+        "Doc 5",
+        "Batam",
+        "Other",
+    ]
+    assert len(combined) == 7
+    assert [r.title for r in ask_module._combine(first, [first[2]])] == [r.title for r in first]
+
+
+def test_second_look_keeps_the_first_round_when_round_two_finds_less(
     client, llm, looking, monkeypatch
 ):
     llm.look_reply = "Batam city overview"
@@ -449,7 +468,7 @@ def test_second_look_tops_up_from_the_first_round_when_round_two_finds_less(
     monkeypatch.setattr(ask_module, "scout", fake_scout)
     got = events(client.post("/ask", json={"question": HOMETOWN}))
     final = done_events(got, "judge")[1]["data"]["final"]
-    assert final == ["Doc 1", "Doc 2", "Doc 3", "Batam", "Doc 4"]
+    assert final == ["Doc 1", "Doc 2", "Doc 3", "Doc 4", "Doc 5", "Batam"]
 
 
 def test_second_look_off_emits_no_second_look_events(client, llm, looking, monkeypatch):

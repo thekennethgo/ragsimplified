@@ -24,7 +24,7 @@ When AI coding tools first appeared, Kenneth was sceptical: they looked like a l
 
 ## Outside work
 
-Kenneth enjoys training mixed martial arts (MMA) and watching the UFC most sundays. He loves watching movies in the cinema and also loves travelling around the world; his most recent trip was to Central Asia. He also enjoys hanging out with friends.
+Kenneth enjoys training mixed martial arts (MMA) and watching the UFC most sundays. He also loves travelling around the world; his most recent trip was to Central Asia. He also enjoys hanging out with friends.
 
 ## Kenneth's favourite movies
 
@@ -37,7 +37,7 @@ He likes them because it explores the darker side of human ambition and technolo
 
 ## Kenneth's favourite video games
 
-Kenneth loves playing video games. His favourites are the Resident Evil series, the Batman: Arkham series, Cyberpunk 2077, The Last of Us and Watch Dogs.
+Kenneth loves playing video games. His favourites are the Resident Evil series, the Batman Arkham games, Cyberpunk 2077, The Last of Us and Watch Dogs.
 
 ## Contact
 

@@ -67,5 +67,5 @@ export type TranslatorRound2 = { query: string };
 /** The Scout's second page. */
 export type ScoutRound2 = { query: string; skipped: number; results: ScoutResult[] };
 
-/** The Judge's second page: the new cards' verdicts and the five that go to the Storyteller. */
+/** The Judge's second page: the new cards' verdicts and the cards that go to the Storyteller. */
 export type JudgeRound2 = { query: string; results: JudgeResult[]; finalCards: FinalCard[] };

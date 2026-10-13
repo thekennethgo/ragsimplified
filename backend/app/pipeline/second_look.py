@@ -15,11 +15,10 @@ from app.pipeline.storyteller import _attribute, _escape
 
 PROMPT = (Path(__file__).with_name("second_look_prompt.md")).read_text(encoding="utf-8")
 
-EXCERPT_CHARS = 400
 MAX_QUERY_CHARS = 100
 MAX_QUERY_TOKENS = 30
 SECOND_LOOK_THRESHOLD = 0.5
-SECOND_LOOK_SLOTS = 2  # places the second round's best results can take among the final 5
+SECOND_LOOK_SLOTS = 2  # cards the second round can add to the Judge's 5
 
 
 def enabled() -> bool:
@@ -32,7 +31,7 @@ def _sources(results: list[Result]) -> str:
         attributes = f'n="{i}" title="{_attribute(r.title)}"'
         if r.heading:
             attributes += f' heading="{_attribute(r.heading)}"'
-        parts.append(f"<source {attributes}>\n{_escape(r.text[:EXCERPT_CHARS])}\n</source>")
+        parts.append(f"<source {attributes}>\n{_escape(r.text)}\n</source>")
     return "\n\n".join(parts)
 
 
@@ -42,7 +41,7 @@ def build_message(question: str, results: list[Result]) -> list[Message]:
 
 
 def build_state(question: str, results: list[Result]) -> str:
-    """The same question and excerpts as `build_message`, as plain text for the decider."""
+    """The same question and cards as `build_message`, as plain text for the decider."""
     return f"Question: {question}\n\nSources:\n\n{_sources(results)}"
 
 

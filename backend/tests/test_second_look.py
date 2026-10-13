@@ -3,8 +3,8 @@ from app.pipeline import second_look
 from app.pipeline.decider import FakeDecider
 from app.pipeline.scout import Result
 from app.pipeline.second_look import (
-    EXCERPT_CHARS,
     MAX_QUERY_CHARS,
+    PROMPT,
     build_message,
     build_state,
     decide,
@@ -66,10 +66,14 @@ def test_build_message_and_state_hold_escaped_excerpts():
     content = message["content"]
     assert f"<question>\n{QUESTION}\n</question>" in content
     assert 'title="A &lt;b&gt; title"' in content and 'heading="About"' in content
-    assert "x" * EXCERPT_CHARS in content and "x" * (EXCERPT_CHARS + 1) not in content
+    assert "x" * 1000 in content  # the whole card, not a 400-character excerpt
     assert "</source>" not in content.replace("\n</source>", "", 1)
     state = build_state(QUESTION, [result])
-    assert QUESTION in state and "x" * EXCERPT_CHARS in state
+    assert QUESTION in state and "x" * 1000 in state
+
+
+def test_prompt_forbids_the_person_s_name_in_the_query():
+    assert "Never include the name of the person" in PROMPT
 
 
 def test_a_confident_decider_ends_the_second_look_without_an_llm_call():
