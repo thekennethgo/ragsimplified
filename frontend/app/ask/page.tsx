@@ -113,6 +113,8 @@ function AskOffice() {
   const [scoutLook, setScoutLook] = useState<string | null>(null);
   // Set while the Judge asks the Clerk to rewrite the question: the Judge's and Clerk's bubbles.
   const [rewriting, setRewriting] = useState<string | null>(null);
+  // Set while the Judge tells the Clerk that nothing on file touches the question.
+  const [noFile, setNoFile] = useState(false);
   const [asked, setAsked] = useState(false);
   const [overlay, setOverlay] = useState<MapOverlay>({});
   const [privateSent, setPrivateSent] = useState(0);
@@ -179,6 +181,7 @@ function AskOffice() {
     setChecking(false);
     setScoutLook(null);
     setRewriting(null);
+    setNoFile(false);
     setOverlay({});
     setPrivateSent(privateChunks.length);
     setSentPrompt(null);
@@ -224,18 +227,28 @@ function AskOffice() {
         } else if (e.step === "second_look") {
           const query = typeof e.data?.query === "string" && e.data.query ? e.data.query : null;
           if (query) followUp = query;
+          if (e.data?.nothing === true) nothingFound = true;
           queue.emit(sceneEvent, {
             onStart: () => {
               if (query && e.status === "done") setRewriting(query);
+              if (e.data?.nothing === true) setNoFile(true);
             },
             onEnd: () => {
               update();
               setRewriting(null);
+              setNoFile(false);
               setChecking(e.status === "start");
-              if (e.status === "done") {
+              if (e.status === "done" && e.data?.round === 2) {
+                // The final check after the second round: the Judge's second page shows it.
+                const part = typeof e.data?.part === "number" ? e.data.part : null;
+                const nothing = e.data?.nothing === true;
+                setJudge2((now) => (now ? { ...now, check: { part, nothing } } : now));
+              } else if (e.status === "done") {
                 setLook({
                   query,
                   enough: typeof e.data?.enough === "number" ? e.data.enough : null,
+                  relevant: typeof e.data?.relevant === "number" ? e.data.relevant : null,
+                  nothing: e.data?.nothing === true,
                   decidedBy: e.data?.decided_by === "decider" ? "decider" : "llm",
                 });
               }
@@ -377,8 +390,14 @@ function AskOffice() {
   }
 
   const phase = (step: string): Phase => states[step] ?? "waiting";
-  const working = CREW.filter((step) => phase(step) === "working");
-  const nothingFound = judge !== null && !judge.some((r) => r.kept);
+  const nothingFound =
+    (judge !== null && !judge.some((r) => r.kept)) ||
+    look?.nothing === true ||
+    judge2?.check?.nothing === true;
+  // With nothing on file the Storyteller has nothing to write, so it never looks busy.
+  const working = CREW.filter(
+    (step) => phase(step) === "working" && !(nothingFound && step === "storyteller"),
+  );
   const running = busy || animating;
   const clerkAway = running && Object.keys(states).length > 0 && phase("storyteller") !== "done";
   const storytellerDone = phase("storyteller") === "done";
@@ -390,7 +409,9 @@ function AskOffice() {
     scout: scoutLook ?? scoutSays(),
     judge: rewriting
       ? `We need more on: “${rewriting}”`
-      : checking
+      : noFile
+        ? "Nothing on file about this."
+        : checking
         ? "Checking whether that's enough…"
         : judgeSays(scout ? scout.length : null, about?.judge.keep),
     storyteller: storytellerSays(keptCount),
@@ -425,7 +446,7 @@ function AskOffice() {
     storyteller: useFollow(
       officeRef,
       "storyteller",
-      animationsOn && phase("storyteller") === "working",
+      animationsOn && working.includes("storyteller"),
     ),
   };
   const clerkAt = useFollow(officeRef, "clerk", animationsOn && clerkAway);

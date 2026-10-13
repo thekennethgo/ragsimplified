@@ -74,6 +74,15 @@ test("second look events have scenes of their own, and round 2 never means nothi
   ]);
   const second = event("judge", "done", { round: 2, results: [{ kept: false }], final: ["A"] });
   expect(toSceneEvents(second)).toEqual([{ name: "judge_done", data: { nothing: false } }]);
+  // A final check follows: the Judge only rules, then the check hands over or tells the Clerk.
+  const checked = event("judge", "done", { round: 2, results: [{ kept: true }], check: true });
+  expect(toSceneEvents(checked)).toEqual([{ name: "judge_ruled" }]);
+  expect(toSceneEvents(event("second_look", "done", { round: 2, nothing: true }))).toEqual([
+    { name: "second_look_nothing" },
+  ]);
+  expect(toSceneEvents(event("second_look", "done", { round: 2, nothing: false }))).toEqual([
+    { name: "judge_handover" },
+  ]);
 });
 
 test("a first-round verdict that leads to a second look only rules; the check then rewrites or hands over", () => {
@@ -87,6 +96,9 @@ test("a first-round verdict that leads to a second look only rules; the check th
   expect(toSceneEvents(event("second_look", "done", { query: null, enough: 0.9 }))).toEqual([
     { name: "judge_handover" },
   ]);
+  expect(
+    toSceneEvents(event("second_look", "done", { query: null, nothing: true, relevant: 0.02 })),
+  ).toEqual([{ name: "second_look_nothing" }]);
   const plain = event("judge", "done", { round: 1, second_look: false, results: [{ kept: true }] });
   expect(toSceneEvents(plain)).toEqual([{ name: "judge_done", data: { nothing: false } }]);
 });

@@ -6,6 +6,7 @@ import type { SceneSet, Timeline } from "../types";
 
 const MIN_WALK = 0.4;
 const SPEED = { clerk: 170, crew: 110 }; // room units per second; the Clerk is a brisk courier
+const TRANSLATOR_PACE = 1.6; // the Translator hurries the slip over to the Scout
 
 // The canvas room's projection: room (x, y, z) to SVG (from OfficeAsk.dc.html's geometry()).
 const iso = (x: number, y: number, z = 0) => ({
@@ -313,6 +314,22 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .to(q("#jd-puzzled"), { opacity: 0, duration: 0.2 }, "<")
       .set(q("#j-rejects"), { opacity: 0 }, "+=0.2")
       .set(q("#jd-held-rejects"), { opacity: 1 }, "<");
+    tellsClerkNothing(tl, "#jd-held-rejects");
+    return tl;
+  }
+
+  // Judge, after ruling, when the check says nothing on file touches the question: the cards he
+  // holds never reach the Storyteller; he tells the Clerk and files them all back.
+  function secondLookNothing() {
+    nothingFound = true;
+    const tl = gsap.timeline({ paused: true });
+    tellsClerkNothing(tl, "#jd-held-kept, #jd-held-rejects");
+    tl.to(q("#d-kept"), { opacity: 0, duration: 0.25 }, "<"); // the ranks come off the board
+    return tl;
+  }
+
+  // The Judge walks to the Clerk, says no file was found, then files `held` back and goes home.
+  function tellsClerkNothing(tl: gsap.core.Timeline, held: string) {
     walk(tl, "jd", P.jdAtClerk, "+=0.1");
     face(tl, "jd", true); // turn to the Clerk
     face(tl, "cl", false, "<"); // and the Clerk turns to the Judge
@@ -325,11 +342,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .to(q("#jd-says"), { opacity: 0, duration: 0.3 }, "+=1.8")
       .addLabel("handoff"); // the Clerk knows: they can head back
     walk(tl, "jd", P.jdAtFiles, "+=0.1");
-    tl.to(q("#jd-held-rejects"), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // all back into the cabinets
-      .set(q("#jd-held-rejects"), { x: 0 });
+    tl.to(q(held), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // all back into the cabinets
+      .set(q(held), { x: 0 });
     walk(tl, "jd", P.jdSpot, "+=0.2");
     faceHome(tl, "jd");
-    return tl;
   }
   const nothingToDo = () => gsap.timeline({ paused: true }).to({}, { duration: 0.01 });
 
@@ -402,10 +418,11 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     // In through the QUERY door, behind the whiteboard, writes the question on it for the crew,
     // then waits on the Storyteller's left.
     clerk_start() {
+      // Reset now, not as the timeline plays: a reset during play would put the Clerk's tracked
+      // position back at the doorway after the walks below have moved it to the board.
+      reset();
       const tl = gsap.timeline({ paused: true });
-      pos.cl = P.doorway;
-      tl.add(reset)
-        .set(q("#clerk"), at(P.doorway))
+      tl.set(q("#clerk"), at(P.doorway))
         .set(q("#cl-flip"), { scaleX: 1 })
         .to(q("#a-door-open"), { opacity: 1, duration: 0.2 })
         .to(q("#clerk"), { opacity: 1, duration: 0.3 });
@@ -423,14 +440,14 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     translator_start() {
       const tl = gsap.timeline({ paused: true });
       face(tl, "tr", false); // looks over at the board
-      face(tl, "tr", true, "+=0.6"); // and back to the keyboard
-      tl.to(q("#crt-text-idle"), { opacity: 0, duration: 0.2 }).set(q("#crt-cursor"), {
+      face(tl, "tr", true, "+=0.3"); // and back to the keyboard
+      tl.to(q("#crt-text-idle"), { opacity: 0, duration: 0.15 }).set(q("#crt-cursor"), {
         opacity: 1,
       });
-      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.3"));
-      tl.to([...q(".crt-line"), ...q("#crt-cursor")], { opacity: 0, duration: 0.2 }, "+=0.3").to(
+      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.15"));
+      tl.to([...q(".crt-line"), ...q("#crt-cursor")], { opacity: 0, duration: 0.15 }, "+=0.15").to(
         q(".crt-bar").slice(0, 3),
-        { opacity: 1, duration: 0.05, stagger: 0.3 },
+        { opacity: 1, duration: 0.05, stagger: 0.15 },
       );
       startHold(tl, "translator", () =>
         gsap.fromTo(
@@ -464,12 +481,12 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         .set(q("#printer-led"), { opacity: 0.3 })
         .to(q("#a-slip"), { opacity: 0, duration: 0.15 }, "+=0.2") // picks it up
         .set(q("#tr-held-slip"), { opacity: 1 }, "<");
-      walk(tl, "tr", P.trAtScout, "+=0.1");
+      walk(tl, "tr", P.trAtScout, "+=0.1", TRANSLATOR_PACE);
       face(tl, "tr", true);
       tl.set(q("#tr-held-slip"), { opacity: 0 }, "+=0.15")
         .set(q("#sc-held-slip"), { opacity: 1 }, "<")
         .addLabel("handoff"); // the Scout has the slip
-      walk(tl, "tr", P.trSpot, "+=0.2");
+      walk(tl, "tr", P.trSpot, "+=0.2", TRANSLATOR_PACE);
       faceHome(tl, "tr");
       tl.to(q(".crt-bar"), { opacity: 0, duration: 0.2 }).to(
         q("#crt-text-idle"),
@@ -575,6 +592,9 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       judgeHandsOver(tl);
       return tl;
     },
+
+    // Judge, when the check finds nothing on file: tells the Clerk instead of the Storyteller.
+    second_look_nothing: () => secondLookNothing(),
 
     // Judge asks the Clerk to rewrite the question: the Clerk writes again at the board, the Judge
     // walks home still holding the cards and puts them back on the desk pile for the second round.

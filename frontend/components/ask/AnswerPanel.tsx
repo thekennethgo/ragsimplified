@@ -55,6 +55,9 @@ type RoundTab = (typeof ROUND_TABS)[number];
 /** Who decided whether the sources were enough, in one line. */
 function decidedLine(look: Look): string {
   const pct = look.enough === null ? null : `${Math.round(look.enough * 100)}%`;
+  if (look.nothing && look.relevant !== null) {
+    return `Mercury Decide was only ${Math.round(look.relevant * 100)}% sure the sources say anything about this.`;
+  }
   if (pct === null) return "The language model decided.";
   if (look.decidedBy === "decider") {
     return `Mercury Decide judged the sources enough (${pct} sure they were).`;
@@ -514,8 +517,25 @@ export default function AnswerPanel({
                         title={`New cards, ranked against “${judge2.query}”`}
                         none="None of the new cards were kept."
                       />
+                      {judge2.check?.nothing && (
+                        <div className={styles.banner}>
+                          <p>
+                            <strong>
+                              Nothing in these cards answers the question, so no answer was written.
+                            </strong>
+                          </p>
+                          {judge2.check.part !== null && (
+                            <p>
+                              Mercury Decide was only {Math.round(judge2.check.part * 100)}% sure
+                              the cards answer any part of it.
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className={styles.block}>
-                        <h3>Handed to the Storyteller</h3>
+                        <h3>
+                          {judge2.check?.nothing ? "Filed back, not handed over" : "Handed to the Storyteller"}
+                        </h3>
                         <ol className={styles.rows}>
                           {judge2.finalCards.map((c) => (
                             <li key={c.n}>
@@ -619,8 +639,17 @@ export default function AnswerPanel({
                               )}
                             </div>
                           )}
+                          {kept.length > 0 && look?.nothing && (
+                            <div className={styles.banner}>
+                              <p>
+                                <strong>Nothing on file about this, so no answer was written.</strong>
+                              </p>
+                              <p>{decidedLine(look)}</p>
+                            </div>
+                          )}
                           {kept.length > 0 &&
                             !look?.query &&
+                            !look?.nothing &&
                             (look !== null || phase("judge") !== "working") && (
                               <div className={styles.banner}>
                                 <p>

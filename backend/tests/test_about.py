@@ -57,7 +57,8 @@ def test_second_look_facts_never_include_the_key(monkeypatch):
     monkeypatch.delenv("SECOND_LOOK", raising=False)
     look = client.get("/about").json()["second_look"]
     assert look["enabled"] is True and look["decider"] is None
-    assert look["threshold"] == 0.5 and look["max_cards"] == 7 and look["slots"] == 2
+    assert look["threshold"] == 0.5 and look["nothing_threshold"] == 0.1
+    assert look["max_cards"] == 7 and look["slots"] == 2
     assert "DONE" in look["prompt"]
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-secret")
     monkeypatch.setenv("SECOND_LOOK", "off")

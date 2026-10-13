@@ -376,6 +376,8 @@ def test_second_look_done_ends_after_one_round(client, llm, looking):
     assert done_events(got, "second_look")[0]["data"] == {
         "query": None,
         "enough": None,
+        "relevant": None,
+        "nothing": False,
         "decided_by": "llm",
     }
     assert done_events(got, "scout")[0]["data"]["round"] == 1
@@ -500,10 +502,47 @@ def test_a_confident_decider_skips_the_llm_call(client, llm, looking):
     assert done_events(got, "second_look")[0]["data"] == {
         "query": None,
         "enough": 0.9,
+        "relevant": 1.0,
+        "nothing": False,
         "decided_by": "decider",
     }
     assert llm.look_calls == []
     assert len(decider.states) == 1
+
+
+def test_a_decider_sure_nothing_is_on_file_refuses_without_any_llm_call(client, llm, looking):
+    app.dependency_overrides[get_decider] = lambda: FakeDecider(0.0, relevant=0.02)
+    got = events(client.post("/ask", json={"question": "Who is the best basketball player?"}))
+    assert steps(got)[6:] == [
+        ("second_look", "start"),
+        ("second_look", "done"),
+        ("storyteller", "start"),
+        ("storyteller", "done"),
+    ]
+    look = done_events(got, "second_look")[0]["data"]
+    assert (look["nothing"], look["relevant"], look["decided_by"]) == (True, 0.02, "decider")
+    assert llm.look_calls == [] and llm.calls == []
+    story = done_events(got, "storyteller")[0]["data"]
+    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": []}
+
+
+def test_a_second_round_that_finds_nothing_new_still_answers_from_round_one(
+    client, llm, looking, monkeypatch
+):
+    app.dependency_overrides[get_decider] = lambda: FakeDecider(0.0, relevant=0.95)
+    llm.look_reply = "Batam city overview"
+    calls = []
+
+    def fake_scout(conn, query, private_chunks=None, k=5, question=None):
+        calls.append(question)
+        return list(ROUND_1) if len(calls) == 1 else []
+
+    monkeypatch.setattr(ask_module, "scout", fake_scout)
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert done_events(got, "second_look")[0]["data"]["nothing"] is False
+    assert done_events(got, "judge")[1]["data"]["final"] == [r.title for r in ROUND_1[:5]]
+    assert len(llm.calls) == 1  # the Storyteller still writes from round one's cards
+    assert done_events(got, "storyteller")[0]["data"]["answer"] != ask_module.NOTHING_FOUND
 
 
 @pytest.mark.parametrize(
@@ -530,6 +569,54 @@ def test_nothing_found_emits_no_second_look_events(client, llm):
     assert "second_look" not in {e.get("step") for e in got}
     assert llm.look_calls == []
     assert done_events(got, "judge")[0]["data"]["second_look"] is False
+
+
+def test_after_a_second_look_the_decider_checks_the_final_cards(client, llm, looking):
+    # "What is Kenneth's hometown's most famous dish?": Batam is found, but nothing about food.
+    decider = FakeDecider(0.0, relevant=0.95, part=0.02)
+    app.dependency_overrides[get_decider] = lambda: decider
+    llm.look_reply = "Batam city overview"
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert steps(got)[-6:] == [
+        ("judge", "start"),
+        ("judge", "done"),
+        ("second_look", "start"),
+        ("second_look", "done"),
+        ("storyteller", "start"),
+        ("storyteller", "done"),
+    ]
+    assert done_events(got, "judge")[1]["data"]["check"] is True
+    final = done_events(got, "second_look")[1]["data"]
+    assert final == {
+        "round": 2,
+        "query": None,
+        "part": 0.02,
+        "nothing": True,
+        "decided_by": "decider",
+    }
+    # the check sees the second round's cards
+    assert "Batam city overview of the island" in decider.states[1]
+    assert llm.calls == []  # no Storyteller call
+    story = done_events(got, "storyteller")[0]["data"]
+    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": []}
+
+
+def test_a_final_check_that_finds_a_partial_answer_hands_over_to_the_storyteller(
+    client, llm, looking
+):
+    app.dependency_overrides[get_decider] = lambda: FakeDecider(0.0, relevant=0.95, part=0.9)
+    llm.look_reply = "Batam city overview"
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert done_events(got, "second_look")[1]["data"]["nothing"] is False
+    assert len(llm.calls) == 1
+
+
+def test_without_a_decider_there_is_no_final_check(client, llm, looking):
+    llm.look_reply = "Batam city overview"
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert done_events(got, "judge")[1]["data"]["check"] is False
+    assert len(done_events(got, "second_look")) == 1
+    assert len(llm.calls) == 1
 
 
 def test_explain_words_false_embeds_only_the_question(monkeypatch):
