@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.pipeline.translator import DIMENSION, FakeEmbedder
-from app.upload import MAX_TEXT_CHARS, get_embedder
+from app.upload import MAX_PDF_PAGES, MAX_TEXT_CHARS, get_embedder
 
 
 @pytest.fixture
@@ -89,3 +89,40 @@ def test_chopper_event_lists_each_chunks_position_heading_length_and_overlap(cli
     assert all(d["overlap"] > 0 for d in details[1:])
     translator = got[-1]["data"]
     assert [d["length"] for d in details] == [len(c["text"]) for c in translator["chunks"]]
+
+
+def test_pages_become_chunks_that_keep_their_page_numbers(client):
+    pages = [
+        {"number": 1, "text": "# Leave\n\nStaff get twenty days of paid leave."},
+        {"number": 2, "text": "Sick days are counted apart."},
+    ]
+    got = events(client.post("/upload", json={"title": "PDF", "pages": pages}))
+    assert got[-1]["step"] == "translator"
+    chunks = got[-1]["data"]["chunks"]
+    assert [c["page"] for c in chunks] == [1, 2]
+    assert "twenty days" in chunks[0]["text"]
+
+
+def test_text_chunks_have_no_page(client):
+    got = events(client.post("/upload", json={"title": "T", "text": "hello there"}))
+    assert [c["page"] for c in got[-1]["data"]["chunks"]] == [None]
+
+
+def test_exactly_one_of_text_or_pages(client):
+    page = {"number": 1, "text": "x"}
+    both = {"title": "T", "text": "x", "pages": [page]}
+    assert client.post("/upload", json=both).status_code == 422
+    assert client.post("/upload", json={"title": "T"}).status_code == 422
+
+
+def test_rejects_too_many_pages_or_characters(client):
+    many = [{"number": i, "text": "x"} for i in range(1, MAX_PDF_PAGES + 2)]
+    assert client.post("/upload", json={"title": "T", "pages": many}).status_code == 422
+    long = [{"number": 1, "text": "x" * 12_000}, {"number": 2, "text": "x" * 8_001}]
+    assert client.post("/upload", json={"title": "T", "pages": long}).status_code == 422
+    assert (
+        client.post(
+            "/upload", json={"title": "T", "pages": [{"number": 0, "text": "x"}]}
+        ).status_code
+        == 422
+    )

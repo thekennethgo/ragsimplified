@@ -1,7 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
+import { PdfError } from "../../lib/pdfText";
 import EnvelopeForm from "./EnvelopeForm";
+
+const extract = vi.hoisted(() => vi.fn());
+vi.mock("../../lib/pdfText", async (original) => ({
+  ...(await original<typeof import("../../lib/pdfText")>()),
+  extractPdf: extract,
+}));
 
 afterEach(cleanup);
 
@@ -71,6 +78,59 @@ test("a file longer than 20,000 characters is cut with a visible note", async ()
 test("any other file type gets a friendly error and changes nothing", async () => {
   render(<EnvelopeForm onSubmit={vi.fn()} busy={false} offline={false} />);
   pick(screen.getByLabelText(/Pick or drop a file/), file("photo.png", "x", "image/png"));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Only .md and .txt files");
+  expect(await screen.findByRole("alert")).toHaveTextContent("Only .pdf, .md and .txt files");
   expect(screen.getByLabelText("Text")).toHaveValue("");
+});
+
+test("the form is called Upload your own document and offers .pdf", () => {
+  render(<EnvelopeForm onSubmit={vi.fn()} busy={false} offline={false} />);
+  expect(screen.getByRole("heading", { name: "Upload your own document" })).toBeInTheDocument();
+  expect(screen.getByText(".pdf, .md or .txt")).toBeInTheDocument();
+  expect(screen.getByLabelText(/Pick or drop a file/)).toHaveAttribute(
+    "accept",
+    expect.stringContaining(".pdf"),
+  );
+  expect(screen.getByText(/PDFs are read in your browser/)).toBeInTheDocument();
+  expect(screen.getByText(/and Google Gemini\s+\(answers\)/)).toBeInTheDocument();
+});
+
+test("a PDF is read in the browser, summarised, and sent as pages", async () => {
+  const pages = [
+    { number: 1, text: "a".repeat(30) },
+    { number: 2, text: "b".repeat(20) },
+  ];
+  extract.mockResolvedValue({ pages, truncated: false, totalPages: 2 });
+  const onSubmit = vi.fn(() => Promise.resolve(true));
+  render(<EnvelopeForm onSubmit={onSubmit} busy={false} offline={false} />);
+  const handbook = file("Staff handbook.pdf", "%PDF", "application/pdf");
+  pick(screen.getByLabelText(/Pick or drop a file/), handbook);
+  expect(await screen.findByText("2 pages read, 50 characters")).toBeInTheDocument();
+  expect(screen.getByLabelText("Title")).toHaveValue("Staff handbook");
+  expect(screen.queryByLabelText("Text")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Add text" }));
+  expect(onSubmit).toHaveBeenCalledWith("Staff handbook", { pages, file: handbook });
+  await waitFor(() => expect(screen.getByLabelText("Text")).toHaveValue(""));
+});
+
+test("a long PDF says how many pages were read", async () => {
+  extract.mockResolvedValue({
+    pages: [{ number: 1, text: "a" }, { number: 4, text: "b" }],
+    truncated: true,
+    totalPages: 30,
+  });
+  render(<EnvelopeForm onSubmit={vi.fn()} busy={false} offline={false} />);
+  pick(screen.getByLabelText(/Pick or drop a file/), file("long.pdf", "%PDF"));
+  expect(await screen.findByText(/Only the first 4 pages were read\./)).toBeInTheDocument();
+});
+
+test.each([
+  ["too-large", "This PDF is larger than 5 MB."],
+  ["no-text", "This PDF has no selectable text (it may be a scan)."],
+  ["not-a-pdf", "This file could not be read as a PDF."],
+] as const)("a PDF that fails with %s shows its message", async (code, message) => {
+  extract.mockRejectedValue(new PdfError(code));
+  render(<EnvelopeForm onSubmit={vi.fn()} busy={false} offline={false} />);
+  pick(screen.getByLabelText(/Pick or drop a file/), file("x.pdf", "%PDF"));
+  expect(await screen.findByRole("alert")).toHaveTextContent(message);
+  expect(screen.getByRole("button", { name: "Add text" })).toBeDisabled();
 });

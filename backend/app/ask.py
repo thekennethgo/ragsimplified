@@ -31,6 +31,7 @@ class PrivateChunkIn(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     position: int = Field(ge=0)
     heading: str | None = Field(default=None, max_length=500)
+    page: int | None = Field(default=None, ge=1)
     text: str = Field(min_length=1, max_length=MAX_CHUNK_CHARS)
     vector: list[float] = Field(min_length=DIMENSION, max_length=DIMENSION)
 

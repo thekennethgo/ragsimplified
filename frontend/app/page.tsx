@@ -42,7 +42,7 @@ const BUILT = [
   },
   {
     q: "What is it built with?",
-    a: "Next.js, FastAPI, Postgres with pgvector, Voyage AI and Claude Haiku. Open source.",
+    a: "Next.js, FastAPI, Postgres with pgvector, Voyage AI, Google Gemini 3.5 Flash Lite and Mercury Decide. Open source.",
     link: "GitHub",
     href: REPO,
   },
@@ -59,7 +59,7 @@ export default function Home() {
             Ask a question
           </Link>
           <Link href="/upload" className={styles.secondary}>
-            Add your own text
+            Upload your own document
           </Link>
         </div>
       </section>

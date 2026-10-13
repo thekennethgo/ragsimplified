@@ -147,6 +147,20 @@ def test_private_chunks_are_searched_and_sent_to_the_storyteller(client, llm):
 
 
 @needs_db
+def test_a_private_chunks_page_reaches_the_prompt_and_the_citation(client, llm):
+    chunk = private_chunk(QUESTION, page=3)
+    llm.reply = "[1] [2] [3] [4] [5]"  # cite every card, so the private one is cited
+    got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))
+    judge_done = next(e for e in got if e.get("step") == "judge" and e["status"] == "done")
+    mine = [r for r in judge_done["data"]["results"] if r["source"] == "private"]
+    assert [r["page"] for r in mine] == [3]
+    assert 'page="3"' in llm.calls[0][1][0]["content"]
+    final = next(e for e in got if e.get("step") == "storyteller" and e["status"] == "done")
+    cited = [c for c in final["data"]["citations"] if c["source"] == "private"]
+    assert [c["page"] for c in cited] == [3]
+
+
+@needs_db
 def test_both_library_and_private_results_can_appear(client, library_chunk):
     chunk = private_chunk(QUESTION)
     got = events(client.post("/ask", json={"question": QUESTION, "private_chunks": [chunk]}))

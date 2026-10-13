@@ -1,4 +1,7 @@
 export const MAX_TEXT_CHARS = 20_000;
+// A visitor PDF: at most this big, and only the first pages are read (the backend allows 10).
+export const MAX_PDF_BYTES = 5 * 1024 * 1024;
+export const MAX_PDF_PAGES = 10;
 
 export function backendUrl(): string {
   return process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";

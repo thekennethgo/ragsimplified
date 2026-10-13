@@ -457,6 +457,40 @@ test("sends the visitor's private chunks with their vectors", async () => {
   ]);
 });
 
+test("a PDF text's chunks are sent with their page numbers", async () => {
+  const fetchMock = stubAsk();
+  function Seed() {
+    const { add } = usePrivateTexts();
+    return (
+      <button
+        onClick={() =>
+          add({
+            id: "p1",
+            pdf: true,
+            title: "Handbook",
+            text: "hello",
+            chunks: [{ position: 0, heading: null, page: 3, text: "hello" }],
+            vectors: [[0.1, 0.2]],
+          })
+        }
+      >
+        seed
+      </button>
+    );
+  }
+  render(
+    <PrivateTextsProvider>
+      <Seed />
+      <AskPage />
+    </PrivateTextsProvider>,
+  );
+  fireEvent.click(screen.getByText("seed"));
+  ask("Hi?");
+  await waitFor(() => expect(askCall(fetchMock)).toBeDefined());
+  const [, init] = askCall(fetchMock);
+  expect(JSON.parse(String(init.body)).private_chunks[0].page).toBe(3);
+});
+
 test("a refusal shows no sources", async () => {
   stubAsk([
     { step: "storyteller", status: "start" },

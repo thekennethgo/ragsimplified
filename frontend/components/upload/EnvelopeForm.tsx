@@ -2,10 +2,22 @@
 
 import { type DragEvent, type FormEvent, useState } from "react";
 
+import { llmName, useAbout } from "../../lib/about";
 import { MAX_TEXT_CHARS } from "../../lib/backend";
+import { type PdfText, PdfError, extractPdf } from "../../lib/pdfText";
 import styles from "./EnvelopeForm.module.css";
 
-const ACCEPTED = /\.(md|txt)$/i;
+const ACCEPTED = /\.(pdf|md|txt)$/i;
+const PDF = /\.pdf$/i;
+
+/** A PDF the browser has read: its pages (sent to the backend) and the file itself (kept in the tab). */
+export type PdfUpload = { pages: PdfText["pages"]; file: File };
+
+const PDF_ERRORS: Record<PdfError["code"], string> = {
+  "too-large": "This PDF is larger than 5 MB.",
+  "no-text": "This PDF has no selectable text (it may be a scan).",
+  "not-a-pdf": "This file could not be read as a PDF.",
+};
 
 /** The interoffice envelope: a title, lined paper and a file picker. Nothing is stored (ADR 002). */
 export default function EnvelopeForm({
@@ -13,8 +25,8 @@ export default function EnvelopeForm({
   busy,
   offline,
 }: {
-  /** Resolves true when the text was added, so the form can empty itself. */
-  onSubmit: (title: string, text: string) => Promise<boolean | void>;
+  /** Resolves true when the text was added, so the form can empty itself. A PDF arrives as its pages. */
+  onSubmit: (title: string, source: string | PdfUpload) => Promise<boolean | void>;
   busy: boolean;
   /** The backend can't be reached, so nothing can be filed. */
   offline: boolean;
@@ -23,14 +35,45 @@ export default function EnvelopeForm({
   const [text, setText] = useState("");
   const [note, setNote] = useState("");
   const [fileError, setFileError] = useState("");
+  const [pdf, setPdf] = useState<{ upload: PdfUpload; chars: number; summary: string } | null>(
+    null,
+  );
+  const about = useAbout();
+
+  async function readPdf(file: File) {
+    try {
+      const { pages, truncated } = await extractPdf(file);
+      const chars = pages.reduce((sum, p) => sum + p.text.length, 0);
+      const count = `${pages.length} ${pages.length === 1 ? "page" : "pages"} read`;
+      const last = pages[pages.length - 1].number;
+      setTitle((now) => now.trim() || file.name.replace(PDF, "").slice(0, 200));
+      setText("");
+      setPdf({
+        upload: { pages, file },
+        chars,
+        summary:
+          `${count}, ${chars.toLocaleString("en-US")} characters` +
+          (truncated ? `. Only the first ${last} pages were read.` : ""),
+      });
+    } catch (error) {
+      setFileError(
+        error instanceof PdfError ? PDF_ERRORS[error.code] : PDF_ERRORS["not-a-pdf"],
+      );
+    }
+  }
 
   function readFile(file: File) {
     setNote("");
     if (!ACCEPTED.test(file.name)) {
-      setFileError("Only .md and .txt files");
+      setFileError("Only .pdf, .md and .txt files");
       return;
     }
     setFileError("");
+    if (PDF.test(file.name)) {
+      void readPdf(file);
+      return;
+    }
+    setPdf(null);
     const reader = new FileReader();
     reader.onload = () => {
       const content = String(reader.result ?? "");
@@ -51,14 +94,16 @@ export default function EnvelopeForm({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (await onSubmit(title, text)) {
+    if (await onSubmit(title, pdf ? pdf.upload : text)) {
       setTitle("");
       setText("");
       setNote("");
+      setPdf(null);
     }
   }
 
-  const percent = Math.min(100, (text.length / MAX_TEXT_CHARS) * 100);
+  const length = pdf ? pdf.chars : text.length;
+  const percent = Math.min(100, (length / MAX_TEXT_CHARS) * 100);
 
   return (
     <section aria-labelledby="env-h" className={styles.envelope}>
@@ -96,7 +141,7 @@ export default function EnvelopeForm({
         <form className={styles.body} onSubmit={submit}>
           <div className={styles.heading}>
             <span className={styles.kicker}>Interoffice mail · To: your folder in the file cabinet</span>
-            <h2 id="env-h">Add a text</h2>
+            <h2 id="env-h">Upload your own document</h2>
           </div>
           <label className={styles.field}>
             Title
@@ -108,22 +153,28 @@ export default function EnvelopeForm({
               placeholder="e.g. Team handbook, chapter 2"
             />
           </label>
-          <label className={styles.field}>
-            Text
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={MAX_TEXT_CHARS}
-              rows={6}
-              placeholder="Paste up to 20,000 characters"
-            />
-          </label>
+          {pdf ? (
+            <p role="status" className={styles.note}>
+              {pdf.summary}
+            </p>
+          ) : (
+            <label className={styles.field}>
+              Text
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                maxLength={MAX_TEXT_CHARS}
+                rows={6}
+                placeholder="Paste up to 20,000 characters"
+              />
+            </label>
+          )}
           <div className={styles.count}>
             <div className={styles.bar}>
               <div style={{ width: `${percent}%` }} />
             </div>
             <p aria-live="polite">
-              {text.length.toLocaleString("en-US")} / {MAX_TEXT_CHARS.toLocaleString("en-US")}
+              {length.toLocaleString("en-US")} / {MAX_TEXT_CHARS.toLocaleString("en-US")}
             </p>
           </div>
           {offline && (
@@ -135,7 +186,7 @@ export default function EnvelopeForm({
             <label className={styles.drop} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
               <input
                 type="file"
-                accept=".md,.txt,text/markdown,text/plain"
+                accept=".pdf,.md,.txt,application/pdf,text/markdown,text/plain"
                 className="visually-hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -144,13 +195,13 @@ export default function EnvelopeForm({
                 }}
               />
               Pick or drop a file
-              <span className={styles.hint}>.md or .txt</span>
+              <span className={styles.hint}>.pdf, .md or .txt</span>
             </label>
             <button
               type="submit"
               aria-label="Add text"
               className={styles.send}
-              disabled={busy || offline || !title.trim() || !text.trim()}
+              disabled={busy || offline || !title.trim() || !(pdf || text.trim())}
             >
               <svg
                 width="16"
@@ -191,8 +242,9 @@ export default function EnvelopeForm({
               <path d="M8 11V7a4 4 0 0 1 8 0v4" />
             </svg>
             <p>
-              Sent to Voyage AI (fingerprints) and Anthropic (answers). Never stored on our
-              server: it stays in this tab until you close it.
+              Sent to Voyage AI (fingerprints) and {about ? llmName(about) : "Google Gemini"}{" "}
+              (answers). Never stored on our server: it stays in this tab until you close it. PDFs
+              are read in your browser.
             </p>
           </div>
         </form>

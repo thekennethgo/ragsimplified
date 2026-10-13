@@ -10,23 +10,25 @@ ragsimplified is a public web app that explains retrieval-augmented generation (
 
 When you paste a text on the Upload page, it is sent to the backend, which cuts it into chunks and asks Voyage AI to turn each chunk into a vector of numbers. The chunks and vectors come straight back to your browser. The server does not store them.
 
+A PDF is different in one way: your browser reads the text out of it, page by page, and sends only that text and the page numbers to the backend. The PDF file itself never leaves your tab, and the server never receives or opens it.
+
 When you ask a question, your chunks travel with it so they can be searched along with the library. The matching passages are then sent to the language model so it can write the answer. So your text does reach Voyage AI, and parts of it can reach the language model provider. Your pasted text is never sent to OpenRouter.
 
 ## Is it stored?
 
-No, not on the server. Your pasted texts are kept in your browser. They are held in memory only, so they are lost when you close or reload the page. The shared library is different: it is chosen by the owner and stored in the database.
+No, not on the server. Your pasted texts and uploaded PDFs are kept in your browser. They are held in memory only, so they are lost when you close or reload the page. The shared library is different: it is chosen by the owner and stored in the database.
 
 ## What does it cost to run?
 
-The site is built to run mostly on free tiers: Vercel for the frontend, Render for the backend, Supabase for the database, and a free allowance from Voyage AI. The one paid service is the language model on the live site, Claude Haiku 4.5, which costs a small amount per answer. Kenneth plans a monthly spend limit of about 10 dollars in the Anthropic Console. Running your own copy costs about the same, or nothing if you use a free model for development.
+The site is built to run mostly on free tiers: Vercel for the frontend, Render for the backend, Supabase for the database, and a free allowance from Voyage AI. The language model on the live site is Google's Gemini 3.5 Flash Lite, reached through an OpenAI-compatible client, and it can run on Google's free tier. The client also supports Claude, which is paid per answer. Running your own copy costs little, or nothing on free tiers; Google's free tier may use submitted content to improve Google products, so use public test questions there.
 
 ## What are the limits?
 
-Today, a pasted text can be at most 20,000 characters, a question at most 1,000 characters, and a question can carry at most 60 of your pasted chunks. A planned limit (project step 6.1) is a daily quota of 20 questions per visitor. Because the free Render server sleeps when idle, the first request after a quiet spell can take up to a minute.
+Today, a pasted text can be at most 20,000 characters (a PDF at most 5 MB, of which the first 10 pages are read, up to the same 20,000 characters), a question at most 1,000 characters, and a question can carry at most 60 of your pasted chunks. A planned limit (project step 6.1) is a daily quota of 20 questions per visitor. Because the free Render server sleeps when idle, the first request after a quiet spell can take up to a minute.
 
 ## Which AI models does it use?
 
-There are four. Voyage AI's `voyage-4` model turns text into vectors of 1,024 numbers. Voyage AI's `rerank-3-lite` model reranks the 20 candidate passages and keeps the best 5. Inception's Mercury Decide, a free decision model reached through OpenRouter, checks whether those 5 passages answer the question (the second look); it reads the library passages that were found, never your pasted texts (when your own text is among the results, the check is skipped). Claude Haiku 4.5 writes the answer on the live site, and also writes the follow-up search when the check says the passages are not enough. The answer model is set with the `LLM_MODEL` environment variable, and during development a free Gemini model can be used instead.
+There are four. Voyage AI's `voyage-4` model turns text into vectors of 1,024 numbers. Voyage AI's `rerank-3-lite` model reranks the 20 candidate passages and keeps the best 5. Inception's Mercury Decide, a free decision model reached through OpenRouter, checks whether those 5 passages answer the question (the second look); it reads the library passages that were found, never your pasted texts (when your own text is among the results, the check is skipped). Google's Gemini 3.5 Flash Lite writes the answer on the live site, and also writes the follow-up search when the check says the passages are not enough. The answer model is set with the `LLM_MODEL` environment variable (here `gemini-3.5-flash-lite`), and the client also supports Claude.
 
 ## Why does it sometimes say it cannot answer?
 
@@ -38,7 +40,7 @@ It is designed not to. The answering model is told to use only the supplied pass
 
 ## Can I add documents to the shared library?
 
-Not as a visitor. The library is curated by the owner, which avoids moderation and hosting other people's files. You can paste your own texts and ask about them together with the library. If you run your own copy, you add documents by putting files in the `corpus` folder and running the seed command.
+Not as a visitor. The library is curated by the owner, which avoids moderation and hosting other people's files. You can paste your own texts, or upload a PDF, .md or .txt file, and ask about them together with the library. If you run your own copy, you add documents by putting files in the `corpus` folder and running the seed command.
 
 ## Can I run my own copy?
 
