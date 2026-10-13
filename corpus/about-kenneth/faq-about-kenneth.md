@@ -10,6 +10,10 @@ Kenneth Go is a recent computer science graduate from UNSW Sydney. He is pursuin
 
 Graduate or junior roles as a software engineer, AI engineer, full-stack engineer or backend engineer, in Sydney or Singapore. He is open to remote, hybrid and on-site work.
 
+## What kind of team is Kenneth looking for?
+
+Kenneth is looking for a team that communicates openly and supports each other. Early in his career, he wants to learn as much as he can, so he values colleagues who share knowledge, give honest feedback and help him grow his skills and experience.
+
 ## What is Kenneth's strongest skill?
 
 Breaking down real-world problems and finding programming solutions for them, and communicating his ideas clearly to the people he works with.
@@ -34,13 +38,9 @@ Step by step with Claude Code, following a written plan: one AI model plans each
 
 Kenneth's main industry experience is an Atlassian client project at UNSW (February to April 2026), where he was Scrum Master and a developer in a team of 5 building an AI-powered Jira prioritisation tool on Atlassian Forge. He also worked as casual wait staff in a restaurant alongside his full-time studies.
 
-## What languages does Kenneth speak?
-
-English and Indonesian fluently, and a little Chinese.
-
 ## Can I see Kenneth's CV?
 
-Kenneth's CV is in the About Kenneth section of the file cabinet. For more about his experience, projects, skills or certifications, ask the office, or contact him by email at gennethko@gmail.com or message him on LinkedIn.
+Kenneth's CV is in the About the creator section of the file cabinet. For more about his experience, projects, skills or certifications, ask the office, or contact him by email at gennethko@gmail.com or message him on LinkedIn.
 
 ## How can I contact Kenneth?
 

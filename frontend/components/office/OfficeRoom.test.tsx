@@ -3,7 +3,13 @@ import { afterEach, expect, test, vi } from "vitest";
 
 import OfficeRoom from "./OfficeRoom";
 
+const stopMeow = vi.fn();
+const startMeow = vi.fn((_root: Element) => stopMeow);
+vi.mock("../../lib/office/meow", () => ({ startMeow: (root: Element) => startMeow(root) }));
+
 afterEach(() => {
+  startMeow.mockClear();
+  stopMeow.mockClear();
   cleanup();
   vi.unstubAllGlobals();
 });
@@ -63,4 +69,41 @@ test("the page still renders when the art cannot be loaded", async () => {
   expect(screen.getByText("A test room")).toBeInTheDocument();
   await new Promise((r) => setTimeout(r, 10));
   expect(q.register).not.toHaveBeenCalled();
+});
+
+test("starts Meow's idle loop when the room has her, and stops it with the room", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => Promise.resolve(new Response('<svg><g id="meow"></g></svg>'))),
+  );
+  const q = queue();
+  const { unmount } = render(
+    <OfficeRoom
+      src="/office/test.svg"
+      label="x"
+      build={() => ({ reset: vi.fn(), scenes: {}, holds: {} })}
+      queue={q}
+    />,
+  );
+  await waitFor(() => expect(startMeow).toHaveBeenCalledTimes(1));
+  unmount();
+  expect(stopMeow).toHaveBeenCalled();
+});
+
+test("does not start Meow in a room without her", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => Promise.resolve(new Response("<svg></svg>"))),
+  );
+  const q = queue();
+  render(
+    <OfficeRoom
+      src="/office/test.svg"
+      label="x"
+      build={() => ({ reset: vi.fn(), scenes: {}, holds: {} })}
+      queue={q}
+    />,
+  );
+  await waitFor(() => expect(q.register).toHaveBeenCalled());
+  expect(startMeow).not.toHaveBeenCalled();
 });

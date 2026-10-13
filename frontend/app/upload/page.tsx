@@ -22,7 +22,7 @@ import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
 import type { ViewTarget } from "../../lib/viewer";
 import styles from "./page.module.css";
 
-const ROOM_LABEL = "The Upload office: the Chopper, the Translator and the Archivist at work.";
+const ROOM_LABEL = "The Upload office: the Chopper, the Translator and the Archivist at work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor.";
 
 export default function UploadPage() {
   const [animationsOn, setAnimationsOn] = useAnimationsSetting();

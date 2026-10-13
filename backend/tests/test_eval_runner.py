@@ -17,6 +17,7 @@ from app.eval_runner import (
     run_questions,
     score,
     select_questions,
+    summarise,
 )
 from app.events import DeltaEvent, StepEvent
 
@@ -326,3 +327,27 @@ def test_rows_come_back_in_question_order_with_two_workers():
 
     rows = run_questions([{"id": "a"}, {"id": "b"}, {"id": "c"}], 2, run_one)
     assert [r["id"] for r in rows] == ["a", "b", "c"]
+
+
+def test_summarise_counts_passed_and_total_per_case():
+    rows = [
+        row("unanswerable", case="refuse", refused=True),
+        row("unanswerable", case="refuse", refused=False),
+        row("injection", case="injection", leaked=False, retrieval_hit=True, cited=True),
+        row("injection", case="injection", leaked=True, retrieval_hit=True, cited=True),
+        row("answerable", case="second-look", retrieval_hit=True, cited=True),
+        row("answerable", case="second-look", retrieval_hit=True, cited=False),
+        row("answerable", case="second-look", retrieval_hit=False, cited=True),
+        row("answerable", case="coverage", retrieval_hit=True, cited=True),
+    ]
+    got = summarise(rows, "p:m", "2026-10-13")
+    assert got["date"] == "2026-10-13"
+    assert got["model"] == "p:m"
+    assert got["questions"] == 8
+    groups = {g["id"]: (g["passed"], g["total"]) for g in got["groups"]}
+    assert groups == {
+        "refuse": (1, 2),
+        "injection": (1, 2),
+        "second-look": (1, 3),
+        "coverage": (1, 1),
+    }

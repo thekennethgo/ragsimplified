@@ -1,10 +1,15 @@
-<svg role="img" aria-label="Illustration of the office break room: a window with half-lowered blinds striping the floor with light, a plant, a wall clock, a corkboard titled Why RAG? with six pinned notes named after the sections of this page joined by red string, the Clerk standing beside the board and waving at it, a kitchen counter with a coffee machine, a mug shelf with one mug in each colleague's colour, a sugar jar and a microwave, a sign saying Please cite your sources and wash your mug, and a small round table with two chairs." xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300">
+<svg role="img" aria-label="Illustration of the office break room: a window with half-lowered blinds striping the floor with light, a plant, a wall clock, a corkboard titled Why RAG? with six pinned notes named after the sections of this page joined by red string, the Clerk standing beside the board and waving at it, a kitchen counter with a coffee machine, a mug shelf with one mug in each colleague's colour, a sugar jar and a microwave, a sign saying Please cite your sources and wash your mug, and a small round table with two chairs, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor." xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 300" width="1280" height="300">
       <rect x="0" y="0" width="1280" height="300" fill="#B48A62"></rect>
       <rect x="0" y="196" width="1280" height="56" fill="#8F6747"></rect>
       <rect x="0" y="192" width="1280" height="5" fill="#C9A47C"></rect>
       <rect x="0" y="252" width="1280" height="48" fill="#8A5E3E"></rect>
       <rect x="0" y="252" width="1280" height="4" fill="#6E4A2F"></rect>
       <path d="M0 268H1280M0 286H1280M140 256V268M420 268V286M700 256V268M980 268V286M1180 256V268M300 286V300M860 286V300" stroke="#7A5134" stroke-width="1.5"></path>
+      <g id="rug" aria-hidden="true">
+        <path id="rug-base" d="M462 262L698 262L720 296L440 296Z" fill="#5A3A28"></path>
+        <path id="rug-border" d="M467 265L693 265L715 293L445 293Z" fill="none" stroke="#A98660" stroke-width="1.6" stroke-linejoin="round"></path>
+        <text id="rug-logo" transform="translate(580 283) scale(1 0.6)" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="20" letter-spacing="3" fill="#85644A">RAG.co</text>
+      </g>
       <path d="M60 300 L80 252 L262 252 L282 300 Z" fill="#F2C27E" opacity="0.14"></path><path d="M60 300 L80 252 L92 252 L72 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M90 300 L110 252 L122 252 L102 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M120 300 L140 252 L152 252 L132 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M150 300 L170 252 L182 252 L162 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M180 300 L200 252 L212 252 L192 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M210 300 L230 252 L242 252 L222 300 Z" fill="#5E3F28" opacity="0.18"></path><path d="M240 300 L260 252 L272 252 L252 300 Z" fill="#5E3F28" opacity="0.18"></path>
 
       <rect x="60" y="46" width="170" height="120" rx="3" fill="#E1CBA8"></rect><rect x="68" y="54" width="154" height="104" fill="#E8A866"></rect>
@@ -37,6 +42,17 @@
       <rect x="930" y="166" width="16" height="20" rx="3" fill="#EFE6D6"></rect><rect x="928" y="162" width="20" height="5" rx="2" fill="#A07A6A"></rect>
       <text x="938" y="180" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="5" fill="#8C7660">SUGAR</text>
       <rect x="1000" y="150" width="54" height="36" rx="3" fill="#D9CBB4"></rect><rect x="1005" y="156" width="34" height="24" rx="2" fill="#3A332E"></rect><rect x="1043" y="157" width="7" height="3" fill="#8C6D46"></rect><rect x="1043" y="163" width="7" height="3" fill="#8C6D46"></rect><circle cx="1046.5" cy="173" r="2.5" fill="#8C6D46"></circle>
+      <g id="meow" aria-hidden="true" transform="translate(1027 150)">
+        <ellipse id="meow-shadow" cx="1" cy="1" rx="21" ry="4" fill="#2B1F17" opacity="0.2"></ellipse>
+        <path id="meow-tail" d="M16 -4C26 -4 26 -14 19 -15" fill="none" stroke="#6E5B4E" stroke-width="4" stroke-linecap="round"></path>
+        <ellipse id="meow-body" cx="3" cy="-8" rx="17" ry="8" fill="#6E5B4E"></ellipse>
+        <g id="meow-head">
+          <path id="meow-ear-left" d="M-20 -13L-18 -22L-12 -15Z" fill="#5C4A3F"></path>
+          <path id="meow-ear-right" d="M-14 -15L-9 -21L-6 -12Z" fill="#5C4A3F"></path>
+          <ellipse id="meow-face" cx="-13" cy="-8" rx="8" ry="7" fill="#7A6658"></ellipse>
+          <path id="meow-eyes" d="M-17 -8q2 2 4 0M-11 -8q2 2 4 0" fill="none" stroke="#2B1F17" stroke-width="1.2" stroke-linecap="round"></path>
+        </g>
+      </g>
 
       <rect x="1084" y="56" width="180" height="56" rx="3" fill="#EFE8DA"></rect>
       <rect x="1084" y="56" width="180" height="56" rx="3" fill="none" stroke="#CDBFA8" stroke-width="2"></rect>

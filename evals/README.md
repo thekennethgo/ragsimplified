@@ -11,8 +11,8 @@
 | `look-alike` | Tells near-identical documents apart | 3 |
 | `two-sources` | Combines facts from two documents | 3 |
 | `conflict` | Handles two documents that give different numbers | 3 |
-| `second-look` | Follows a lead when the question only points at the answer | 6 |
-| `coverage` | One plain question per shelf and per kind of document | 24 |
+| `second-look` | Follows a lead when the question only points at the answer | 8 |
+| `coverage` | One plain question per shelf and per kind of document | 26 |
 
 ## Running a subset
 

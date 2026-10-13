@@ -184,7 +184,7 @@
 }
 
 .viewer {
-  max-height: 60vh;
+  height: min(88vh, 1100px);
   overflow: auto;
   padding: 4px 2px;
 }

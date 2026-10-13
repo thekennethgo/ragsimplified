@@ -29,6 +29,8 @@
 {"id": "movie-1", "type": "answerable", "question": "Who directed The Social Network?", "expected_file": "movies-and-games/the-social-network.md", "expected_keyword": "David Fincher", "case": "coverage"}
 {"id": "game-1", "type": "answerable", "question": "What is Watch Dogs about?", "expected_file": "movies-and-games/watch-dogs.md", "expected_keyword": "hacker", "case": "coverage"}
 {"id": "general-1", "type": "answerable", "question": "Which mission first landed humans on the Moon?", "expected_file": "general/apollo-11.md", "expected_keyword": "Apollo 11", "case": "coverage"}
+{"id": "general-2", "type": "answerable", "question": "Who invented the World Wide Web?", "expected_file": "general/world-wide-web.md", "expected_keyword": "Berners-Lee", "case": "coverage"}
+{"id": "general-3", "type": "answerable", "question": "Where was coffee first cultivated?", "expected_file": "general/coffee.md", "expected_keyword": "Yemen", "case": "coverage"}
 {"id": "proj-1", "type": "answerable", "question": "How many candidates does the Scout pass on, and how many does the Judge keep?", "expected_file": "this-project/how-this-office-works.md", "expected_keyword": "20", "case": "coverage"}
 {"id": "proj-2", "type": "answerable", "question": "Why did the project switch from Rive to GSAP for the animations?", "expected_file": "this-project/design-decisions.md", "expected_keyword": "Rive", "case": "coverage"}
 {"id": "proj-3", "type": "answerable", "question": "Does the site store the text I paste?", "expected_file": "this-project/site-faq.md", "expected_keyword": "not store", "case": "coverage"}
@@ -49,3 +51,5 @@
 {"id": "indirect-1", "type": "answerable", "tier": "hard", "question": "When was Kenneth's favourite movie about a humanoid robot released?", "expected_files": ["about-kenneth/personal.md", "movies-and-games/ex-machina.md"], "case": "second-look", "expected_keyword": "2014"}
 {"id": "indirect-2", "type": "answerable", "tier": "hard", "question": "What is Kenneth's hometown like?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/batam.md"], "case": "second-look"}
 {"id": "indirect-3", "type": "answerable", "tier": "hard", "question": "Which country does the sport of Kenneth's university society come from?", "expected_files": ["about-kenneth/personal.md", "places-and-interests/muay-thai.md"], "case": "second-look", "expected_keyword": "Thailand"}
+{"id": "indirect-5", "type": "answerable", "tier": "hard", "question": "What is the region Kenneth travelled to known for?", "expected_file": "places-and-interests/central-asia.md", "expected_keyword": "Silk Road", "case": "second-look"}
+{"id": "cross-6", "type": "answerable", "tier": "hard", "question": "Which countries make up the region Kenneth visited on his trip?", "expected_file": "places-and-interests/central-asia.md", "expected_keyword": "Turkmenistan", "case": "second-look"}

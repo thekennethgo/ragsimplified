@@ -80,6 +80,7 @@ Wikipedia articles, trimmed to at most 3,000 words.
 | File | Source | Licence |
 |---|---|---|
 | `batam.md` | https://en.wikipedia.org/wiki/Batam (revision 1379635846) | CC BY-SA 4.0 |
+| `central-asia.md` | https://en.wikipedia.org/wiki/Central_Asia (revision 1379988557) | CC BY-SA 4.0 |
 | `mixed-martial-arts.md` | https://en.wikipedia.org/wiki/Mixed_martial_arts (revision 1379554519) | CC BY-SA 4.0 |
 | `muay-thai.md` | https://en.wikipedia.org/wiki/Muay_Thai (revision 1377864957) | CC BY-SA 4.0 |
 | `singapore.md` | https://en.wikipedia.org/wiki/Singapore (revision 1379468381) | CC BY-SA 4.0 |
@@ -110,8 +111,9 @@ Wikipedia articles (trimmed to at most 3,000 words) and one public-domain story.
 |---|---|---|
 | `apollo-11.md` | https://en.wikipedia.org/wiki/Apollo_11 (revision 1371120273) | CC BY-SA 4.0 |
 | `chess.md` | https://en.wikipedia.org/wiki/Chess (revision 1379113904) | CC BY-SA 4.0 |
-| `go-game.md` | https://en.wikipedia.org/wiki/Go_(game) (revision 1377627768) | CC BY-SA 4.0 |
+| `coffee.md` | https://en.wikipedia.org/wiki/Coffee (revision 1371799424) | CC BY-SA 4.0 |
 | `great-barrier-reef.md` | https://en.wikipedia.org/wiki/Great_Barrier_Reef (revision 1375964325) | CC BY-SA 4.0 |
+| `world-wide-web.md` | https://en.wikipedia.org/wiki/World_Wide_Web (revision 1379635447) | CC BY-SA 4.0 |
 
 ## This project (`this-project/`)
 

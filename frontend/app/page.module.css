@@ -320,13 +320,21 @@
   align-items: center;
 }
 
-.creator {
+.footer {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 20px;
+  justify-content: center;
   padding: 16px 20px;
   border-top: 1px solid var(--border);
+}
+
+.github {
+  display: inline-flex;
+  color: var(--muted);
+}
+
+.github:hover,
+.github:focus-visible {
+  color: var(--ink);
 }
 
 @media (max-width: 700px) {

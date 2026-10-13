@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-13",
+  "model": "openai_compatible:gemini-3.5-flash-lite",
+  "questions": 55,
+  "groups": [
+    {
+      "id": "refuse",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "injection",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "look-alike",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "needle",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "exact-code",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "two-sources",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "coverage",
+      "passed": 26,
+      "total": 26
+    },
+    {
+      "id": "conflict",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "id": "second-look",
+      "passed": 8,
+      "total": 8
+    }
+  ]
+}

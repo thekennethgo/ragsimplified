@@ -1,0 +1,85 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+
+.section h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.lead {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+}
+
+.card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+.card p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.try {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-dark);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tab-soft);
+  font-size: 12px;
+  color: var(--accent-dark);
+}
+
+.small {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
