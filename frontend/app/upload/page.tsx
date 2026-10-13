@@ -37,6 +37,7 @@ export default function UploadPage() {
   // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
   const { texts, add } = usePrivateTexts();
   const offline = useBackendHealth() === "offline";
+  const [run, setRun] = useState(0);
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [error, setError] = useState("");
@@ -82,6 +83,7 @@ export default function UploadPage() {
   async function onSubmit(newTitle: string, source: string | PdfUpload): Promise<boolean> {
     const upload = typeof source === "string" ? null : source;
     const text = upload ? upload.pages.map((p) => p.text).join("\n\n") : (source as string);
+    setRun((n) => n + 1);
     setBusy(true);
     setAnimating(true);
     setError("");
@@ -223,7 +225,7 @@ export default function UploadPage() {
 
       <div className={styles.row}>
         <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />
-        <WhatHappened states={states} chunks={chunkDetails} vectors={vectors} />
+        <WhatHappened run={run} states={states} chunks={chunkDetails} vectors={vectors} />
       </div>
 
       <LibraryPanel onCount={setStarterBooks} onOpen={openViewer} viewer={viewer} />

@@ -96,6 +96,7 @@ function AskOffice() {
   const [viewer, setViewer] = useState<ViewTarget | null>(null);
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [run, setRun] = useState(0);
   const [states, setStates] = useState<Record<string, Phase>>({});
   const [words, setWords] = useState<Word[]>([]);
   const [scout, setScout] = useState<ScoutResult[] | null>(null);
@@ -157,6 +158,7 @@ function AskOffice() {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    setRun((n) => n + 1);
     setBusy(true);
     setAnimating(true);
     setAsked(true);
@@ -519,6 +521,7 @@ function AskOffice() {
             overlay={overlay}
             privateSent={privateSent}
             sentPrompt={sentPrompt}
+            run={run}
           />
         </div>
       </div>

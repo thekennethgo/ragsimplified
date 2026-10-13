@@ -202,6 +202,7 @@ export default function AnswerPanel({
   overlay,
   privateSent,
   sentPrompt,
+  run = 0,
 }: {
   states: Record<string, Phase>;
   answer: string;
@@ -226,10 +227,13 @@ export default function AnswerPanel({
   privateSent: number;
   /** The exact message the Storyteller's model was sent, once the backend has said. */
   sentPrompt: string | null;
+  /** Changes with every new question, which hands the panel back to the steps. */
+  run?: number;
 }) {
   const [tab, setTab] = useState<TabId>("answer");
   // Once the visitor picks a tab, the panel stops switching on its own until the next run.
-  const [touched, setTouched] = useState(false);
+  // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
+  const touched = useRef(false);
   // Which round each tab shows; a tab with a second page opens on it when round 2 starts.
   const [rounds, setRounds] = useState<Record<string, 1 | 2>>({});
   const { points, error } = useMapPoints(tab === "scout");
@@ -267,19 +271,18 @@ export default function AnswerPanel({
       : (states[id] ?? "waiting");
   // Follow the newest step whose results are in, and show the answer when it first appears.
   const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
-  const fresh = Object.keys(states).length === 0;
   useEffect(() => {
-    setTouched(false);
-  }, [fresh]);
+    touched.current = false;
+  }, [run]);
   useEffect(() => {
-    if (touched) return;
+    if (touched.current) return;
     if (follow && latest) setTab(latest);
-  }, [follow, latest, touched]);
+  }, [follow, latest]);
   const hasAnswer = Boolean(answer);
   useEffect(() => {
-    if (touched) return;
+    if (touched.current) return;
     if (hasAnswer) setTab("answer");
-  }, [hasAnswer, touched]);
+  }, [hasAnswer]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
     clerk: clerkCopy(about),
@@ -325,7 +328,7 @@ export default function AnswerPanel({
               type="button"
               aria-pressed={tab === s.id}
               onClick={() => {
-                setTouched(true);
+                touched.current = true;
                 setTab(s.id);
               }}
             >
@@ -337,7 +340,7 @@ export default function AnswerPanel({
             type="button"
             aria-pressed={tab === "answer"}
             onClick={() => {
-              setTouched(true);
+              touched.current = true;
               setTab("answer");
             }}
           >

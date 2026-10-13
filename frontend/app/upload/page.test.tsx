@@ -345,6 +345,28 @@ test("once the Chopper tab is clicked mid-upload the panel stays there as later 
   close();
 });
 
+test("a Chopper click made the moment the upload's last step lands is not undone by the panel", async () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  // Click from a MutationObserver: that runs right after the commit that shows the Translator as done,
+  // before React has flushed that commit's effects. A tab pick must still win over them.
+  let clicked = false;
+  const observer = new MutationObserver(() => {
+    const translator = screen.queryByRole("button", { name: "Translator" });
+    if (!clicked && translator && within(translator).queryByTitle("done")) {
+      clicked = true;
+      fireEvent.click(screen.getByRole("button", { name: "Chopper" }));
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  paste("My note", "hello");
+  await waitFor(() => expect(clicked).toBe(true));
+  observer.disconnect();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(screen.getByRole("button", { name: "Chopper" })).toHaveAttribute("aria-pressed", "true");
+  expect(await screen.findByText(/2 cards from 200 characters/)).toBeInTheDocument();
+});
+
 test("when the library is offline the send button is disabled and a note shows", async () => {
   vi.stubGlobal(
     "fetch",

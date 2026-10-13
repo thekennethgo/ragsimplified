@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAbout } from "../../lib/about";
 import {
@@ -34,24 +34,27 @@ export default function WhatHappened({
   states,
   chunks,
   vectors,
+  run = 0,
 }: {
   states: Record<string, Phase>;
   chunks: ChunkDetail[] | null;
   vectors: number[][] | null;
+  /** Changes with every new upload, which hands the panel back to the steps. */
+  run?: number;
 }) {
   const [step, setStep] = useState<StepId>("chopper");
-  // Once the visitor picks a tab, the panel stops following the steps until the next run.
-  const [touched, setTouched] = useState(false);
-  const fresh = Object.keys(states).length === 0;
+  // Once the visitor picks a tab, the panel stops following the steps until the next upload.
+  // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
+  const touched = useRef(false);
   useEffect(() => {
-    setTouched(false);
-  }, [fresh]);
+    touched.current = false;
+  }, [run]);
   // Show a step's results as soon as they arrive.
   const latest = [...STEPS].reverse().find((s) => states[s.id] === "done")?.id;
   useEffect(() => {
-    if (touched) return;
+    if (touched.current) return;
     if (latest) setStep(latest);
-  }, [latest, touched]);
+  }, [latest]);
   const about = useAbout();
   const copy = {
     chopper: chopperCopy(about),
@@ -83,7 +86,7 @@ export default function WhatHappened({
                 type="button"
                 aria-pressed={step === s.id}
                 onClick={() => {
-                  setTouched(true);
+                  touched.current = true;
                   setStep(s.id);
                 }}
               >
