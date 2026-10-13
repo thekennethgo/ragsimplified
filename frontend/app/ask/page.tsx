@@ -35,6 +35,7 @@ import { buildQueryScenes } from "../../lib/office/scenes/query";
 import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { useBackendHealth } from "../../lib/health";
+import { ASK_DOC_COUNT } from "../../lib/office-spots";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
 import { SHELVES, shelfOf } from "../../lib/shelves";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
@@ -444,6 +445,15 @@ function AskOffice() {
             build={buildAskScenes}
             queue={queue}
           />
+          {library !== null && (
+            <span
+              className={styles.count}
+              style={{ left: `${ASK_DOC_COUNT.left}%`, top: `${ASK_DOC_COUNT.top}%` }}
+              aria-hidden="true"
+            >
+              {library.length + texts.length}
+            </span>
+          )}
         </div>
         <div className={styles.bubbles}>
           {CREW.map((step) => {

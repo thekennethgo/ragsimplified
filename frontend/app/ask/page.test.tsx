@@ -1616,3 +1616,74 @@ test("the second look fills the map overlay with its star and candidates, and a 
   ask("Another question?");
   await waitFor(() => expect(screen.queryByTestId("follow-up-marker")).toBeNull());
 });
+
+const DOCS = [
+  { id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", chunk_count: 22 },
+  { id: 2, title: "Vector database", filename: "how-ai-works/vector-database.md", chunk_count: 9 },
+];
+const plaqueCount = () =>
+  Array.from(document.querySelectorAll('span[aria-hidden="true"]')).filter((el) =>
+    /^\d+$/.test(el.textContent ?? ""),
+  );
+
+function SeedText() {
+  const { add } = usePrivateTexts();
+  return (
+    <button
+      onClick={() =>
+        add({
+          title: "My note",
+          text: "hello world",
+          chunks: [{ position: 0, heading: null, text: "hello world" }],
+          vectors: [[0.1]],
+        })
+      }
+    >
+      seed text
+    </button>
+  );
+}
+
+test("the plaque shows the library's documents plus the visitor's own texts", async () => {
+  stubAsk(EVENTS, DOCS);
+  render(
+    <PrivateTextsProvider>
+      <SeedText />
+      <AskPage />
+    </PrivateTextsProvider>,
+  );
+  await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["2"]));
+  fireEvent.click(screen.getByRole("button", { name: "seed text" }));
+  await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["3"]));
+});
+
+test("a failed /library shows no count, and a later retry shows it", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    let up = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.endsWith("/library")
+            ? up
+              ? new Response(JSON.stringify(DOCS))
+              : new Response("bad gateway", { status: 502 })
+            : url.endsWith("/about")
+              ? new Response(JSON.stringify(ABOUT))
+              : url.endsWith("/map")
+                ? new Response("[]")
+                : new Response("{}"),
+        ),
+      ),
+    );
+    render(<AskPage />, { wrapper: PrivateTextsProvider });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(plaqueCount()).toHaveLength(0);
+    up = true;
+    await vi.advanceTimersByTimeAsync(5000);
+    await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["2"]));
+  } finally {
+    vi.useRealTimers();
+  }
+});

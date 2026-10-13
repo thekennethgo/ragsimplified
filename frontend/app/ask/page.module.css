@@ -25,6 +25,20 @@
 .stage {
   position: relative;
   min-height: 120px;
+  container-type: inline-size;
+}
+
+/* The documents-on-file number, beside the plaque above the shelves (skewed the other way from the Upload one). */
+.count {
+  position: absolute;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  font-size: 1.5cqw;
+  line-height: 1;
+  color: #f2c27e;
+  transform: skewY(-26.57deg);
+  transform-origin: left bottom;
+  pointer-events: none;
 }
 
 .bubbles {
