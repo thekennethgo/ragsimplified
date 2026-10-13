@@ -8,15 +8,15 @@ The first four shelves are shown; the rest sit behind "Show all shelves". Order 
 
 | # | Shelf | Question 1 | Question 2 | Note |
 |---|---|---|---|---|
-| 1 | About Kenneth | What projects is Kenneth most proud of? | Where has Kenneth travelled? | Q2 is new; needs your trip paragraph in `personal.md` |
+| 1 | About the creator | What is Kenneth's academic background? | What project is Kenneth most proud of? | Q2 is new; needs your trip paragraph in `personal.md` |
 | 2 | This project | Why does the Judge sometimes take a second look? | Is my pasted text stored anywhere? | Q1 is new |
 | 3 | RAG basics | What is retrieval-augmented generation? | What is a vector database? | unchanged |
 | 4 | How AI works | Why do language models hallucinate? | How does a transformer work? | order swapped |
-| 5 | AI history | Where did the term artificial intelligence come from? | What was the AI winter? | unchanged |
+| 5 | AI history | Where did the term artificial intelligence come from? | What started the AI boom? | unchanged |
 | 6 | AI and society | How could AI affect jobs? | What is algorithmic bias? | unchanged |
 | 7 | RAG.co lore (fictional) | What does the RAG.co staff handbook say about lunch breaks? | What is the no-guessing guarantee in the Query Desk terms? | unchanged |
-| 8 | Places & interests | What is Batam known for? | What is Central Asia known for? | Q2 is new; needs `central-asia.md` |
-| 9 | Movies & games | What is Ex Machina about? | What is Watch Dogs about? | unchanged |
+| 8 | Places & interests | What are some of Kenneth's hobbies? | What is Kenneth's hometown known for? | Q2 is new; needs `central-asia.md` |
+| 9 | Movies & games | What are Kenneth's favourite movies about? | What are Kenneth's favourite video games? | unchanged |
 | 10 | General | Which chess champion lost to Deep Blue? | Which mission first landed humans on the Moon? | Q2 is new |
 
 ## 2. "How we test it" cards on the home page
