@@ -15,7 +15,7 @@ const sans = IBM_Plex_Sans({
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "ragsimplified",
+  title: "RAG Visualised",
   description: "A public, forkable RAG web app",
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <header>
               <Nav />
               <div className="header-right">
-                <span className="brand">ragsimplified</span>
+                <span className="brand">RAG Visualised</span>
                 <HealthBadge />
               </div>
             </header>

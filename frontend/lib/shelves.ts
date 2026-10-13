@@ -7,14 +7,20 @@ export const OTHER_COLOR = "#8A7A6A";
 export const SHELVES: Shelf[] = [
   {
     id: "about-kenneth",
-    name: "About Kenneth",
-    questions: ["Where did Kenneth grow up?", "What projects is Kenneth most proud of?"],
+    name: "About the creator",
+    questions: [
+      "What is Kenneth's academic background?",
+      "What project is Kenneth most proud of?",
+    ],
     color: "#4e79a7",
   },
   {
     id: "this-project",
     name: "This project",
-    questions: ["How does the Judge pick the best sources?", "Is my pasted text stored anywhere?"],
+    questions: [
+      "Why does the Judge sometimes take a second look?",
+      "Is my pasted text stored anywhere?",
+    ],
     color: "#f28e2b",
   },
   {
@@ -26,13 +32,13 @@ export const SHELVES: Shelf[] = [
   {
     id: "how-ai-works",
     name: "How AI works",
-    questions: ["How does a transformer work?", "Why do language models hallucinate?"],
+    questions: ["Why do language models hallucinate?", "How does a transformer work?"],
     color: "#59a14f",
   },
   {
     id: "ai-history",
     name: "AI history",
-    questions: ["Where did the term artificial intelligence come from?", "What was the AI winter?"],
+    questions: ["Where did the term artificial intelligence come from?", "What started the AI boom?"],
     color: "#b07aa1",
   },
   {
@@ -53,19 +59,19 @@ export const SHELVES: Shelf[] = [
   {
     id: "places-and-interests",
     name: "Places & interests",
-    questions: ["What is Batam known for?"],
+    questions: ["What are some of Kenneth's hobbies?", "What is Kenneth's hometown known for?"],
     color: "#b6992d",
   },
   {
     id: "movies-and-games",
     name: "Movies & games",
-    questions: ["What is Ex Machina about?", "What is Watch Dogs about?"],
+    questions: ["What are Kenneth's favourite movies about?", "What are Kenneth's favourite video games?"],
     color: "#499894",
   },
   {
     id: "general",
     name: "General",
-    questions: ["Which chess champion lost to Deep Blue?"],
+    questions: ["Which chess champion lost to Deep Blue?", "Which mission first landed humans on the Moon?"],
     color: "#34495e",
   },
 ];

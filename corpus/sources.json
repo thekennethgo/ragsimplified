@@ -117,17 +117,23 @@
     "licence": "CC BY-SA 4.0",
     "note": "revision 1379113904"
   },
-  "general/go-game.md": {
+  "general/coffee.md": {
     "source": "Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Go_(game)",
+    "url": "https://en.wikipedia.org/wiki/Coffee",
     "licence": "CC BY-SA 4.0",
-    "note": "revision 1377627768"
+    "note": "revision 1371799424"
   },
   "general/great-barrier-reef.md": {
     "source": "Wikipedia",
     "url": "https://en.wikipedia.org/wiki/Great_Barrier_Reef",
     "licence": "CC BY-SA 4.0",
     "note": "revision 1375964325"
+  },
+  "general/world-wide-web.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/World_Wide_Web",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379635447"
   },
   "how-ai-works/ai-hallucination.md": {
     "source": "Wikipedia",
@@ -260,6 +266,12 @@
     "url": "https://en.wikipedia.org/wiki/Batam",
     "licence": "CC BY-SA 4.0",
     "note": "revision 1379635846"
+  },
+  "places-and-interests/central-asia.md": {
+    "source": "Wikipedia",
+    "url": "https://en.wikipedia.org/wiki/Central_Asia",
+    "licence": "CC BY-SA 4.0",
+    "note": "revision 1379988557"
   },
   "places-and-interests/mixed-martial-arts.md": {
     "source": "Wikipedia",

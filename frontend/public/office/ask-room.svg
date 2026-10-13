@@ -1,8 +1,14 @@
-<svg role="img" aria-label="A cut-away isometric office in warm light. Along the left wall: the door to the Query room, the Translator at a beige 1990s computer with a printer, and a bank of filing cabinets with the Scout shining a lantern on them. Along the right wall: the Judge at a desk facing a detective board of pinned papers and red string, and the Storyteller in front of a desk with a classic typewriter. Once you ask a question the Clerk comes in, writes it on a big mobile whiteboard at the front left of the room, and waits beside the board until the answer is written." xmlns="http://www.w3.org/2000/svg" viewBox="150 0 1060 600" width="1060" height="600">
+<svg role="img" aria-label="A cut-away isometric office in warm light. Along the left wall: the door to the Query room, the Translator at a beige 1990s computer with a printer, and a bank of filing cabinets with the Scout shining a lantern on them. Along the right wall: the Judge at a desk facing a detective board of pinned papers and red string, and the Storyteller in front of a desk with a classic typewriter. Once you ask a question the Clerk comes in, writes it on a big mobile whiteboard at the front left of the room, and waits beside the board until the answer is written, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor." xmlns="http://www.w3.org/2000/svg" viewBox="150 0 1060 600" width="1060" height="600">
       <rect x="0" y="0" width="1280" height="600" fill="#2B1F17"></rect>
       <path d="M1200 490L720 730L720 749.2L1200 509.2Z" fill="#4A3324"></path><path d="M160 450L720 730L720 749.2L160 469.2Z" fill="#3D2A1E"></path>
       <path d="M640 210L1200 490L720 730L160 450Z" fill="#8A5E3E"></path>
       <path d="M608 226L1168 506M576 242L1136 522M544 258L1104 538M512 274L1072 554M480 290L1040 570M448 306L1008 586M416 322L976 602M384 338L944 618M352 354L912 634M320 370L880 650M288 386L848 666M256 402L816 682M224 418L784 698M192 434L752 714" stroke="#7A5134" stroke-width="1.5" fill="none"></path>
+  <g id="rug" aria-hidden="true">
+    <path id="rug-base" d="M648 350 L844 448 L725 508 L529 410Z" fill="#5A3A28"></path>
+    <path id="rug-border" d="M648 371 L802 448 L725 486 L571 410Z" fill="none" stroke="#A98660" stroke-width="2" stroke-linejoin="round"></path>
+    <path id="rug-trim" d="M648 385 L774 448 L725 473 L599 410Z" fill="none" stroke="#7A5640" stroke-width="1"></path>
+    <text id="rug-logo" transform="matrix(1 0.5 -1 0.5 686.5 428.8)" x="0" y="9" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="26" letter-spacing="3.5" fill="#85644A">RAG.co</text>
+  </g>
       <path d="M925.3 436.4L1029.3 488.4L976 537.9L872 485.9Z" fill="#F2C27E" opacity="0.16"></path>
       <path d="M921 440.4L1025 492.4L1022.1 495.1L918.1 443.1Z M914.1 446.8L1018.1 498.8L1015.2 501.5L911.2 449.5Z M907.2 453.2L1011.2 505.2L1008.2 508L904.2 456Z M900.2 459.7L1004.2 511.7L1001.3 514.4L897.3 462.4Z M893.3 466.1L997.3 518.1L994.4 520.8L890.4 468.8Z M886.4 472.5L990.4 524.5L987.5 527.3L883.5 475.3Z M879.5 479L983.5 531L980.5 533.7L876.5 481.7Z " fill="#5E3F28" opacity="0.28"></path>
       <path d="M240 409.6L276.8 428L212.8 460L176 441.6Z" fill="#5B4636"></path>
@@ -55,7 +61,18 @@
       <path d="M609.2 245L598.8 250.2L598.8 247.8L609.2 242.6Z M609.2 217.8L598.8 223L598.8 220.6L609.2 215.4Z M609.2 190.6L598.8 195.8L598.8 193.4L609.2 188.2Z M609.2 163.4L598.8 168.6L598.8 166.2L609.2 161Z M568.4 265.4L558 270.6L558 268.2L568.4 263Z M568.4 238.2L558 243.4L558 241L568.4 235.8Z M568.4 211L558 216.2L558 213.8L568.4 208.6Z M568.4 183.8L558 189L558 186.6L568.4 181.4Z M527.6 285.8L517.2 291L517.2 288.6L527.6 283.4Z M527.6 258.6L517.2 263.8L517.2 261.4L527.6 256.2Z M527.6 231.4L517.2 236.6L517.2 234.2L527.6 229Z M527.6 204.2L517.2 209.4L517.2 207L527.6 201.8Z M486.8 306.2L476.4 311.4L476.4 309L486.8 303.8Z M486.8 279L476.4 284.2L476.4 281.8L486.8 276.6Z M486.8 251.8L476.4 257L476.4 254.6L486.8 249.4Z M486.8 224.6L476.4 229.8L476.4 227.4L486.8 222.2Z " fill="#6B6255"></path>
       <path d="M571.2 130.8L584 137.2L584 145.2L571.2 138.8Z" fill="#E6DDCB"></path><path d="M601.6 128.4L584 137.2L584 145.2L601.6 136.4Z" fill="#D8CCB7"></path><path d="M588.8 122L601.6 128.4L584 137.2L571.2 130.8Z" fill="#F7F2E8"></path>
       <path d="M534.4 133.2L555.2 143.6L555.2 167.6L534.4 157.2Z" fill="#56677A"></path><path d="M563.2 139.6L555.2 143.6L555.2 167.6L563.2 163.6Z" fill="#4A596A"></path><path d="M542.4 129.2L563.2 139.6L555.2 143.6L534.4 133.2Z" fill="#6F7F96"></path>
-      <path d="M454.4 190.8L465.6 196.4L465.6 206L454.4 200.4Z" fill="#7A4D33"></path><path d="M476.8 190.8L465.6 196.4L465.6 206L476.8 200.4Z" fill="#6B432C"></path><path d="M465.6 185.2L476.8 190.8L465.6 196.4L454.4 190.8Z" fill="#4A3324"></path>
+
+      <g id="meow" aria-hidden="true" transform="translate(507 176)">
+        <ellipse id="meow-shadow" cx="1" cy="1" rx="21" ry="4" fill="#2B1F17" opacity="0.2"></ellipse>
+        <path id="meow-tail" d="M16 -4C26 -4 26 -14 19 -15" fill="none" stroke="#6E5B4E" stroke-width="4" stroke-linecap="round"></path>
+        <ellipse id="meow-body" cx="3" cy="-8" rx="17" ry="8" fill="#6E5B4E"></ellipse>
+        <g id="meow-head">
+          <path id="meow-ear-left" d="M-20 -13L-18 -22L-12 -15Z" fill="#5C4A3F"></path>
+          <path id="meow-ear-right" d="M-14 -15L-9 -21L-6 -12Z" fill="#5C4A3F"></path>
+          <ellipse id="meow-face" cx="-13" cy="-8" rx="8" ry="7" fill="#7A6658"></ellipse>
+          <path id="meow-eyes" d="M-17 -8q2 2 4 0M-11 -8q2 2 4 0" fill="none" stroke="#2B1F17" stroke-width="1.2" stroke-linecap="round"></path>
+        </g>
+      </g>      <path d="M454.4 190.8L465.6 196.4L465.6 206L454.4 200.4Z" fill="#7A4D33"></path><path d="M476.8 190.8L465.6 196.4L465.6 206L476.8 200.4Z" fill="#6B432C"></path><path d="M465.6 185.2L476.8 190.8L465.6 196.4L454.4 190.8Z" fill="#4A3324"></path>
       <ellipse cx="465.6" cy="182.8" rx="7" ry="14" fill="#6F7F4F"></ellipse>
 
 

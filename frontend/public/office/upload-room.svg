@@ -1,4 +1,4 @@
-<svg role="img" aria-label="A cut-away isometric office in warm light: an inbox cabinet with an interoffice envelope, the Chopper's paper-cutting workbench on the left with a guillotine paper cutter, the Translator's desk at the back with a 1990s beige computer, a printer and an index-card box, a side table with in and out trays, a stamping table with an ink pad and a stamp carousel, and a bank of filing cabinets with the Archivist in front. A counter above the file cabinets shows how many documents are on file. The Chopper, Translator and Archivist are drawn from behind as faceless bean-shaped figures facing their work." xmlns="http://www.w3.org/2000/svg" viewBox="150 0 1060 600" width="1060" height="600">
+<svg role="img" aria-label="A cut-away isometric office in warm light: an inbox cabinet with an interoffice envelope, the Chopper's paper-cutting workbench on the left with a guillotine paper cutter, the Translator's desk at the back with a 1990s beige computer, a printer and an index-card box, a side table with in and out trays, a stamping table with an ink pad and a stamp carousel, and a bank of filing cabinets with the Archivist in front. A counter above the file cabinets shows how many documents are on file. The Chopper, Translator and Archivist are drawn from behind as faceless bean-shaped figures facing their work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor." xmlns="http://www.w3.org/2000/svg" viewBox="150 0 1060 600" width="1060" height="600">
   <g id="background">
     <rect x="0" y="0" width="1280" height="600" fill="#2B1F17"></rect>
   </g>
@@ -6,6 +6,12 @@
     <path d="M1200 490L720 730L720 749.2L1200 509.2Z" fill="#4A3324"></path><path d="M160 450L720 730L720 749.2L160 469.2Z" fill="#3D2A1E"></path>
     <path d="M640 210L1200 490L720 730L160 450Z" fill="#8A5E3E"></path>
     <path d="M608 226L1168 506M576 242L1136 522M544 258L1104 538M512 274L1072 554M480 290L1040 570M448 306L1008 586M416 322L976 602M384 338L944 618M352 354L912 634M320 370L880 650M288 386L848 666M256 402L816 682M224 418L784 698M192 434L752 714" stroke="#7A5134" stroke-width="1.5" fill="none"></path>
+  </g>
+  <g id="rug" aria-hidden="true">
+    <path id="rug-base" d="M773 386.3 L577 484.3 L696 544.3 L892 446.3Z" fill="#5A3A28"></path>
+    <path id="rug-border" d="M773.1 407.2 L618.8 484.4 L695.9 523.3 L850.2 446.1Z" fill="none" stroke="#A98660" stroke-width="2" stroke-linejoin="round"></path>
+    <path id="rug-trim" d="M773 421.3 L646.8 484.4 L696 509.2 L822.2 446.1Z" fill="none" stroke="#7A5640" stroke-width="1"></path>
+    <text id="rug-logo" transform="matrix(1 -0.5 1 0.5 734.5 465)" x="0" y="9" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-weight="700" font-size="26" letter-spacing="3.5" fill="#85644A">RAG.co</text>
   </g>
   <g id="window-light">
     <path d="M581.4 323.1L437.4 395.1L496 457.9L640 385.9Z" fill="#F2C27E" opacity="0.18"></path>
@@ -75,6 +81,17 @@
     <path d="M982.4 280.4L1000 289.2L1000 297.2L982.4 288.4Z" fill="#E6DDCB"></path><path d="M1012.8 282.8L1000 289.2L1000 297.2L1012.8 290.8Z" fill="#D8CCB7"></path><path d="M995.2 274L1012.8 282.8L1000 289.2L982.4 280.4Z" fill="#F7F2E8"></path>
     <path d="M1017.6 304.4L1036.8 314L1036.8 318.8L1017.6 309.2Z" fill="#E6DDCB"></path><path d="M1051.2 306.8L1036.8 314L1036.8 318.8L1051.2 311.6Z" fill="#D8CCB7"></path><path d="M1032 297.2L1051.2 306.8L1036.8 314L1017.6 304.4Z" fill="#F7F2E8"></path>
     <path d="M1051.2 306.8L1059.2 310.8L1059.2 334.8L1051.2 330.8Z" fill="#56677A"></path><path d="M1080 300.4L1059.2 310.8L1059.2 334.8L1080 324.4Z" fill="#4A596A"></path><path d="M1072 296.4L1080 300.4L1059.2 310.8L1051.2 306.8Z" fill="#6F7F96"></path>
+  </g>
+  <g id="meow" aria-hidden="true" transform="translate(1154 373)">
+    <ellipse id="meow-shadow" cx="1" cy="1" rx="21" ry="4" fill="#2B1F17" opacity="0.2"></ellipse>
+    <path id="meow-tail" d="M16 -4C26 -4 26 -14 19 -15" fill="none" stroke="#6E5B4E" stroke-width="4" stroke-linecap="round"></path>
+    <ellipse id="meow-body" cx="3" cy="-8" rx="17" ry="8" fill="#6E5B4E"></ellipse>
+    <g id="meow-head">
+      <path id="meow-ear-left" d="M-20 -13L-18 -22L-12 -15Z" fill="#5C4A3F"></path>
+      <path id="meow-ear-right" d="M-14 -15L-9 -21L-6 -12Z" fill="#5C4A3F"></path>
+      <ellipse id="meow-face" cx="-13" cy="-8" rx="8" ry="7" fill="#7A6658"></ellipse>
+      <path id="meow-eyes" d="M-17 -8q2 2 4 0M-11 -8q2 2 4 0" fill="none" stroke="#2B1F17" stroke-width="1.2" stroke-linecap="round"></path>
+    </g>
   </g>
     <!-- Pulled-out drawer (column 3, row 2), drawn fully open; GSAP slides it in/out along the cabinet normal. -->
   <g id="cabinet-drawer" opacity="0">

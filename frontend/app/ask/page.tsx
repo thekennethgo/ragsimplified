@@ -44,26 +44,16 @@ import styles from "./page.module.css";
 // The backend accepts at most this many private chunks per question.
 const MAX_PRIVATE_CHUNKS = 60;
 
-const ASK_LABEL = "The Ask office: the Clerk, Translator, Scout, Judge and Storyteller at work.";
+const ASK_LABEL = "The Ask office: the Clerk, Translator, Scout, Judge and Storyteller at work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor.";
 const QUERY_LABEL = "The Query room, where the Clerk takes your question.";
 
-const MAX_EXAMPLES = 8;
-const EXAMPLES_PER_SHELF = 2;
-
-/** Up to 2 starter questions per shelf that has a document, in shelf order, 8 in total. */
+/** A card per shelf that has a document, in shelf order, with its starter questions. */
 function examplesFor(docs: { filename: string }[] | null) {
   if (!docs) return [];
   const present = new Set(docs.map((doc) => shelfOf(doc.filename)));
-  let left = MAX_EXAMPLES;
-  const groups: { shelf: string; questions: string[] }[] = [];
-  for (const shelf of SHELVES) {
-    if (left === 0) break;
-    if (!present.has(shelf.id) || shelf.questions.length === 0) continue;
-    const questions = shelf.questions.slice(0, Math.min(EXAMPLES_PER_SHELF, left));
-    groups.push({ shelf: shelf.name, questions });
-    left -= questions.length;
-  }
-  return groups;
+  return SHELVES.filter((shelf) => present.has(shelf.id) && shelf.questions.length > 0).map(
+    (shelf) => ({ shelf: shelf.name, color: shelf.color, questions: shelf.questions }),
+  );
 }
 
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;

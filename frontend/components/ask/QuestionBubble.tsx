@@ -5,6 +5,8 @@ import styles from "./QuestionBubble.module.css";
 
 export const MAX_QUESTION_CHARS = 1_000;
 
+export type ExampleCard = { shelf: string; color: string; questions: string[] };
+
 /** The question's words, each shaded by how much it shaped the question's vector. */
 export function HighlightedWords({ words }: { words: Word[] }) {
   return (
@@ -48,8 +50,9 @@ export function QuestionBubble({
   busy: boolean;
   /** The backend can't be reached, so nothing can be answered. */
   offline: boolean;
-  examples?: { shelf: string; questions: string[] }[];
+  examples?: ExampleCard[];
 }) {
+  const cards = examples ?? [];
   return (
     <form className={styles.form} onSubmit={onSubmit}>
       <label className={styles.label}>
@@ -62,19 +65,41 @@ export function QuestionBubble({
           placeholder="e.g. Where did Kenneth grow up?"
         />
       </label>
-      {examples && examples.length > 0 && (
+      {cards.length > 0 && (
         <div className={styles.examples}>
-          <span>Try:</span>
-          {examples.map((group) => (
-            <div key={group.shelf} className={styles.shelf}>
-              <span className={styles.shelfName}>{group.shelf}</span>
-              {group.questions.map((q) => (
-                <button type="button" key={q} onClick={() => onChange(q)} disabled={busy || offline}>
-                  {q}
-                </button>
-              ))}
-            </div>
-          ))}
+          <h2>Not sure what to ask? Try one of these</h2>
+          <div
+            className={styles.cards}
+            role="region"
+            aria-label="Suggested questions"
+            tabIndex={0}
+          >
+            {cards.map((card) => (
+              <div
+                key={card.shelf}
+                className={styles.card}
+                data-testid="shelf-card"
+                style={{ borderLeftColor: card.color }}
+              >
+                <p className={styles.shelfName}>
+                  <span className={styles.dot} style={{ background: card.color }} aria-hidden="true" />
+                  {card.shelf}
+                </p>
+                {card.questions.map((q) => (
+                  <button
+                    type="button"
+                    key={q}
+                    className={styles.question}
+                    onClick={() => onChange(q)}
+                    disabled={busy || offline}
+                  >
+                    <span>{q}</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       <p className={styles.count} aria-live="polite">
@@ -92,7 +117,6 @@ export function QuestionBubble({
       >
         {busy ? "Asking…" : "Ask"}
       </button>
-      <p className={styles.privacy}>Sent to Voyage AI (fingerprint), Anthropic (answer) and, when set up, OpenRouter's Mercury Decide (a yes/no check on the library passages found).</p>
     </form>
   );
 }

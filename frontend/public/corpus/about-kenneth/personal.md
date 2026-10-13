@@ -2,9 +2,9 @@
 
 Kenneth Go is a computer science graduate from UNSW Sydney who want to build software that turns real-world problems into working products, and who is currently exploring AI engineering. He built this site.
 
-## Where Kenneth is from and where he lives
+## Where Kenneth is from, where he lives and where he has travelled
 
-Kenneth grew up in Batam, Indonesia, and now lives in Sydney, Australia.
+Kenneth grew up in Batam, Indonesia, and now lives in Sydney, Australia. His most recent trip was to Central Asia.
 
 ## Languages
 
@@ -24,7 +24,7 @@ When AI coding tools first appeared, Kenneth was sceptical: they looked like a l
 
 ## Outside work
 
-Kenneth enjoys training mixed martial arts (MMA) and watching the UFC most sundays. He also loves travelling around the world; his most recent trip was to Central Asia. He also enjoys hanging out with friends.
+Kenneth enjoys training mixed martial arts (MMA) and watching the UFC most sundays. He also loves travelling around the world. He also enjoys hanging out with friends.
 
 ## Kenneth's favourite movies
 
@@ -38,9 +38,3 @@ He likes them because it explores the darker side of human ambition and technolo
 ## Kenneth's favourite video games
 
 Kenneth loves playing video games. His favourites are the Resident Evil series, the Batman Arkham games, Cyberpunk 2077, The Last of Us and Watch Dogs.
-
-## Contact
-
-- Email: gennethko@gmail.com
-- GitHub: https://github.com/thekennethgo/
-- LinkedIn: https://www.linkedin.com/in/go-kenneth-go/

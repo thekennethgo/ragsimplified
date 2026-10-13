@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useEffect, useRef, useState } from "react";
 
+import { startMeow } from "../../lib/office/meow";
 import type { SceneQueue } from "../../lib/office/sceneQueue";
 import type { SceneSet } from "../../lib/office/types";
 import styles from "./OfficeRoom.module.css";
@@ -53,7 +54,12 @@ export default function OfficeRoom({
       set.reset();
       window.dispatchEvent(new CustomEvent("office-ready", { detail: src }));
       const unregister = queue.register(set);
-      return unregister;
+      // Meow's idle loop runs on its own, apart from the scene queue.
+      const stopMeow = svg.querySelector("#meow") ? startMeow(svg) : undefined;
+      return () => {
+        stopMeow?.();
+        unregister();
+      };
     },
     { scope: ref, dependencies: [loaded] },
   );

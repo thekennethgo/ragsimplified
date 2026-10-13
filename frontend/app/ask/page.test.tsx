@@ -1067,21 +1067,26 @@ test("the Top 5 leaves filler words out", async () => {
   expect(items.map((li) => li.textContent)).toEqual(["silicon0.95", "Apple0.70"]);
 });
 
-test("example questions come from the shelves in the library, with the shelf names", async () => {
+test("example questions come from the shelves in the library, as cards in the shelf colours", async () => {
   const fetchMock = stubAsk(EVENTS, [
     { id: 1, title: "Personal", filename: "about-kenneth/personal.md", chunk_count: 1 },
     { id: 2, title: "Vector database", filename: "rag-basics/vector-database.md", chunk_count: 1 },
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  const examples = await screen.findByRole("button", { name: "Where did Kenneth grow up?" });
-  expect(examples).toBeInTheDocument();
-  for (const label of ["About Kenneth", "RAG basics"]) {
-    expect(screen.getByText(label, { selector: "span" })).toBeInTheDocument();
-  }
+  await screen.findByRole("button", { name: "What is Kenneth's academic background?" });
+  expect(screen.getByText("Not sure what to ask? Try one of these")).toBeInTheDocument();
+  const cards = screen.getAllByTestId("shelf-card");
+  expect(cards).toHaveLength(2);
+  expect(cards[0]).toHaveTextContent("About the creator");
+  expect(cards[0]).toHaveStyle({ borderLeftColor: "#4e79a7" });
+  expect(cards[1]).toHaveTextContent("RAG basics");
+  expect(cards[1]).toHaveStyle({ borderLeftColor: "#e15759" });
   expect(screen.getByRole("button", { name: "What is a vector database?" })).toBeInTheDocument();
-  // No documents on these shelves, so no questions for them.
-  expect(screen.queryByRole("button", { name: "How does the Judge pick the best sources?" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "What is Ex Machina about?" })).toBeNull();
+  // No documents on these shelves, so no cards for them.
+  expect(screen.queryByRole("button", { name: "Why does the Judge sometimes take a second look?" })).toBeNull();
+  const row = screen.getByRole("region", { name: "Suggested questions" });
+  expect(row).toHaveAttribute("tabindex", "0");
+  expect(screen.queryByRole("button", { name: /Show all shelves/ })).toBeNull();
 
   fireEvent.click(
     screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
@@ -1095,11 +1100,35 @@ test("example questions come from the shelves in the library, with the shelf nam
   ).toBe(false);
 });
 
-test("shows no example questions while the library is empty", async () => {
+test("shows every shelf card in one scrolling row, with no Show all button", async () => {
+  stubAsk(
+    EVENTS,
+    [
+      "about-kenneth",
+      "this-project",
+      "rag-basics",
+      "how-ai-works",
+      "ai-history",
+      "general",
+    ].map((shelf, i) => ({
+      id: i + 1,
+      title: shelf,
+      filename: `${shelf}/doc.md`,
+      chunk_count: 1,
+    })),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  await screen.findByRole("region", { name: "Suggested questions" });
+  expect(screen.getAllByTestId("shelf-card")).toHaveLength(6);
+  expect(screen.queryByRole("button", { name: /Show all shelves|Show fewer/ })).toBeNull();
+});
+
+test("shows no starter question cards while the library is empty", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("button", { name: "Ask" });
-  expect(screen.queryByText("Try:")).toBeNull();
+  expect(screen.queryByTestId("shelf-card")).toBeNull();
+  expect(screen.queryByText("Not sure what to ask? Try one of these")).toBeNull();
 });
 
 test("when the library is offline the Ask button is disabled and a note shows", async () => {
@@ -1469,10 +1498,10 @@ test("the Judge's tab says how the second look works, from GET /about", async ()
   expect(await screen.findByText(/The second look is on/)).toBeInTheDocument();
 });
 
-test("the question box says what is sent to OpenRouter's Mercury Decide", () => {
+test("the question box has no privacy line under it", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  expect(screen.getByText(/OpenRouter's Mercury Decide \(a yes\/no check on the library passages found\)/)).toBeInTheDocument();
+  expect(screen.queryByText(/Sent to Voyage AI/)).toBeNull();
 });
 
 test("while the Clerk rewrites the question the Judge and the Clerk say so", async () => {
