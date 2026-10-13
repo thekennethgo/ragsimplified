@@ -44,6 +44,10 @@ The Judge reads the Scout's candidates next to the question and decides which on
 
 The real setting: the Judge uses Voyage AI's reranker model `rerank-3-lite`. It scores all 20 candidates against the question and keeps the best 5, with at most 2 cards from any one document so that one document cannot fill every place. If the reranker fails, the Judge falls back to the first 5 of the Scout's order, and the question still gets an answer.
 
+## The second look
+
+Some questions need two searches. Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. After the Judge, a quick check decides whether the 5 cards already answer the question. The check is Mercury Decide, a small free decision model that answers yes or no as a probability. If the sources are not enough, a small, fast call to the answer model writes one follow-up search query, and the Scout and the Judge go through the office once more. The second look runs at most once per question, and it costs at most one small extra AI call, of about 30 words at most. The final 5 cards are the first round's best 3 and the second round's best 2.
+
 ## The Storyteller
 
 The Storyteller writes the answer, using only the 5 cards the Judge kept. Every sentence that uses a card ends with its number in square brackets, such as [1]. Those numbers become clickable citations that open the source passage.

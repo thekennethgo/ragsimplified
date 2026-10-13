@@ -447,3 +447,129 @@
   letter-spacing: 0.08em;
   color: var(--muted);
 }
+
+.roundSwitch {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  box-sizing: border-box;
+  height: 32px;
+  margin-bottom: 12px;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--tab-soft);
+}
+
+.roundSwitch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.roundSwitch button[aria-pressed="true"] {
+  background: var(--accent-dark);
+  color: #ffffff;
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #fff6d6;
+  border: 1px solid #e0b84a;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.banner button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: #ffffff;
+  font-weight: 600;
+  color: var(--accent-dark);
+  cursor: pointer;
+}
+
+.roundTag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--tab-soft);
+}
+
+.chipSkipped {
+  background: var(--tab-soft);
+  color: var(--accent-dark);
+  border: 1px dashed var(--border-strong);
+}
+
+.askedCard {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.askedCard span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.askedCard p {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+.meter {
+  padding-bottom: 20px;
+}
+
+.meterTrack {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--tab-soft);
+  border-radius: 4px;
+}
+
+.meterFill {
+  height: 100%;
+  background: var(--accent-dark);
+  border-radius: 4px;
+}
+
+.meterTick {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent-dark);
+}
+
+.meterTick span {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}

@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.ask import MAX_PRIVATE_CHUNKS
 from app.llm import ANTHROPIC_MAX_TOKENS
-from app.pipeline import chopper, judge, scout, storyteller, translator
+from app.pipeline import chopper, decider, judge, scout, second_look, storyteller, translator
 from app.upload import MAX_TEXT_CHARS
 
 router = APIRouter()
@@ -40,5 +40,13 @@ def about() -> dict:
             "max_private_chunks": MAX_PRIVATE_CHUNKS,
         },
         "judge": {"keep": scout.DEFAULT_K, "max_per_document": judge.MAX_PER_DOCUMENT},
+        "second_look": {
+            "enabled": second_look.enabled(),
+            "decider": decider.MODEL if decider.get_decider() else None,
+            "threshold": second_look.SECOND_LOOK_THRESHOLD,
+            "excerpt_chars": second_look.EXCERPT_CHARS,
+            "slots": second_look.SECOND_LOOK_SLOTS,
+            "prompt": second_look.PROMPT,
+        },
         "storyteller_prompt": storyteller.SYSTEM_PROMPT,
     }

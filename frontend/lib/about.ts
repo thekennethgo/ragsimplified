@@ -18,6 +18,14 @@ export type About = {
   translator: { max_weighted_words: number };
   scout: { candidates: number; rrf_k: number; max_private_chunks: number };
   judge: { keep: number; max_per_document: number };
+  second_look: {
+    enabled: boolean;
+    decider: string | null;
+    threshold: number;
+    excerpt_chars: number;
+    slots: number;
+    prompt: string;
+  };
   storyteller_prompt: string;
 };
 

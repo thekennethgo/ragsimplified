@@ -255,3 +255,65 @@ test("an error runs the remaining hooks in order, then kills the timelines", asy
     "kill chopper_start",
   ]);
 });
+
+test("the same scene plays again when it is emitted twice (the Scout's second trip)", async () => {
+  const { queue, log, timelines } = setup();
+  queue.emit({ name: "chopper_start" });
+  queue.emit({ name: "second_look_start" }); // no scene: ignored
+  queue.emit({ name: "chopper_start" });
+  await flush();
+  expect(log).toEqual(["play chopper_start"]);
+  timelines.chopper_start.finish();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(log).toEqual(["play chopper_start", "play chopper_start"]);
+});
+
+test("a second look plays in order: ruled, rewrite, the crew again, then the handover", async () => {
+  const order = [
+    "judge_ruled",
+    "second_look_start", // no scene: ignored
+    "second_look_rewrite",
+    "translator_start",
+    "translator_done",
+    "scout_start",
+    "scout_done",
+    "judge_start",
+    "judge_done",
+    "storyteller_start",
+  ];
+  const played: string[] = [];
+  const finishers: Record<string, () => void> = {};
+  const scene = (name: string) => () => {
+    let onComplete: (() => void) | undefined;
+    finishers[name] = () => onComplete?.();
+    return {
+      labels: {},
+      duration: () => 1,
+      play: () => played.push(name),
+      progress: () => onComplete?.(),
+      kill: () => {},
+      call: () => {},
+      eventCallback: ((_: "onComplete", fn?: () => void) => {
+        if (fn) onComplete = fn;
+        return onComplete;
+      }) as Timeline["eventCallback"],
+    } as Timeline;
+  };
+  const set: SceneSet = {
+    reset: vi.fn(),
+    scenes: Object.fromEntries(
+      order.filter((n) => n !== "second_look_start").map((n) => [n, scene(n)]),
+    ),
+    holds: {},
+  };
+  const queue = createSceneQueue({ reduced: () => false, holdMs: 1000 });
+  queue.register(set);
+  for (const name of order) queue.emit({ name });
+  await flush();
+  for (const name of order.filter((n) => n !== "second_look_start")) {
+    expect(played[played.length - 1]).toBe(name);
+    finishers[name]();
+    await vi.advanceTimersByTimeAsync(1000);
+  }
+  expect(played).toEqual(order.filter((n) => n !== "second_look_start"));
+});

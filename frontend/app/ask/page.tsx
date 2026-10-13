@@ -16,7 +16,17 @@ import {
   scoutSays,
   storytellerSays,
 } from "../../lib/characters";
-import { type Citation, type JudgeResult, type ScoutResult, type Word } from "../../lib/ask";
+import {
+  type Citation,
+  type FinalCard,
+  type JudgeResult,
+  type JudgeRound2,
+  type Look,
+  type ScoutResult,
+  type ScoutRound2,
+  type TranslatorRound2,
+  type Word,
+} from "../../lib/ask";
 import { backendUrl, readEvents } from "../../lib/backend";
 import type { MapOverlay, Point } from "../../lib/map";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
@@ -100,6 +110,17 @@ function AskOffice() {
   const [words, setWords] = useState<Word[]>([]);
   const [scout, setScout] = useState<ScoutResult[] | null>(null);
   const [judge, setJudge] = useState<JudgeResult[] | null>(null);
+  // The second look: the check's outcome, and each character's round 2 data and progress.
+  const [look, setLook] = useState<Look | null>(null);
+  const [translator2, setTranslator2] = useState<TranslatorRound2 | null>(null);
+  const [scout2, setScout2] = useState<ScoutRound2 | null>(null);
+  const [judge2, setJudge2] = useState<JudgeRound2 | null>(null);
+  const [round2, setRound2] = useState<Record<string, Phase>>({});
+  // The Judge's bubble while it checks whether the cards are enough; the Scout's on its second trip.
+  const [checking, setChecking] = useState(false);
+  const [scoutLook, setScoutLook] = useState<string | null>(null);
+  // Set while the Judge asks the Clerk to rewrite the question: the Judge's and Clerk's bubbles.
+  const [rewriting, setRewriting] = useState<string | null>(null);
   const [asked, setAsked] = useState(false);
   const [overlay, setOverlay] = useState<MapOverlay>({});
   const [privateSent, setPrivateSent] = useState(0);
@@ -156,6 +177,14 @@ function AskOffice() {
     setWords([]);
     setScout(null);
     setJudge(null);
+    setLook(null);
+    setTranslator2(null);
+    setScout2(null);
+    setJudge2(null);
+    setRound2({});
+    setChecking(false);
+    setScoutLook(null);
+    setRewriting(null);
     setOverlay({});
     setPrivateSent(privateChunks.length);
     setSentPrompt(null);
@@ -167,6 +196,9 @@ function AskOffice() {
     queue.emit({ name: "clerk_away" });
     queue.emit({ name: "clerk_start" });
     let nothingFound = false;
+    // Each step starts once per round, so a second start is round 2; `followUp` is its query.
+    const starts: Record<string, number> = {};
+    let followUp = "";
     try {
       const response = await fetch(`${backendUrl()}/ask`, {
         method: "POST",
@@ -188,17 +220,62 @@ function AskOffice() {
         }
         const update = () => setStates((now) => sceneReducer(now, e));
         const [sceneEvent] = toSceneEvents(e);
+        if (e.status === "start") starts[e.step] = (starts[e.step] ?? 0) + 1;
+        const second = e.status === "start" && starts[e.step] > 1;
         if (e.step === "error") {
           setError(String(e.data?.message ?? "Something went wrong"));
           queue.emit({ name: "error" });
           update();
           setAnimating(false);
+        } else if (e.step === "second_look") {
+          const query = typeof e.data?.query === "string" && e.data.query ? e.data.query : null;
+          if (query) followUp = query;
+          queue.emit(sceneEvent, {
+            onStart: () => {
+              if (query && e.status === "done") setRewriting(query);
+            },
+            onEnd: () => {
+              update();
+              setRewriting(null);
+              setChecking(e.status === "start");
+              if (e.status === "done") {
+                setLook({
+                  query,
+                  enough: typeof e.data?.enough === "number" ? e.data.enough : null,
+                  decidedBy: e.data?.decided_by === "decider" ? "decider" : "llm",
+                });
+              }
+            },
+          });
         } else if (e.status === "start") {
           // The message isn't visible progress, so it shows up right away.
           if (e.step === "storyteller" && typeof e.data?.prompt === "string") {
             setSentPrompt(e.data.prompt);
           }
-          queue.emit(sceneEvent, { onStart: update });
+          queue.emit(sceneEvent, {
+            onStart: () => {
+              update();
+              if (second) {
+                setRound2((now) => ({ ...now, [e.step]: "working" }));
+                // Only now, after the follow-up's fingerprint, does the Scout set off again.
+                if (e.step === "scout") setScoutLook(`Taking a second look: “${followUp}”`);
+              }
+            },
+          });
+        } else if (e.step === "translator" && e.data?.round === 2) {
+          // The Clerk's rewrite: the follow-up's star on the map; the question's words stay.
+          const point = e.data?.point as Point | undefined;
+          const followUpQuery = typeof e.data?.query === "string" ? e.data.query : followUp;
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setTranslator2({ query: followUpQuery });
+              setRound2((now) => ({ ...now, translator: "done" }));
+              if (point) {
+                setOverlay((now) => ({ ...now, followUp: { point, query: followUpQuery } }));
+              }
+            },
+          });
         } else if (e.step === "translator") {
           const found = (e.data?.words ?? []) as Word[];
           const point = e.data?.point as Point | undefined;
@@ -207,6 +284,46 @@ function AskOffice() {
               update();
               setWords(found);
               if (point) setOverlay((now) => ({ ...now, question: point }));
+            },
+          });
+        } else if (e.step === "scout" && e.data?.round === 2) {
+          const found = (e.data?.results ?? []) as ScoutResult[];
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setScout2({
+                query: typeof e.data?.query === "string" ? e.data.query : followUp,
+                skipped: typeof e.data?.skipped === "number" ? e.data.skipped : 0,
+                results: found,
+              });
+              setRound2((now) => ({ ...now, scout: "done" }));
+              setScoutLook(null);
+              setOverlay((now) => ({
+                ...now,
+                followUpCandidates: found.map((r) => ({
+                  source: r.source,
+                  document_id: r.document_id,
+                  title: r.title,
+                  position: r.position,
+                  rank: r.rank,
+                  found_by: r.found_by,
+                })),
+              }));
+            },
+          });
+        } else if (e.step === "judge" && e.data?.round === 2) {
+          // The first round's verdict stays on the Judge's tab; this one is its second page.
+          const results = (e.data?.results ?? []) as JudgeResult[];
+          const finalCards = (e.data?.final_cards ?? []) as FinalCard[];
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setJudge2({
+                query: typeof e.data?.query === "string" ? e.data.query : followUp,
+                results,
+                finalCards,
+              });
+              setRound2((now) => ({ ...now, judge: "done" }));
             },
           });
         } else if (e.step === "scout") {
@@ -276,13 +393,19 @@ function AskOffice() {
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
   const crewSays: Record<(typeof CREW)[number], string> = {
     translator: askTranslatorSays(),
-    scout: scoutSays(),
-    judge: judgeSays(scout ? scout.length : null, about?.judge.keep),
+    scout: scoutLook ?? scoutSays(),
+    judge: rewriting
+      ? `We need more on: “${rewriting}”`
+      : checking
+        ? "Checking whether that's enough…"
+        : judgeSays(scout ? scout.length : null, about?.judge.keep),
     storyteller: storytellerSays(keptCount),
   };
   const clerkSays = error
     ? "Sorry, something went wrong. Try again?"
-    : finished && nothingFound
+    : rewriting
+      ? `Rewriting the question: “${rewriting}”`
+      : finished && nothingFound
       ? "Sorry, nothing on file about that. Try something else?"
       : finished
         ? "Here's your answer. The tabs show who did what."
@@ -300,7 +423,11 @@ function AskOffice() {
   const crewAt = {
     translator: useFollow(officeRef, "translator", animationsOn && phase("translator") === "working"),
     scout: useFollow(officeRef, "scout", animationsOn && phase("scout") === "working"),
-    judge: useFollow(officeRef, "judge", animationsOn && phase("judge") === "working"),
+    judge: useFollow(
+      officeRef,
+      "judge",
+      animationsOn && (phase("judge") === "working" || rewriting !== null),
+    ),
     storyteller: useFollow(
       officeRef,
       "storyteller",
@@ -388,6 +515,11 @@ function AskOffice() {
             citations={citations}
             words={words}
             scout={scout}
+            look={look}
+            translator2={translator2}
+            scout2={scout2}
+            judge2={judge2}
+            round2={round2}
             judge={judge}
             askedQuestion={askedQuestion}
             targetFor={targetFor}

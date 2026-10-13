@@ -92,7 +92,7 @@ export function QuestionBubble({
       >
         {busy ? "Asking…" : "Ask"}
       </button>
-      <p className={styles.privacy}>Sent to Voyage AI (fingerprint) and Anthropic (answer).</p>
+      <p className={styles.privacy}>Sent to Voyage AI (fingerprint), Anthropic (answer) and, when set up, OpenRouter's Mercury Decide (a yes/no check on library excerpts).</p>
     </form>
   );
 }

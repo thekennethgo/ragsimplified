@@ -4,7 +4,7 @@ Common questions about Kenneth Go, the creator of this site, answered by Kenneth
 
 ## Who is Kenneth Go?
 
-Kenneth Go is a computer science graduate from UNSW Sydney. He grew up in Batam, Indonesia, and lives in Sydney, Australia.
+Kenneth Go is a recent computer science graduate from UNSW Sydney. He is pursuing software engineering as a career and he currently lives in Sydney, Australia.
 
 ## What roles is Kenneth looking for?
 
@@ -33,18 +33,6 @@ Step by step with Claude Code, following a written plan: one AI model plans each
 ## Does Kenneth have work experience?
 
 Kenneth's main industry experience is an Atlassian client project at UNSW (February to April 2026), where he was Scrum Master and a developer in a team of 5 building an AI-powered Jira prioritisation tool on Atlassian Forge. He also worked as casual wait staff in a restaurant alongside his full-time studies.
-
-## What does Kenneth do outside work?
-
-He enjoys training mixed martial arts (MMA), watches the UFC and movies, travels (most recently to Central Asia) and spends time with friends.
-
-## What are Kenneth's favourite movies?
-
-Some of his favourites are Blade Runner 2049, The Social Network and Ex Machina.
-
-## What video games does Kenneth play?
-
-His favourites are the Resident Evil series, the Batman: Arkham series, Cyberpunk 2077, The Last of Us and Watch Dogs.
 
 ## What languages does Kenneth speak?
 

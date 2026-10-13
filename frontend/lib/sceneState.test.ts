@@ -42,3 +42,51 @@ test("the Judge's done event says whether anything was kept", () => {
   ]);
   expect(toSceneEvents(event("judge", "start"))).toEqual([{ name: "judge_start" }]);
 });
+
+test("the second look puts the Judge to work, leaves the Scout alone, and ends with the Judge done", () => {
+  const judged: Record<string, Phase> = { scout: "done", judge: "done" };
+  const checking = sceneReducer(judged, event("second_look", "start"));
+  expect(checking).toEqual({ scout: "done", judge: "working" });
+  const trip = sceneReducer(checking, event("second_look", "done", { query: "Batam city" }));
+  expect(trip).toEqual({ scout: "done", judge: "done" });
+  const enough = sceneReducer(checking, event("second_look", "done", { query: null, enough: 0.9 }));
+  expect(enough).toEqual({ scout: "done", judge: "done" });
+});
+
+test("round 2 translator, scout and judge starts put each to work again, and their done events finish them", () => {
+  let state: Record<string, Phase> = { translator: "done", scout: "done", judge: "done" };
+  state = sceneReducer(state, event("translator", "start"));
+  expect(state).toEqual({ translator: "working", scout: "done", judge: "done" });
+  state = sceneReducer(state, event("translator", "done", { round: 2 }));
+  state = sceneReducer(state, event("scout", "start"));
+  expect(state).toEqual({ translator: "done", scout: "working", judge: "done" });
+  state = sceneReducer(state, event("scout", "done", { round: 2 }));
+  state = sceneReducer(state, event("judge", "start"));
+  expect(state.judge).toBe("working");
+  state = sceneReducer(state, event("judge", "done", { round: 2 }));
+  expect(state).toEqual({ translator: "done", scout: "done", judge: "done" });
+});
+
+test("second look events have scenes of their own, and round 2 never means nothing found", () => {
+  expect(toSceneEvents(event("second_look", "start"))).toEqual([{ name: "second_look_start" }]);
+  expect(toSceneEvents(event("second_look", "done", { query: null }))).toEqual([
+    { name: "judge_handover" },
+  ]);
+  const second = event("judge", "done", { round: 2, results: [{ kept: false }], final: ["A"] });
+  expect(toSceneEvents(second)).toEqual([{ name: "judge_done", data: { nothing: false } }]);
+});
+
+test("a first-round verdict that leads to a second look only rules; the check then rewrites or hands over", () => {
+  const ruled = event("judge", "done", { round: 1, second_look: true, results: [{ kept: true }] });
+  expect(toSceneEvents(ruled)).toEqual([{ name: "judge_ruled" }]);
+  const nothing = event("judge", "done", { round: 1, second_look: true, results: [{ kept: false }] });
+  expect(toSceneEvents(nothing)).toEqual([{ name: "judge_done", data: { nothing: true } }]);
+  expect(toSceneEvents(event("second_look", "done", { query: "Batam city" }))).toEqual([
+    { name: "second_look_rewrite", data: { query: "Batam city" } },
+  ]);
+  expect(toSceneEvents(event("second_look", "done", { query: null, enough: 0.9 }))).toEqual([
+    { name: "judge_handover" },
+  ]);
+  const plain = event("judge", "done", { round: 1, second_look: false, results: [{ kept: true }] });
+  expect(toSceneEvents(plain)).toEqual([{ name: "judge_done", data: { nothing: false } }]);
+});

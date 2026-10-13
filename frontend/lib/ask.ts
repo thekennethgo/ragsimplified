@@ -35,7 +35,37 @@ export type JudgeResult = {
   new_rank: number;
   rerank_score: number | null;
   source: "library" | "private";
+  document_id: number | null;
   title: string;
+  position: number;
   page: number | null;
   heading: string | null;
 };
+
+/** One card handed to the Storyteller, in citation order, and the round that found it. */
+export type FinalCard = {
+  n: number;
+  round: 1 | 2;
+  source: "library" | "private";
+  document_id: number | null;
+  title: string;
+  position: number;
+  page: number | null;
+  heading: string | null;
+};
+
+/** The second look's check (the "second_look" step's done event). */
+export type Look = {
+  query: string | null;
+  enough: number | null;
+  decidedBy: "decider" | "llm";
+};
+
+/** The Translator's second page: the Clerk's follow-up query, fingerprinted. */
+export type TranslatorRound2 = { query: string };
+
+/** The Scout's second page. */
+export type ScoutRound2 = { query: string; skipped: number; results: ScoutResult[] };
+
+/** The Judge's second page: the new cards' verdicts and the five that go to the Storyteller. */
+export type JudgeRound2 = { query: string; results: JudgeResult[]; finalCards: FinalCard[] };

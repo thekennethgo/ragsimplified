@@ -32,8 +32,14 @@ export const FOUND_BY_COLOR = {
   both: "linear-gradient(135deg, #3b5878 50%, #c98a2b 50%)",
 } as const;
 
-/** What the Ask page draws on top of the map: the question and the Scout's candidates. */
-export type MapOverlay = { question?: Point; candidates?: Candidate[] };
+/** What the Ask page draws on top of the map: the question, the Scout's candidates and the second look. */
+export type MapOverlay = {
+  question?: Point;
+  candidates?: Candidate[];
+  /** The second look: the rewritten question's star and the candidates its search found. */
+  followUp?: { point: Point; query: string };
+  followUpCandidates?: Candidate[];
+};
 
 /** Same document-and-position key for library dots and Scout candidates; private ones use the title. */
 export const keyOf = (c: {
