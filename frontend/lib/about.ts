@@ -22,6 +22,7 @@ export type About = {
     enabled: boolean;
     decider: string | null;
     threshold: number;
+    nothing_threshold: number;
     max_cards: number;
     slots: number;
     prompt: string;

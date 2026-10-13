@@ -58,6 +58,10 @@ export type FinalCard = {
 export type Look = {
   query: string | null;
   enough: number | null;
+  /** How sure Mercury Decide was that the sources touch the question at all. */
+  relevant: number | null;
+  /** Mercury Decide is sure nothing on file touches the question: no answer is written. */
+  nothing: boolean;
   decidedBy: "decider" | "llm";
 };
 
@@ -68,4 +72,10 @@ export type TranslatorRound2 = { query: string };
 export type ScoutRound2 = { query: string; skipped: number; results: ScoutResult[] };
 
 /** The Judge's second page: the new cards' verdicts and the cards that go to the Storyteller. */
-export type JudgeRound2 = { query: string; results: JudgeResult[]; finalCards: FinalCard[] };
+export type JudgeRound2 = {
+  query: string;
+  results: JudgeResult[];
+  finalCards: FinalCard[];
+  /** Mercury Decide's check of the final cards: how sure they answer any part of the question. */
+  check?: { part: number | null; nothing: boolean } | null;
+};

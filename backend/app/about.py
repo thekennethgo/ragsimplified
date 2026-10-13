@@ -44,6 +44,7 @@ def about() -> dict:
             "enabled": second_look.enabled(),
             "decider": decider.MODEL if decider.get_decider() else None,
             "threshold": second_look.SECOND_LOOK_THRESHOLD,
+            "nothing_threshold": second_look.NOTHING_THRESHOLD,
             "max_cards": scout.DEFAULT_K + second_look.SECOND_LOOK_SLOTS,
             "slots": second_look.SECOND_LOOK_SLOTS,
             "prompt": second_look.PROMPT,

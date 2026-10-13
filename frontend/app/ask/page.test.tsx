@@ -35,8 +35,8 @@ const ABOUT = {
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
-// When set, a second_look_rewrite scene never reaches its end (the rewrite is "in progress").
-const mid = vi.hoisted(() => ({ rewrite: false }));
+// When set, a second_look_rewrite or second_look_nothing scene never reaches its end ("in progress").
+const mid = vi.hoisted(() => ({ rewrite: false, nothing: false }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
 vi.mock("../../lib/office/useFollow", () => ({
@@ -52,7 +52,10 @@ vi.mock("../../lib/office/useSceneQueue", () => {
     ) => {
       emitted.push(event);
       hooks?.onStart?.();
-      if (!(mid.rewrite && event.name === "second_look_rewrite")) hooks?.onEnd?.();
+      const playing =
+        (mid.rewrite && event.name === "second_look_rewrite") ||
+        (mid.nothing && event.name === "second_look_nothing");
+      if (!playing) hooks?.onEnd?.();
     },
     clear: () => undefined,
     skipAll: () => undefined,
@@ -66,6 +69,7 @@ beforeEach(() => {
   resetAboutCache();
   emitted.length = 0;
   mid.rewrite = false;
+  mid.nothing = false;
   search.params = new URLSearchParams();
 });
 
@@ -1534,6 +1538,79 @@ test("a check that says enough shows the Judge's banner with the decision", asyn
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
+test("a check that finds nothing on file has the Judge tell the Clerk instead of the Storyteller", async () => {
+  const refusal = "I can't answer that from the available documents.";
+  stubAsk([
+    ...EVENTS.slice(0, 5),
+    { ...EVENTS[5], data: { ...EVENTS[5].data, round: 1, second_look: true } },
+    { step: "second_look", status: "start" },
+    {
+      step: "second_look",
+      status: "done",
+      data: { query: null, enough: 0, relevant: 0.02, nothing: true, decided_by: "decider" },
+    },
+    { step: "storyteller", status: "start" },
+    { step: "answer", delta: refusal },
+    { step: "storyteller", status: "done", data: { answer: refusal, citations: [] } },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("Who is the best basketball player?");
+  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
+  expect(names()).not.toContain("judge_handover");
+  expect(names()).not.toContain("clerk_back");
+  expect(
+    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  expect(
+    screen.getByText("Nothing on file about this, so no answer was written."),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText("Mercury Decide was only 2% sure the sources say anything about this."),
+  ).toBeInTheDocument();
+  expect(screen.queryByText("Enough to answer. These cards go to the Storyteller.")).toBeNull();
+});
+
+test("a final check that finds nothing after the second look has the Judge tell the Clerk", async () => {
+  const refusal = "I can't answer that from the available documents.";
+  const judge2 = SECOND_LOOK_EVENTS.findIndex((e) => {
+    const event = e as { step: string; status?: string; data?: { round?: number } };
+    return event.step === "judge" && event.status === "done" && event.data?.round === 2;
+  });
+  const ruled = SECOND_LOOK_EVENTS[judge2] as { data: object };
+  stubAsk([
+    ...SECOND_LOOK_EVENTS.slice(0, judge2),
+    { ...ruled, data: { ...ruled.data, check: true } },
+    { step: "second_look", status: "start", data: { round: 2 } },
+    {
+      step: "second_look",
+      status: "done",
+      data: { round: 2, query: null, part: 0.02, nothing: true, decided_by: "decider" },
+    },
+    { step: "storyteller", status: "start" },
+    { step: "answer", delta: refusal },
+    { step: "storyteller", status: "done", data: { answer: refusal, citations: [] } },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown's most famous dish?");
+  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  const after = names().slice(names().indexOf("second_look_rewrite"));
+  expect(after).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
+  expect(after).not.toContain("judge_handover");
+  expect(names()).not.toContain("clerk_back");
+  expect(
+    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  fireEvent.click(screen.getByRole("button", { name: "Second look" }));
+  expect(
+    screen.getByText("Nothing in these cards answers the question, so no answer was written."),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/only 2% sure the cards answer any part of it/)).toBeInTheDocument();
+  expect(screen.getByText("Filed back, not handed over")).toBeInTheDocument();
+});
+
 test("a new question removes the round switch", async () => {
   let events: object[] = SECOND_LOOK_EVENTS;
   stubFetch(() => ndjson(events));
@@ -1580,6 +1657,33 @@ test("while the Clerk rewrites the question the Judge and the Clerk say so", asy
   expect(await screen.findByText("We need more on: “Batam city overview”")).toBeInTheDocument();
   expect(screen.getByText("Rewriting the question: “Batam city overview”")).toBeInTheDocument();
   expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_rewrite"]));
+  close();
+});
+
+test("while the Judge tells the Clerk nothing is on file the Judge says so", async () => {
+  mid.nothing = true;
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("Who is the best basketball player?");
+  for (const e of SECOND_LOOK_EVENTS.slice(0, 6)) push(e);
+  push({ step: "second_look", status: "start" });
+  expect(await screen.findByText("Checking whether that's enough…")).toBeInTheDocument();
+  push({
+    step: "second_look",
+    status: "done",
+    data: { query: null, enough: 0, relevant: 0.01, nothing: true, decided_by: "decider" },
+  });
+  expect(await screen.findByText("Nothing on file about this.")).toBeInTheDocument();
+  expect(screen.queryByText("Checking whether that's enough…")).toBeNull();
   close();
 });
 

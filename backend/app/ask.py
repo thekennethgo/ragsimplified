@@ -178,21 +178,23 @@ def run_ask(
 
     if results and second_look.enabled():
         yield StepEvent(step="second_look", status="start")
-        follow_up, probability = second_look.decide(request.question, results, llm, decider)
+        look = second_look.decide(request.question, results, llm, decider)
+        follow_up = look.query
         yield StepEvent(
             step="second_look",
             status="done",
             data={
                 "query": follow_up,
-                "enough": None if probability is None else round(probability, 3),
-                "decided_by": (
-                    "decider"
-                    if probability is not None and probability >= second_look.SECOND_LOOK_THRESHOLD
-                    else "llm"
-                ),
+                "enough": None if look.enough is None else round(look.enough, 3),
+                "relevant": None if look.relevant is None else round(look.relevant, 3),
+                "nothing": look.nothing,
+                "decided_by": look.decided_by,
             },
         )
-        if follow_up:
+        if look.nothing:
+            # The decider is sure nothing on file touches the question: refuse like an empty Judge.
+            results = []
+        elif follow_up:
             first_round = results
             seen = {_key(r) for r in candidates}
             yield StepEvent(step="translator", status="start")
@@ -220,6 +222,7 @@ def run_ask(
             # Reranked against the follow-up: the linked text rarely repeats the question's words.
             second = judge(follow_up, new, reranker, keep=second_look.SECOND_LOOK_SLOTS)
             results = _combine(first_round, second.kept)
+            check = second_look.can_check(results, decider)
             yield StepEvent(
                 step="judge",
                 status="done",
@@ -230,8 +233,28 @@ def run_ask(
                     "query": follow_up,
                     "final": [r.title for r in results],
                     "final_cards": describe_final(first_round, results),
+                    "check": check,
                 },
             )
+
+            if check and decider is not None:
+                # One more free check: is there anything in the final cards for the Storyteller?
+                yield StepEvent(step="second_look", status="start", data={"round": 2})
+                part = second_look.final_check(request.question, results, decider)
+                nothing = part is not None and part < second_look.NOTHING_THRESHOLD
+                yield StepEvent(
+                    step="second_look",
+                    status="done",
+                    data={
+                        "round": 2,
+                        "query": None,
+                        "part": None if part is None else round(part, 3),
+                        "nothing": nothing,
+                        "decided_by": "decider",
+                    },
+                )
+                if nothing:
+                    results = []
 
     if not results:
         yield StepEvent(step="storyteller", status="start")

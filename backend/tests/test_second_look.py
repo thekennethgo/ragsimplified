@@ -5,9 +5,12 @@ from app.pipeline.scout import Result
 from app.pipeline.second_look import (
     MAX_QUERY_CHARS,
     PROMPT,
+    Look,
     build_message,
     build_state,
+    can_check,
     decide,
+    final_check,
     parse,
 )
 
@@ -23,7 +26,7 @@ def private() -> Result:
 
 
 class ExplodingDecider:
-    def enough(self, state):
+    def decide(self, state):
         raise RuntimeError("down")
 
 
@@ -78,14 +81,33 @@ def test_prompt_forbids_the_person_s_name_in_the_query():
 
 def test_a_confident_decider_ends_the_second_look_without_an_llm_call():
     llm = FakeLLM("Batam")
-    assert decide(QUESTION, [library()], llm, FakeDecider(0.9)) == (None, 0.9)
+    look = decide(QUESTION, [library()], llm, FakeDecider(0.9))
+    assert look == Look(None, 0.9, 1.0)
+    assert look.decided_by == "decider"
     assert llm.calls == []
+
+
+def test_a_decider_sure_nothing_is_on_file_ends_without_an_llm_call():
+    # "Who is the best basketball player?" against a library about Kenneth.
+    llm = FakeLLM("Basketball greats")
+    look = decide(QUESTION, [library()], llm, FakeDecider(0.0, relevant=0.02))
+    assert look == Look(None, 0.0, 0.02, nothing=True)
+    assert look.decided_by == "decider"
+    assert llm.calls == []
+
+
+def test_sources_that_touch_the_question_still_get_a_second_look():
+    # "What is Kenneth's hometown like?" with only "He grew up in Batam." on the cards.
+    llm = FakeLLM("Batam city overview")
+    look = decide(QUESTION, [library()], llm, FakeDecider(0.0, relevant=0.95))
+    assert look == Look("Batam city overview", 0.0, 0.95)
+    assert not look.nothing and look.decided_by == "llm"
 
 
 def test_a_doubtful_decider_hands_over_to_the_llm_which_writes_the_query():
     llm = FakeLLM("Batam city overview")
     decider = FakeDecider(0.1)
-    assert decide(QUESTION, [library()], llm, decider) == ("Batam city overview", 0.1)
+    assert decide(QUESTION, [library()], llm, decider) == Look("Batam city overview", 0.1, 1.0)
     system, messages = llm.calls[0]
     assert system == second_look.PROMPT
     assert "He grew up in Batam." in messages[0]["content"]
@@ -105,21 +127,34 @@ def test_the_llm_call_is_capped_in_length():
 
 def test_a_failing_decider_falls_back_to_the_llm():
     llm = FakeLLM("Batam city overview")
-    assert decide(QUESTION, [library()], llm, ExplodingDecider()) == ("Batam city overview", None)
+    assert decide(QUESTION, [library()], llm, ExplodingDecider()) == Look("Batam city overview")
 
 
 def test_without_a_decider_the_llm_decides_alone():
-    assert decide(QUESTION, [library()], FakeLLM("DONE"), None) == (None, None)
-    assert decide(QUESTION, [library()], FakeLLM("Batam"), None) == ("Batam", None)
+    assert decide(QUESTION, [library()], FakeLLM("DONE"), None) == Look(None)
+    assert decide(QUESTION, [library()], FakeLLM("Batam"), None) == Look("Batam")
 
 
 def test_pasted_text_is_never_sent_to_the_decider():
     decider = FakeDecider(0.9)
     llm = FakeLLM("Batam city overview")
-    assert decide(QUESTION, [library(), private()], llm, decider) == ("Batam city overview", None)
+    assert decide(QUESTION, [library(), private()], llm, decider) == Look("Batam city overview")
     assert decider.states == []
 
 
 def test_a_failing_llm_skips_the_second_look():
-    assert decide(QUESTION, [library()], ExplodingLLM(), None) == (None, None)
-    assert decide(QUESTION, [library()], ExplodingLLM(), FakeDecider(0.2)) == (None, 0.2)
+    assert decide(QUESTION, [library()], ExplodingLLM(), None) == Look(None)
+    assert decide(QUESTION, [library()], ExplodingLLM(), FakeDecider(0.2)) == Look(None, 0.2, 1.0)
+
+
+def test_final_check_reads_the_part_probability_and_falls_back_to_none():
+    decider = FakeDecider(0.0, part=0.03)
+    assert final_check(QUESTION, [library()], decider) == 0.03
+    assert QUESTION in decider.states[0]
+    assert final_check(QUESTION, [library()], ExplodingDecider()) is None
+
+
+def test_can_check_needs_a_decider_and_only_library_cards():
+    assert can_check([library()], FakeDecider(0.5))
+    assert not can_check([library()], None)
+    assert not can_check([library(), private()], FakeDecider(0.5))

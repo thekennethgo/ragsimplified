@@ -1,11 +1,16 @@
 """The second look (ADR 006): after the Judge, decide whether one more search is needed.
 
 Stage 1 (decider.py, free): a decision model gives the probability that the sources answer the
-question. Stage 2 (the configured LLM, only when needed): write one follow-up search query.
+question, and that they hold anything on it at all; when it is sure they hold nothing, there is no
+answer to write and the run ends without the Storyteller. Stage 2 (the configured LLM, only when
+needed): write one follow-up search query. After the second round the decision model checks the
+final cards once more (`final_check`): if they answer no part of the question, the run ends the
+same way.
 """
 
 import os
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from app.llm import LLM, Message
@@ -18,6 +23,7 @@ PROMPT = (Path(__file__).with_name("second_look_prompt.md")).read_text(encoding=
 MAX_QUERY_CHARS = 100
 MAX_QUERY_TOKENS = 30
 SECOND_LOOK_THRESHOLD = 0.5
+NOTHING_THRESHOLD = 0.1  # below this chance that the sources touch the question, nothing is on file
 SECOND_LOOK_SLOTS = 2  # cards the second round can add to the Judge's 5
 
 
@@ -55,23 +61,48 @@ def parse(reply: str, question: str) -> str | None:
     return line[:MAX_QUERY_CHARS]
 
 
-def decide(
-    question: str, results: list[Result], llm: LLM, decider: Decider | None
-) -> tuple[str | None, float | None]:
-    """The follow-up search query (or None) and the decider's probability (or None)."""
-    probability: float | None = None
-    # Pasted text is never sent to a new provider, so the decider only sees library results.
-    if decider is not None and all(r.source == "library" for r in results):
+@dataclass(frozen=True)
+class Look:
+    query: str | None  # the follow-up search query, or None
+    enough: float | None = None  # the decider's probabilities, or None without a decider
+    relevant: float | None = None
+    nothing: bool = False  # the decider is sure the sources hold nothing on the question
+
+    @property
+    def decided_by(self) -> str:
+        return "decider" if self.nothing or (self.enough or 0) >= SECOND_LOOK_THRESHOLD else "llm"
+
+
+def can_check(results: list[Result], decider: Decider | None) -> bool:
+    """Whether the decider may see these cards: pasted text is never sent to a new provider."""
+    return decider is not None and all(r.source == "library" for r in results)
+
+
+def final_check(question: str, results: list[Result], decider: Decider) -> float | None:
+    """After the second round: how likely the final cards answer any part of the question."""
+    try:
+        return decider.partly(build_state(question, results))
+    except Exception:
+        return None
+
+
+def decide(question: str, results: list[Result], llm: LLM, decider: Decider | None) -> Look:
+    """Whether to search again (and for what), or whether there is nothing to answer from."""
+    look = Look(None)
+    if decider is not None and can_check(results, decider):
         try:
-            probability = decider.enough(build_state(question, results))
+            decision = decider.decide(build_state(question, results))
+            look = Look(None, decision.enough, decision.relevant)
         except Exception:
-            probability = None
-    if probability is not None and probability >= SECOND_LOOK_THRESHOLD:
-        return None, probability
+            pass
+    if look.relevant is not None and look.relevant < NOTHING_THRESHOLD:
+        return Look(None, look.enough, look.relevant, nothing=True)
+    if look.enough is not None and look.enough >= SECOND_LOOK_THRESHOLD:
+        return look
     try:
         reply = "".join(
             llm.stream(PROMPT, build_message(question, results), max_tokens=MAX_QUERY_TOKENS)
         )
     except Exception:
-        return None, probability
-    return parse(reply, question), probability
+        return look
+    return Look(parse(reply, question), look.enough, look.relevant)
