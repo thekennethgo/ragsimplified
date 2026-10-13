@@ -1,6 +1,6 @@
 # ADR 004: Office rooms animated in code with GSAP
 
-Status: Accepted (2026-10-09, after the GSAP spike in `docs/design/gsap-spike/`). Replaces the earlier proposal under this number, "Office rooms animated in Rive, one file per room", which was never built.
+Status: Accepted (2026-10-09, after a GSAP spike, removed from the repo; see git history). Replaces the earlier proposal under this number, "Office rooms animated in Rive, one file per room", which was never built.
 
 ## Context
 
@@ -13,7 +13,7 @@ The first version of this ADR chose Rive: one `.riv` file per room, a state mach
 - **Claude cannot edit `.riv` files.** Every timing, pose or art change would go through the owner in the Rive editor, and the owner would have to re-import the art after every canvas change.
 - **The project is a data-driven visualisation.** The brief wants the visuals to show real data: the real number of chunks, cuts at the real chunk boundaries, fingerprints from real vectors, real ranks. A `.riv` file can only switch between scenes drawn in advance; it cannot draw one card per real chunk.
 
-A spike (`docs/design/gsap-spike/`) built the whole Upload cycle with GSAP on the flat Upload room SVG: the Chopper takes the mail from the inbox, cuts it and carries a card to the in-tray; the Translator types, prints, walks to the stamping table and stamps three times; the Archivist takes the page and files it in a cabinet drawer. Six buttons stood in for the step events. The queue, the "still working" loops, the handoffs between characters and reduced motion all worked, and Claude built and changed every part of it.
+A spike (the GSAP spike, removed from the repo; see git history) built the whole Upload cycle with GSAP on the flat Upload room SVG: the Chopper takes the mail from the inbox, cuts it and carries a card to the in-tray; the Translator types, prints, walks to the stamping table and stamps three times; the Archivist takes the page and files it in a cabinet drawer. Six buttons stood in for the step events. The queue, the "still working" loops, the handoffs between characters and reduced motion all worked, and Claude built and changed every part of it.
 
 ## Decision
 
@@ -71,5 +71,5 @@ A spike (`docs/design/gsap-spike/`) built the whole Upload cycle with GSAP on th
   - 5.0b writes the room SVGs with their characters, props and walk markers, starting from the spike.
   - The Rive steps 5.1 to 5.4 become code steps: 5.1 the room player and the Upload scenes, 5.2 the Ask room scenes, 5.3 the Query room scenes, 5.4 both rooms on the Ask page.
   - 5.8 and 5.9 add the data-driven parts to these scenes.
-  - Later (2026-10-09), once both rooms were tested in spikes (`docs/design/gsap-spike/`, `docs/design/gsap-ask-spike/`), the page steps 5.0a to 5.0f and 5.0h and the code steps 5.1 to 5.4 were merged into one step, 5.1, that ports them into the app.
+  - Later (2026-10-09), once both rooms were tested in spikes (the GSAP spikes, removed from the repo; see git history), the page steps 5.0a to 5.0f and 5.0h and the code steps 5.1 to 5.4 were merged into one step, 5.1, that ports them into the app.
   - The cast stays seven characters: the Collector (seed script only) and the Fact-Checker (step 4.3, skipped) have no character.
