@@ -1078,6 +1078,28 @@ test("once a tab is clicked the panel stops switching on its own, until a new qu
   bodies[1].close();
 });
 
+test("a tab clicked the moment a step lands is not undone by the panel", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  // Click from a MutationObserver: that runs right after the commit that shows the Translator as done,
+  // before React has flushed that commit's effects. A tab pick must still win over them.
+  let clicked = false;
+  const observer = new MutationObserver(() => {
+    const translator = screen.queryByRole("button", { name: "Translator" });
+    if (!clicked && translator && within(translator).queryByTitle("done")) {
+      clicked = true;
+      fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(clicked).toBe(true));
+  observer.disconnect();
+  await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("the Top 5 leaves filler words out", async () => {
   stubAsk([
     { step: "translator", status: "start" },

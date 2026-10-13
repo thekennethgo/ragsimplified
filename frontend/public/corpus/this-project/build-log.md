@@ -46,7 +46,7 @@ The vector map came from step 4.9 (a two-dimensional PCA of every chunk vector) 
 
 ## Plan the launch around the library
 
-Late in the build, Kenneth saw that the placeholder library of Apple and Star Wars articles was hiding the point of the project. He replaced it with a launch library of 65 documents on 10 shelves, including his own documents, Wikipedia articles on AI, and a fictional company called RAG.co with its own handbook and terms. The plan for it was written first, in `docs/plans/launch-library.md`, and every file got a licence check. The lesson is that the content of a RAG system is part of the product, and openly licensed or self-written text is the only text that belongs in a public repository.
+Late in the build, Kenneth saw that the placeholder library of Apple and Star Wars articles was hiding the point of the project. He replaced it with a launch library of 65 documents on 10 shelves, including his own documents, Wikipedia articles on AI, and a fictional company called RAG.co with its own handbook and terms. The plan for it was written first (the plan files are now in git history), and every file got a licence check. The lesson is that the content of a RAG system is part of the product, and openly licensed or self-written text is the only text that belongs in a public repository.
 
 ## 13 October 2026: the second half of Phase 5
 

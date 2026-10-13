@@ -13,7 +13,7 @@ A public, forkable RAG web app: an Upload page and an Ask page sharing one centr
 - Never commit secrets. Read every key from environment variables.
 
 ## Stack
-Next.js (frontend/) on Vercel, FastAPI (backend/) on Render, Supabase Postgres + pgvector (chunks only, no file storage), Voyage AI embeddings and reranker, Gemini 3.5 Flash Lite via `LLM_MODEL` (OpenAI-compatible client; Claude also supported), Langfuse, GSAP for the office rooms (ADR 004).
+Next.js (frontend/) on Vercel, FastAPI (backend/) on Render, Supabase Postgres + pgvector (chunks only, no file storage), Voyage AI embeddings and reranker, Gemini 3.5 Flash Lite via `LLM_MODEL` (OpenAI-compatible client; Claude also supported), Mercury Decide via OpenRouter for the second look (optional), GSAP for the office rooms (ADR 004).
 
 ## Layout
 `frontend/`, `backend/app/pipeline/` (one module per character), `evals/`, `docs/adr/`, `corpus/`.

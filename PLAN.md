@@ -201,19 +201,19 @@ Each upgrade has eval scores before and after, pasted into the PR description.
 
 ## Phase 5: Office rooms and characters (design canvas and GSAP)
 
-The design lives on the Claude Design canvas "Upload Page Workshop" (https://claude.ai/artifact/XkNNxKuaj5gfEvSfFhR15F): a warm, isometric 3-D office in browns, with IBM Plex Sans and Mono. How it reaches the code is in `docs/design/DESIGN_TO_CODE.md`. The cast is seven characters: the Clerk (greets the visitor on the Ask page and carries the question), the Chopper, the Translator and the Archivist (Upload), and the Scout, the Judge and the Storyteller (Ask). The Collector stays in the seed script and the Fact-Checker (4.3) is skipped, so neither has a character.
+The design lives on the Claude Design canvas "Upload Page Workshop" (https://claude.ai/artifact/XkNNxKuaj5gfEvSfFhR15F): a warm, isometric 3-D office in browns, with IBM Plex Sans and Mono. The design-to-code notes were removed from the repo (see git history). The cast is seven characters: the Clerk (greets the visitor on the Ask page and carries the question), the Chopper, the Translator and the Archivist (Upload), and the Scout, the Judge and the Storyteller (Ask). The Collector stays in the seed script and the Fact-Checker (4.3) is skipped, so neither has a character.
 
-Step 5.1 builds the pages from the canvas and ports the animation in one go. Two test pages play today's scenes and are the reference for the rooms and the animation: `docs/design/gsap-spike/` (Upload office) and `docs/design/gsap-ask-spike/` (Ask office and Query room). Both offices show the canvas's zoom, `viewBox="150 0 1060 600"`.
+Step 5.1 builds the pages from the canvas and ports the animation in one go. Two test pages play today's scenes and are the reference for the rooms and the animation: the GSAP spikes for the Upload office and the Ask office with the Query room (removed from the repo; see git history). Both offices show the canvas's zoom, `viewBox="150 0 1060 600"`.
 
 Office animation convention (ADR 004; added to `CLAUDE.md` in step 5.1): each room is one SVG in `frontend/public/office/` (`upload-room.svg`, `ask-room.svg`, `query-room.svg`, and the static `break-room.svg`) with its characters, their carried props and every extra moving part in it, animated in code with `gsap` and `@gsap/react` (exact versions in ADR 004). Ids: moving room parts in kebab-case; each character a group named after it, drawn in an 80 by 120 box with its feet at (40, 116), with a `<p>-flip` group and every part prefixed `<p>-` (`cl`, `ch`, `tr`, `ar`, `sc`, `ju`, `st`); home spots `spot-<name>` and walk targets `spot-<name>-<place>`. Scenes live in `frontend/lib/office/scenes/<room>.ts` as a map from `<step>_<status>` to a function that builds a paused timeline (optional label `handoff`); `frontend/lib/office/sceneQueue.ts` plays them one at a time, starting the next at the `handoff` label or 1 second after the end. All text with real data stays in the DOM.
 
 - [x] 5.0 (You) Final design on the canvas
-  - Do: finish the pages, the rooms (Upload office, Ask office, Query room, the home page's break room) and the seven characters on the canvas; pull every canvas file into `docs/design/upload-page/project/` and commit it.
+  - Do: finish the pages, the rooms (Upload office, Ask office, Query room, the home page's break room) and the seven characters on the canvas; pull every canvas file into the repo and commit it (later removed; the final art is in `frontend/public/office/`).
   - Done when: the files in git match the canvas.
 - [x] 5.1 Office pages and animation (one PR; replaces the old steps 5.0a to 5.0f, 5.0h and 5.1 to 5.4)
-  - Do: port the finished canvas design and the two tested GSAP pages (`docs/design/gsap-spike/`, `docs/design/gsap-ask-spike/`) into `frontend/`, driven by the real backend.
+  - Do: port the finished canvas design and the two tested GSAP pages (the GSAP spikes, removed from the repo; see git history) into `frontend/`, driven by the real backend.
     - Look and tabs: IBM Plex Sans and Mono with `next/font/google`; the canvas's tokens in `globals.css` (page #E4D8C6, panel #F6EFE4, paper #FBF6EC, border #D2C1A8, ink #33261D, muted text #6A5848, accent #7A5236, dark tab #4A3426; status chips: waiting #E4E1D8 on #4A3426, working #EDE1B8 on #5A4A12, done #DCE3D6 on #2F4F2A); the header's segmented tabs "Home | Upload | Ask" (icon and label, 44px tall, links with `aria-current="page"`), keeping the "Backend online" badge.
-    - Room art: flat static SVGs in `docs/design/office-svg/`, copied to `frontend/public/office/`: `upload-room.svg` from the Upload spike, `ask-room.svg` and `query-room.svg` from the Ask spike, and the static `break-room.svg` from the canvas, each with its characters, props, moving parts and `spot-*` markers named by the convention above (offices in `viewBox="150 0 1060 600"`). Home spots as percentages in `frontend/lib/office-spots.ts` (`left = (x - 150) / 10.6`, `top = y / 6`).
+    - Room art: flat static SVGs (build scripts removed from the repo; see git history), copied to `frontend/public/office/`: `upload-room.svg` from the Upload spike, `ask-room.svg` and `query-room.svg` from the Ask spike, and the static `break-room.svg` from the canvas, each with its characters, props, moving parts and `spot-*` markers named by the convention above (offices in `viewBox="150 0 1060 600"`). Home spots as percentages in `frontend/lib/office-spots.ts` (`left = (x - 150) / 10.6`, `top = y / 6`).
     - Player: add the convention above to `CLAUDE.md`; add `gsap` and `@gsap/react` at the exact versions in ADR 004. `frontend/lib/office/sceneQueue.ts` (plain TypeScript): one scene at a time in order, the next starts at the current scene's `handoff` label or 1 second after it ends, a character's "still working" loop stops when its next scene starts, events with no scene are ignored, `error` clears the queue and stops every loop, and reduced motion jumps each scene to its end state (still 1 second apart, no loops). `frontend/components/office/OfficeRoom.tsx` loads a room SVG from `/office/`, hides the `spot-*` markers, scopes GSAP with `useGSAP` and feeds the queue from one reducer in `frontend/lib/sceneState.ts`, which turns the real step events into scene events and into the speech bubbles' waiting, working, done and error.
     - Scenes, ported from the spikes with walk targets read from the spot markers: `frontend/lib/office/scenes/upload.ts` (Chopper, Translator, Archivist), `ask.ts` (the Clerk writes the question on the whiteboard and waits beside it, the Translator, Scout, Judge and Storyteller, the Clerk fetches the answer, and the "nothing found" ending) and `query.ts` (`clerk_away`, `clerk_back`, `clerk_shrug`).
     - Upload page: the Upload office with `OfficeRoom` and the three characters' `SpeechBubble`s; the Archivist has no backend step, so send `archivist_start` and `archivist_done` around `usePrivateTexts().add()`. When the Chopper's `done` gives the chunk count the bubble says so, and the counter above the file cabinets shows the real number of documents. The step log becomes a collapsible "What just happened" panel. The paste form becomes the canvas's interoffice envelope ("Interoffice mail · To: File cabinet", a title line, lined paper with the 20,000-character counter, the "Send to file cabinet" button whose accessible name stays "Add text", the privacy note), with "pick or drop a file" for `.md` and `.txt` read by `FileReader` (title from the file name, cut at 20,000 characters with a visible note; any other type gets a friendly error). The backend still only receives text (ADR 002).
@@ -234,44 +234,46 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: review and finish the drafts of your own documents in `corpus-drafts/about-me/` (`personal.md`, `experience-and-projects.md`, `faq-about-kenneth.md`), written from your answers and CV. The CV itself is not added while it is a work in progress, and the phone number never goes in. Only include what you are happy to publish: everything in `corpus/` is public in `frontend/public/corpus/`.
   - Done when: you sign off the three drafts, ready for step 5.7c (L8).
 - [x] 5.7c Launch corpus (moved up from 6.0a, expanded)
-  - Do: follow `docs/plans/launch-library.md` steps L1 to L9: prove subfolders work, move the kept documents into their new shelves and the placeholders to `evals/corpus/`, add about 62 documents on 11 shelves (About Kenneth, This project, Places & interests, Movies & games, RAG basics, How AI works, AI history, AI and society, General, Real reports, and the fictional RAG.co company in `lore/`), move in the owner's signed-off documents, add their eval questions, reseed locally and save a new baseline. One PR per L step.
+  - Do: follow steps L1 to L9 of the launch-library plan (removed from the repo; see git history): prove subfolders work, move the kept documents into their new shelves and the placeholders to `evals/corpus/`, add about 62 documents on 11 shelves (About Kenneth, This project, Places & interests, Movies & games, RAG basics, How AI works, AI history, AI and society, General, Real reports, and the fictional RAG.co company in `lore/`), move in the owner's signed-off documents, add their eval questions, reseed locally and save a new baseline. One PR per L step.
   - Done when: `corpus/` matches the layout in the plan, `make eval` includes the new questions with a saved baseline, and the local library and map show the new library.
   - Out of scope: seeding Supabase (6.0a), the download button (5.7d), PDF highlighting (5.7e), shelves (5.7f).
-- [ ] 5.7g Per-document cap in the Judge
+- [x] 5.7g Per-document cap in the Judge
   - Do: in `backend/app/pipeline/judge.py`, after reranking, keep at most 2 chunks from any one document in the final 5, filling the freed places with the next best candidates from other documents; the cap is a named constant shown in `GET /about`. Then run `make eval` and save the baseline.
   - Done when: a unit test with fixed reranker scores shows a third chunk from the same document replaced by the next document, and the `indirect-*` eval questions (added before this step) do not get worse.
   - Out of scope: the second look (5.7h), changing how many candidates the Scout passes on.
-  - Plan: `docs/plans/phase-5-features.md` (F1).
-- [ ] 5.7f Library shelves, starter questions and source lines
-  - Do: follow `docs/plans/library-polish.md` steps P1 to P4: the File cabinet grouped by folder as shelves, the Ask page's starter questions grouped by shelf, a source and licence line in the viewer from `corpus/sources.json`, and the vector map coloured by shelf.
+- [x] 5.7f Library shelves, starter questions and source lines
+  - Do: follow steps P1 to P4 of the library-polish plan (removed from the repo; see git history): the File cabinet grouped by folder as shelves, the Ask page's starter questions grouped by shelf, a source and licence line in the viewer from `corpus/sources.json`, and the vector map coloured by shelf.
   - Done when: the plan's verification passes on localhost.
   - Out of scope: new endpoints, migrations.
-  - Plan: `docs/plans/phase-5-features.md` (F2).
-- [ ] 5.7h Second look (multi-hop retrieval, moved up from 7.1)
+- [x] 5.7h Second look (multi-hop retrieval, moved up from 7.1)
   - Do: write ADR 006 first. After the Judge, a two-stage check: Mercury Decide (a free System 1 decision model on OpenRouter) gives the probability that the top 5 sources answer the question, and only when it is low does a short LLM call through `llm.py` write one follow-up search query (the LLM decides alone when no OpenRouter key is set or the sources include pasted text) (for example "Batam Indonesia" for "What is Kenneth's hometown like?"); on a follow-up, the Scout searches again and the Judge picks the best 5 from both rounds, at most one extra round. New step events (`second_look` start and done, with the follow-up query) so the office can show it: reuse the Scout's existing walk and lantern tweens in `frontend/lib/office/scenes/ask.ts` for a second trip, with the follow-up query in the Scout's speech bubble (DOM), and a line in the Scout's character tab; no new room art.
   - Done when: the `indirect-*` and `cross-*` eval questions improve over the saved baseline, no other score drops by more than 2 points, and on localhost "What is Kenneth's hometown like?" shows the second trip and answers from the Batam document.
   - Out of scope: more than one extra round, query rewriting before the first search, the Fact-Checker, new character art.
-  - Plan: `docs/plans/phase-5-features.md` (F3).
-- [ ] 5.7d Download button
-  - Do: follow `docs/plans/launch-library.md` step L10: a Download link for library documents and a Download button for pasted texts in the viewer.
+- [x] 5.7d Download button
+  - Do: follow step L10 of the launch-library plan (removed from the repo; see git history): a Download link for library documents and a Download button for pasted texts in the viewer.
   - Done when: both download the right file, with tests.
   - Out of scope: PDF highlighting.
-  - Plan: `docs/plans/phase-5-features.md` (F4).
-- [ ] 5.7e Highlight the cited passage in PDFs
-  - Do: follow `docs/plans/launch-library.md` step L11: ADR 005, `react-pdf@9.2.1`, the cited page rendered in the viewer with the cited text marked, the extracted text kept as the fallback.
+- [x] 5.7e Highlight the cited passage in PDFs
+  - Do: follow step L11 of the launch-library plan (removed from the repo; see git history): ADR 005, `react-pdf@9.2.1`, the cited page rendered in the viewer with the cited text marked, the extracted text kept as the fallback.
   - Done when: a citation from a PDF shows its passage marked on the right page, with tests.
   - Out of scope: highlighting inside the browser's own PDF viewer, the source side panel (5.12).
-  - Plan: `docs/plans/phase-5-features.md` (F5).
-- [ ] 5.7i Second look animation
+- [x] 5.7i Second look animation
   - Do: when a second look runs, the Judge walks to the Clerk at the whiteboard instead of handing the cards to the Storyteller, the Clerk rewrites the board with the follow-up query, and the Translator, Scout and Judge run again before the handover; no new room art.
   - Done when: the hometown question plays the rewrite and the second round on localhost, and a question that needs no second look plays exactly as before.
   - Out of scope: new characters, changes to how the second look decides.
-  - Plan: `docs/plans/phase-5-features.md` (F6).
-- [ ] 5.7j Meow, the office cat, a RAG.co rug, a taller viewer, shelf cards, Central Asia, and eval edge cases on the home page (moved up from 7.2)
-  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says. Also a flat RAG.co rug on each room's floor, a taller File cabinet viewer where a whole PDF page fits, starter questions as shelf cards, a Central Asia document with a trip section in `personal.md`, a "How we test it" section on the home page showing the eval edge cases, and a clearer split between `personal.md` and the FAQ (details in `docs/plans/phase-5-features.md` F7).
+- [x] 5.7j Meow, the office cat, a RAG.co rug, a taller viewer, shelf cards, Central Asia, and eval edge cases on the home page (moved up from 7.2)
+  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says. Also a flat RAG.co rug on each room's floor, a taller File cabinet viewer where a whole PDF page fits, starter questions as shelf cards, a Central Asia document with a trip section in `personal.md`, a "How we test it" section on the home page showing the eval edge cases, and a clearer split between `personal.md` and the FAQ (details in the Phase 5 plan, removed from the repo; see git history).
   - Done when: Meow shows in every room, the idle loop plays and stops with reduced motion, and the scene id tests still pass.
   - Out of scope: making Meow react to the pipeline, a character tab for Meow.
-  - Plan: `docs/plans/phase-5-features.md` (F7).
+- [x] 5.7k Faster eval
+  - Do: `make eval` runs without a sleep between questions, with 2 workers and a cached embedding for each question, plus new cases; the 55 questions finish in about 75 seconds.
+  - Done when: the baseline is saved and `make eval` completes in about 75 seconds.
+- [x] 5.7l Visitor PDF uploads
+  - Do: the Upload page accepts a `.pdf`, read in the browser (page numbers kept), and citations from the visitor's PDFs open with the cited passage highlighted.
+  - Done when: a pasted-in PDF can be asked about and its citation opens on the right page, with tests.
+- [x] 5.7m Injection hardening and fact joining in the Storyteller
+  - Do: the Storyteller ignores instructions planted in sources and joins facts that come from different cards.
+  - Done when: the injection and cross-document eval questions pass at the saved baseline.
 - [ ] 5.7b Page polish (moved after the features)
   - Do: polish the pages with the owner, Home first (layout, copy, spacing, visuals), then make Upload and Ask consistent with it. Each round is agreed with the owner in the browser before it is built.
   - Done when: the owner signs off on Home, Upload and Ask.
@@ -303,10 +305,13 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 - [ ] 2.10 (You) Spend limit (moved from Phase 2)
   - Do: set a monthly spend limit (about $10) in the Anthropic Console, before any endpoint that calls Claude goes live.
   - Done when: the limit shows in the Console.
-- [ ] 6.0a (You) Launch seed
+- [x] 6.0a (You) Launch seed
   - Do: with `DATABASE_URL` pointing at Supabase, run `make migrate` (the live database is missing migration 002, so `/map` fails today) and then `make seed`; remove the old placeholder documents from Supabase; check the live File cabinet and Map tab.
   - Done when: the live library lists only the launch documents and the live map works.
   - Out of scope: new code; the eval questions and baseline (done in 5.7c).
+- [x] 6.0b (You) Keep-awake ping
+  - Do: `.github/workflows/keep-awake.yml` pings the backend's `/health` every 10 minutes and `/library` daily, using the repository variable `BACKEND_URL`.
+  - Done when: the workflow runs on schedule and the free Render service stays awake.
 - [ ] 6.1 Limits
   - Do: a 20,000-character limit on pasted text, a cap on the private chunks sent with one question, a per-IP daily quota for pastes and for questions (20 a day), and a question length cap. Counts live in a `usage` table (new migration); the IP comes from `X-Forwarded-For`.
   - Done when: each limit returns a clear error on the page, and the 21st question in a day is politely refused.
@@ -332,10 +337,10 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 
 ## Milestones
 
-- [ ] Phase 0: public repo, step skills and protections in place
-- [ ] Phase 1: both empty pages live, CI green on every PR
-- [ ] Phase 2: the starter library is live and anyone can paste a private text on the live site
-- [ ] Phase 3: cited answers on the live site, with a baseline eval score
-- [ ] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
+- [x] Phase 0: public repo, step skills and protections in place
+- [x] Phase 1: both empty pages live, CI green on every PR
+- [x] Phase 2: the starter library is live and anyone can paste a private text on the live site
+- [x] Phase 3: cited answers on the live site, with a baseline eval score
+- [x] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
 - [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map with character tabs, the launch library, downloads, PDF highlighting and the second look (data-driven scenes, accessibility and source side panel skipped)
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
