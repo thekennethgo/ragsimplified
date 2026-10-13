@@ -77,7 +77,7 @@ Both pipelines stream **step events** over server-sent events. The frontend turn
 | Backend | FastAPI (Python 3.12) |
 | Database | Supabase Postgres + pgvector (chunks only, no file storage) |
 | Embeddings and reranking | Voyage AI |
-| LLM | Claude Haiku 4.5 on the live site, set with `LLM_MODEL` ([ADR 003](docs/adr/003-llm-provider.md)) |
+| LLM | Gemini 3.5 Flash Lite via `LLM_MODEL` (OpenAI-compatible client; Claude also supported) ([ADR 003](docs/adr/003-llm-provider.md)) |
 | Tracing | Langfuse |
 
 ## Quality

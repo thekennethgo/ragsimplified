@@ -124,6 +124,7 @@ function AskOffice() {
         title: item.title,
         position: chunk.position,
         heading: chunk.heading,
+        ...(chunk.page != null ? { page: chunk.page } : {}),
         text: chunk.text,
         vector: item.vectors[i],
       })),

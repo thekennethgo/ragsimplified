@@ -19,6 +19,7 @@ class PrivateChunk:
     heading: str | None
     text: str
     vector: list[float]
+    page: int | None = None  # the PDF page it came from, when the visitor's text was a PDF
 
 
 @dataclass(frozen=True)
@@ -148,7 +149,7 @@ def search_private(
             title=chunk.title,
             position=chunk.position,
             heading=chunk.heading,
-            page=None,
+            page=chunk.page,
             text=chunk.text,
         )
         for chunk in chunks

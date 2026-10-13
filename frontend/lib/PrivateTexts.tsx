@@ -2,10 +2,16 @@
 
 import { type ReactNode, createContext, useContext, useState } from "react";
 
+import { pdfFiles } from "./pdfFiles";
+
 export type PrivateText = {
+  /** Keys the original PDF in lib/pdfFiles (PDF uploads only). */
+  id?: string;
+  /** The text was read from a PDF, so its chunks carry page numbers. */
+  pdf?: boolean;
   title: string;
   text: string;
-  chunks: { position: number; heading: string | null; text: string }[];
+  chunks: { position: number; heading: string | null; page?: number | null; text: string }[];
   vectors: number[][];
   /** Each chunk's place on the vector map (missing when the backend has no map). */
   points?: { x: number; y: number }[];
@@ -26,7 +32,11 @@ const PrivateTextsContext = createContext<PrivateTexts | null>(null);
 export function PrivateTextsProvider({ children }: { children: ReactNode }) {
   const [texts, setTexts] = useState<PrivateText[]>([]);
   const add = (text: PrivateText) => setTexts((items) => [...items, text]);
-  const remove = (index: number) => setTexts((items) => items.filter((_, i) => i !== index));
+  const remove = (index: number) => {
+    const id = texts[index]?.id;
+    if (id) pdfFiles.remove(id);
+    setTexts((items) => items.filter((_, i) => i !== index));
+  };
   return (
     <PrivateTextsContext.Provider value={{ texts, add, remove }}>
       {children}

@@ -34,7 +34,7 @@ Kenneth learned that retrieval problems hide in the wording of questions: some a
 
 ## Build the eval suite early
 
-Step 3.7 added `make eval` and a question file before the Judge existed. The questions include ones the library cannot answer and ones aimed at a planted prompt injection hidden in a test document. Step 3.8 then added a bigger set of competing documents and harder, paraphrased questions. The README reports the baseline from 5 October: 53 questions, a retrieval hit rate of 97.8 percent, and 100 percent for citation validity, correct refusals and injections resisted.
+Step 3.7 added `make eval` and a question file before the Judge existed. The questions include ones the library cannot answer and ones aimed at a planted prompt injection hidden in a test document. Step 3.8 then added a bigger set of competing documents and harder, paraphrased questions. The first baseline, from 5 October, had 53 questions: a retrieval hit rate of 97.8 percent, and 100 percent for citation validity, correct refusals and injections resisted.
 
 The lesson: without a score, a change that "feels better" may not be better. The eval database is dropped and rebuilt on every run, and the run refuses to start against anything but a local database, so a paid or live database cannot be wiped by mistake.
 
@@ -46,4 +46,8 @@ The vector map came from step 4.9 (a two-dimensional PCA of every chunk vector) 
 
 ## Plan the launch around the library
 
-Late in the build, Kenneth saw that the placeholder library of Apple and Star Wars articles was hiding the point of the project. He replaced it with a launch library of about 65 documents on 11 shelves, including his own documents, Wikipedia articles on AI, and a fictional company called RAG.co with its own handbook and terms. The plan for it was written first, in `docs/plans/launch-library.md`, and every file got a licence check. The lesson is that the content of a RAG system is part of the product, and openly licensed or self-written text is the only text that belongs in a public repository.
+Late in the build, Kenneth saw that the placeholder library of Apple and Star Wars articles was hiding the point of the project. He replaced it with a launch library of 65 documents on 10 shelves, including his own documents, Wikipedia articles on AI, and a fictional company called RAG.co with its own handbook and terms. The plan for it was written first, in `docs/plans/launch-library.md`, and every file got a licence check. The lesson is that the content of a RAG system is part of the product, and openly licensed or self-written text is the only text that belongs in a public repository.
+
+## 13 October 2026: the second half of Phase 5
+
+Between the launch library and the launch, Phase 5 added several things, each as a reviewed pull request. The second look (ADR 006) lets the office search a second time when the first five cards do not answer the question, with Inception's Mercury Decide, a free decision model, doing the yes or no check. The eval was made faster: 55 questions run in about a minute and a half, grouped into the cases shown on the home page under "How we test it". The Storyteller was hardened against instructions planted in sources. Meow, the office cat, and the RAG.co rugs were added to the rooms, along with a taller viewer and shelf cards. The last step lets a visitor upload a PDF, which the browser reads page by page so that citations show the real page.

@@ -45,14 +45,17 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Every page of a library PDF in one column, with the cited chunk's text marked on its page. */
+/**
+ * Every page of a PDF in one column, with the cited chunk's text marked on its page. `file` is a
+ * URL (library documents) or the visitor's own PDF kept in memory.
+ */
 export default function PdfView({
-  filename,
+  file,
   page,
   citedText,
   onError,
 }: {
-  filename: string;
+  file: string | Blob;
   page: number | null;
   citedText: string | null;
   onError: () => void;
@@ -106,7 +109,7 @@ export default function PdfView({
   return (
     <div ref={containerRef} className={styles.pdf}>
       <Document
-        file={`/corpus/${filename}`}
+        file={file}
         onLoadSuccess={({ numPages: count }) => setNumPages(count)}
         onLoadError={onError}
         loading={<p>Loading the PDF…</p>}

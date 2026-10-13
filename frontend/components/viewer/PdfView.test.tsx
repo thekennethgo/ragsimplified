@@ -50,7 +50,7 @@ test("inside a scrolling viewer the page width follows the viewer's height", asy
   vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(600);
   render(
     <div style={{ overflowY: "auto" }}>
-      <PdfView filename="lore/staff-handbook.pdf" page={null} citedText={null} onError={() => {}} />
+      <PdfView file="/corpus/lore/staff-handbook.pdf" page={null} citedText={null} onError={() => {}} />
     </div>,
   );
   await waitFor(() => expect(screen.getByTestId("page-1")).toHaveAttribute("data-width", "390"));
@@ -60,7 +60,7 @@ test("inside a scrolling viewer the page width follows the viewer's height", asy
 test("with no scrolling viewer (the full-page route) the window's height is used", async () => {
   vi.stubGlobal("innerHeight", 600);
   render(
-    <PdfView filename="lore/staff-handbook.pdf" page={null} citedText={null} onError={() => {}} />,
+    <PdfView file="/corpus/lore/staff-handbook.pdf" page={null} citedText={null} onError={() => {}} />,
   );
   await waitFor(() => expect(screen.getByTestId("page-1")).toHaveAttribute("data-width", "390"));
   vi.unstubAllGlobals();

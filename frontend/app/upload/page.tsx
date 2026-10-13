@@ -7,7 +7,7 @@ import Toast from "../../components/Toast";
 import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
 import SpeechBubble from "../../components/office/SpeechBubble";
-import EnvelopeForm from "../../components/upload/EnvelopeForm";
+import EnvelopeForm, { type PdfUpload } from "../../components/upload/EnvelopeForm";
 import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHappened";
 import { backendUrl, readEvents } from "../../lib/backend";
 import { archivistSays, chopperSays, uploadTranslatorSays } from "../../lib/characters";
@@ -17,6 +17,7 @@ import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
 import { buildUploadScenes } from "../../lib/office/scenes/upload";
 import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
+import { pdfFiles } from "../../lib/pdfFiles";
 import { type PrivateText, usePrivateTexts } from "../../lib/PrivateTexts";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
 import type { ViewTarget } from "../../lib/viewer";
@@ -78,7 +79,9 @@ export default function UploadPage() {
     }
   }
 
-  async function onSubmit(newTitle: string, text: string): Promise<boolean> {
+  async function onSubmit(newTitle: string, source: string | PdfUpload): Promise<boolean> {
+    const upload = typeof source === "string" ? null : source;
+    const text = upload ? upload.pages.map((p) => p.text).join("\n\n") : (source as string);
     setBusy(true);
     setAnimating(true);
     setError("");
@@ -94,7 +97,9 @@ export default function UploadPage() {
       const response = await fetch(`${backendUrl()}/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle, text }),
+        body: JSON.stringify(
+          upload ? { title: newTitle, pages: upload.pages } : { title: newTitle, text },
+        ),
       });
       if (!response.ok) {
         setError(`Upload rejected (${response.status})`);
@@ -132,7 +137,13 @@ export default function UploadPage() {
           });
           archivist("start");
           const index = texts.length;
-          add({ title: newTitle, text, chunks, vectors: made, points });
+          if (upload) {
+            const id = `pdf-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            pdfFiles.set(id, upload.file);
+            add({ id, pdf: true, title: newTitle, text, chunks, vectors: made, points });
+          } else {
+            add({ title: newTitle, text, chunks, vectors: made, points });
+          }
           archivist("done", newTitle, chunks.length, index);
           added = true;
         } else {

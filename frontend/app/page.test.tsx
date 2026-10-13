@@ -23,7 +23,7 @@ test("the hero links to Ask and Upload", () => {
     "A language model that looks things up before it answers.",
   );
   expect(screen.getByRole("link", { name: "Ask a question" })).toHaveAttribute("href", "/ask");
-  expect(screen.getByRole("link", { name: "Add your own text" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Upload your own document" })).toHaveAttribute(
     "href",
     "/upload",
   );

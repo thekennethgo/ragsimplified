@@ -8,7 +8,7 @@ The design rule from the start was to keep every piece a real RAG system needs (
 
 ## The stack (ADR 001)
 
-The frontend is Next.js on Vercel, the backend is FastAPI on Render, and the database is Supabase Postgres with the pgvector extension. Embeddings and reranking come from Voyage AI, and the language model is Claude Haiku 4.5, chosen by an environment variable.
+The frontend is Next.js on Vercel, the backend is FastAPI on Render, and the database is Supabase Postgres with the pgvector extension. Embeddings and reranking come from Voyage AI, and the language model is chosen by an environment variable (ADR 001 named Claude Haiku 4.5; the live site now runs Google's Gemini 3.5 Flash Lite).
 
 The main reason for Postgres with pgvector is that one free database holds the chunks, the vectors and the full-text index, so meaning search and keyword search live in one place. Python was chosen for the backend because it has the best RAG libraries, and FastAPI streams events easily, which the animated characters need. Database changes are plain numbered `.sql` files applied by a small script, rather than an ORM, so the local, test and live databases cannot drift apart.
 
@@ -22,13 +22,17 @@ The first idea was to let any visitor upload a document into one shared library.
 
 ## Pasted texts stay private (ADR 002)
 
-Visitors paste text instead of uploading files, with a title and a limit of 20,000 characters. The backend cuts and embeds the text, hands the chunks and vectors back to the browser, and stores nothing. Every question then carries the visitor's chunks with it. The Scout searches the library in the database and the private chunks in memory, and merges the results.
+Visitors paste text, or upload a .md, .txt or PDF file, with a title and a limit of 20,000 characters. The backend cuts and embeds the text, hands the chunks and vectors back to the browser, and stores nothing. Every question then carries the visitor's chunks with it. The Scout searches the library in the database and the private chunks in memory, and merges the results.
 
-Other options were rejected. Temporary per-session rows in the database would still write visitor content to the server, and one missed filter could leak one visitor's text to another. Re-embedding on every question is slow and spends the embedding allowance. Because the backend never parses a visitor's file, there is also no file-parsing attack surface. The honest trade-offs are that private text is lost when the page is closed, has no page numbers, and still passes through Voyage and the language model provider while a question is answered.
+Other options were rejected. Temporary per-session rows in the database would still write visitor content to the server, and one missed filter could leak one visitor's text to another. Re-embedding on every question is slow and spends the embedding allowance. Because the backend never parses a visitor's file, there is also no file-parsing attack surface. The honest trade-offs are that private text is lost when the page is closed and still passes through Voyage and the language model provider while a question is answered. Private text had no page numbers at first; PDFs now have them (see below).
 
 ## A provider-agnostic language model client (ADR 003)
 
-A single small module is the only code that calls a language model. It has two implementations, one for OpenAI-style APIs and one for the Anthropic API, chosen by the `LLM_PROVIDER` setting. During development the project used Google Gemini's free tier, with Groq as a fallback. Gemini's free tier may use submitted content to improve Google products, so it is used for development only, with public test questions, and never on the live site. The live site is expected to use Claude Haiku with a monthly spend limit set in the Anthropic Console. Tests never call a language model; they use fakes.
+A single small module is the only code that calls a language model. It has two implementations, one for OpenAI-style APIs and one for the Anthropic API, chosen by the `LLM_PROVIDER` setting. During development the project used Google Gemini's free tier, with Groq as a fallback. Gemini's free tier may use submitted content to improve Google products, so it was used for development with public test questions. The live site now runs `gemini-3.5-flash-lite` through the OpenAI-compatible client; Claude Haiku with a monthly spend limit was the earlier expectation, and the Anthropic implementation is still there. Tests never call a language model; they use fakes.
+
+## Visitor PDFs are read in the browser
+
+A visitor can upload a PDF, but the server never receives the file. The browser extracts the text page by page with pdf.js, at most the first 10 pages and 20,000 characters of a file up to 5 MB, and sends only the page texts to the backend, which cuts and embeds them like any pasted text, keeping each chunk's page number. There are two reasons. The backend never parses a file from an untrusted visitor, so there is no file-parsing attack surface on the server. And the file never leaves the tab: it is kept in memory only, so when the cited passage is opened, the browser shows the real page with the passage marked. A scanned PDF with no text layer is refused, because there is no OCR.
 
 ## Hybrid search and a Judge
 

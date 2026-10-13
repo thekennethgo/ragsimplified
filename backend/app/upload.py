@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.events import StepEvent
 from app.map import Projection, get_projection
@@ -11,13 +11,29 @@ from app.pipeline.collector import Page
 from app.pipeline.translator import Embedder, VoyageEmbedder
 
 MAX_TEXT_CHARS = 20_000
+MAX_PDF_PAGES = 10
 
 router = APIRouter()
 
 
+class UploadPage(BaseModel):
+    number: int = Field(ge=1)
+    text: str
+
+
 class UploadRequest(BaseModel):
     title: str = Field(min_length=1, max_length=200)
-    text: str = Field(min_length=1, max_length=MAX_TEXT_CHARS)
+    # Pasted or file text, or the pages of a PDF the browser has already read: exactly one.
+    text: str | None = Field(default=None, min_length=1, max_length=MAX_TEXT_CHARS)
+    pages: list[UploadPage] | None = Field(default=None, min_length=1, max_length=MAX_PDF_PAGES)
+
+    @model_validator(mode="after")
+    def exactly_one_source(self) -> "UploadRequest":
+        if (self.text is None) == (self.pages is None):
+            raise ValueError("send either text or pages, not both and not neither")
+        if self.pages is not None and sum(len(p.text) for p in self.pages) > MAX_TEXT_CHARS:
+            raise ValueError(f"pages hold more than {MAX_TEXT_CHARS} characters")
+        return self
 
 
 def get_embedder() -> Embedder:
@@ -28,7 +44,10 @@ def run_upload(
     request: UploadRequest, embedder: Embedder, projection: Projection | None = None
 ) -> Iterator[StepEvent]:
     yield StepEvent(step="chopper", status="start")
-    chunks = chop([Page(number=None, text=request.text)])
+    if request.pages is not None:
+        chunks = chop([Page(number=p.number, text=p.text) for p in request.pages])
+    else:
+        chunks = chop([Page(number=None, text=request.text or "")])
     yield StepEvent(
         step="chopper",
         status="done",
@@ -50,7 +69,10 @@ def run_upload(
     vectors = embedder.embed([chunk.text for chunk in chunks], input_type="document")
     translated: dict = {
         "title": request.title,
-        "chunks": [{"position": c.position, "heading": c.heading, "text": c.text} for c in chunks],
+        "chunks": [
+            {"position": c.position, "heading": c.heading, "page": c.page, "text": c.text}
+            for c in chunks
+        ],
         # Rounded to keep the response small; the browser keeps these in memory.
         "vectors": [[round(v, 5) for v in vector] for vector in vectors],
     }

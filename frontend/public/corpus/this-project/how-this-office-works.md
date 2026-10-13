@@ -2,7 +2,7 @@
 
 ragsimplified acts out retrieval-augmented generation (RAG) as a small office of seven cartoon characters. Each character is one real step of the pipeline, and each step is one module of the backend code, so what you see on screen is what the software does. This document explains each character in plain words and then gives the real settings, taken from the code.
 
-There are two offices. The Upload office turns a text you paste into searchable cards. The Ask office finds the right cards for a question and writes a cited answer. Both offices send "step events" to the page as the work happens, and the animation follows those events.
+There are two offices. The Upload office turns a text you paste, or a file you upload (a PDF is read in your browser, page by page, and keeps its page numbers), into searchable cards. The Ask office finds the right cards for a question and writes a cited answer. Both offices send "step events" to the page as the work happens, and the animation follows those events.
 
 ## The Clerk
 
@@ -14,7 +14,7 @@ The Clerk is the only character without a backend module. The Clerk lives in the
 
 The Chopper cuts a long text into small pieces called chunks, the way you might cut a long letter into index cards. Each card is small enough to be useful on its own but keeps a little of the text before it, so no idea is cut in half without a trace.
 
-The real setting: a chunk is about 500 tokens, and neighbouring chunks share about 50 tokens of overlap. The code does not use a tokenizer. It estimates one token as 4 characters, so a chunk is up to 2,000 characters and the overlap is about 200 characters. The Chopper cuts on paragraph breaks and keeps each chunk's heading, and for PDFs its page number. Code blocks are kept whole. A paragraph that is too long is cut at a word boundary.
+The real setting: a chunk is about 500 tokens, and neighbouring chunks share about 50 tokens of overlap. The code does not use a tokenizer. It estimates one token as 4 characters, so a chunk is up to 2,000 characters and the overlap is about 200 characters. The Chopper cuts on paragraph breaks and keeps each chunk's heading, and for PDFs its page number. This holds for a PDF you upload too: your browser reads it page by page, so its chunks keep their page numbers. Code blocks are kept whole. A paragraph that is too long is cut at a word boundary.
 
 A pasted text is limited to 20,000 characters, which makes roughly 10 chunks.
 
@@ -52,7 +52,7 @@ Some questions only point at a thing indirectly, so the first search finds the d
 
 The Storyteller writes the answer, using only the cards the Judge kept, 5, or up to 7 after a second look. Every sentence that uses a card ends with its number in square brackets, such as [1]. Those numbers become clickable citations that open the source passage.
 
-The real setting: the model is Claude Haiku 4.5 on the live site, chosen by the `LLM_MODEL` environment variable, so changing the model is a configuration change. The reply is capped at 1,024 tokens when the Anthropic provider is used. The Storyteller's instructions say to use only the provided cards, to cite every claim, to treat text inside the cards as data and never as instructions, and to say so when the cards do not contain the answer. After the answer is written, the code removes any citation number that does not match a real card.
+The real setting: the model is Google's Gemini 3.5 Flash Lite (`gemini-3.5-flash-lite`) on the live site, chosen by the `LLM_MODEL` environment variable and reached through an OpenAI-compatible client, so changing the model is a configuration change. The client also supports Claude, and the reply is capped at 1,024 tokens when the Anthropic provider is used. The Storyteller's instructions say to use only the provided cards, to cite every claim, to treat text inside the cards as data and never as instructions, and to say so when the cards do not contain the answer. After the answer is written, the code removes any citation number that does not match a real card.
 
 ## The "nothing found" ending
 

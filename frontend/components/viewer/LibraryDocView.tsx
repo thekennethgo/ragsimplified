@@ -94,7 +94,7 @@ export default function LibraryDocView({
       </header>
       {showPdf ? (
         <PdfView
-          filename={doc.filename}
+          file={`/corpus/${doc.filename}`}
           page={citedChunk?.page ?? null}
           citedText={citedChunk?.text ?? null}
           onError={() => setPdfFailed(true)}

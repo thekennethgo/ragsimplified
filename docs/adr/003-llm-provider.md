@@ -47,3 +47,5 @@ Free tiers checked in October 2026 (from the providers' own docs where they publ
 - **Free-tier terms can change.** The numbers above must be re-checked before each decision that depends on them.
 - **PLAN.md changes.** Step 3.3 (`POST /ask`) and steps 4.3 and 4.4 should call `llm.py` instead of an Anthropic SDK directly, and a small step that adds `llm.py` and the env vars is needed before 3.3. This ADR does not change PLAN.md; the owner does that.
 - **Langfuse (step 4.6) cost reporting** needs per-model prices, and a free model has price zero.
+
+Update 2026-10-13: the live site runs `gemini-3.5-flash-lite` through the OpenAI-compatible client.
