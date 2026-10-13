@@ -82,7 +82,7 @@ export function clerkCopy(about: About | null): CharacterCopy {
     role: "takes your question to the team",
     plain:
       "I take your question, pin it on the board for the team, and bring the answer back to you.",
-    how: `The browser sends your question to the FastAPI backend's /ask endpoint. The cards in your folder live in this tab, so the browser includes them too (up to ${max}). The backend runs each step in order and streams its progress back as one JSON event per line. Every bubble, tab and animation on this page is driven by those events.`,
+    how: `The browser sends your question to the FastAPI backend's /ask endpoint. The cards in your folder live in this tab, so the browser includes them too (up to ${max}). The backend runs each step in order and streams its progress back as one JSON event per line. Every bubble, tab and animation on this page is driven by those events. On a second look the Clerk rewrites the question into a short search for the missing details.`,
     tech: ["Next.js · Vercel", "FastAPI · Render", "Streamed JSON events"],
     settings: [
       ["Endpoint", "POST /ask"],
@@ -97,7 +97,7 @@ export function askTranslatorCopy(about: About | null): CharacterCopy {
     role: "turns your question into a fingerprint",
     plain:
       "I turn your question into the same kind of fingerprint as the cards, so it can be compared with them by meaning. I also work out which of your words mattered most.",
-    how: `Your question goes to ${v(e?.model)}, marked as a query, and comes back as ${v(e?.dimensions)} numbers. To score each word, the question is fingerprinted again with that word left out: the further the fingerprint moves (1 − cosine similarity), the more the word mattered. Scores are scaled so the top word is 1.00. Only the first ${v(about?.translator.max_weighted_words)} words are scored.`,
+    how: `Your question goes to ${v(e?.model)}, marked as a query, and comes back as ${v(e?.dimensions)} numbers. To score each word, the question is fingerprinted again with that word left out: the further the fingerprint moves (1 − cosine similarity), the more the word mattered. Scores are scaled so the top word is 1.00. Only the first ${v(about?.translator.max_weighted_words)} words are scored. On a second look it fingerprints the Clerk's new query too.`,
     tech: [`${v(e?.provider)} · ${v(e?.model)}`, "Leave-one-out word scores"],
     settings: [
       ["Model", v(e?.model)],
@@ -109,13 +109,24 @@ export function askTranslatorCopy(about: About | null): CharacterCopy {
 
 export const askTranslatorSays = () => "Turning your question into numbers…";
 
+/** One sentence on the second look for the Judge's tab, from GET /about; empty until it loads. */
+export function secondLookLine(about: About | null): string {
+  const look = about?.second_look;
+  if (!look) return "";
+  if (!look.enabled) return " The second look is off.";
+  const check = look.decider
+    ? `${look.decider} estimates the chance that the best cards answer the question`
+    : "the language model decides whether the best cards answer the question";
+  return ` The second look is on: after I rule, ${check}. If they do not, a short language-model call writes one follow-up search, and the Scout searches a second time (at most once). I keep the best ${look.slots} cards of that second search, and they join the first search's best ${v(about?.judge.keep !== undefined ? about.judge.keep - look.slots : undefined)}.`;
+}
+
 export function scoutCopy(about: About | null): CharacterCopy {
   const s = about?.scout;
   return {
     role: "finds likely cards",
     plain:
       "I search the cabinet two ways at once: cards whose fingerprints sit closest to your question, and cards that use the same words. Then I merge both lists into one.",
-    how: `Meaning search uses pgvector's cosine distance over the HNSW index and takes the top ${v(s?.candidates)}. Word search uses Postgres full-text search (English stemming, ranked with ts_rank_cd) and takes the top ${v(s?.candidates)}. Your own cards are compared in the server's memory. The lists are merged with reciprocal rank fusion: each card scores the sum of 1 / (${v(s?.rrf_k)} + its rank) across the lists. Ranks can be added up even though the two searches score on different scales. The best ${v(s?.candidates)} go to the Judge.`,
+    how: `Meaning search uses pgvector's cosine distance over the HNSW index and takes the top ${v(s?.candidates)}. Word search uses Postgres full-text search (English stemming, ranked with ts_rank_cd) and takes the top ${v(s?.candidates)}. Your own cards are compared in the server's memory. The lists are merged with reciprocal rank fusion: each card scores the sum of 1 / (${v(s?.rrf_k)} + its rank) across the lists. Ranks can be added up even though the two searches score on different scales. The best ${v(s?.candidates)} go to the Judge. On a second look it searches again for the Clerk's new query and skips cards it already found.`,
     tech: ["pgvector · cosine", "Postgres full-text", "Reciprocal rank fusion"],
     settings: [
       ["Cards per search", v(s?.candidates)],
@@ -133,7 +144,7 @@ export function judgeCopy(about: About | null): CharacterCopy {
   return {
     role: "keeps only the best",
     plain: `Search is quick but rough. I read each card next to your question, score how well it really answers it, and keep only the best ${keep}.`,
-    how: `The question and the ${v(about?.scout.candidates)} candidates go to ${v(r?.provider)}'s ${v(r?.model)} reranker. It reads the question and each card together (a cross-encoder), which is more accurate than comparing fingerprints but too slow to run over the whole library. The ${keep} highest-scoring cards are kept, in their new order. No more than ${v(about?.judge.max_per_document)} cards come from the same document, so one document cannot fill every place. If the reranker fails, the Scout's order is used instead.`,
+    how: `The question and the ${v(about?.scout.candidates)} candidates go to ${v(r?.provider)}'s ${v(r?.model)} reranker. It reads the question and each card together (a cross-encoder), which is more accurate than comparing fingerprints but too slow to run over the whole library. The ${keep} highest-scoring cards are kept, in their new order. No more than ${v(about?.judge.max_per_document)} cards come from the same document, so one document cannot fill every place. If the reranker fails, the Scout's order is used instead.${secondLookLine(about)}`,
     tech: [`${v(r?.provider)} · ${v(r?.model)}`, "Cross-encoder reranking"],
     settings: [
       ["Model", v(r?.model)],

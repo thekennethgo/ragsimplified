@@ -10,7 +10,9 @@ from pydantic import BaseModel, Field
 from app.events import DeltaEvent, StepEvent
 from app.llm import LLM, get_llm
 from app.map import Projection, get_projection
+from app.pipeline import second_look
 from app.pipeline.citations import extract_citations
+from app.pipeline.decider import Decider, get_decider
 from app.pipeline.judge import Reranker, get_reranker, judge
 from app.pipeline.scout import CANDIDATES, PrivateChunk, Result, scout
 from app.pipeline.storyteller import build_prompt
@@ -90,12 +92,42 @@ def describe_judgement(candidates: list[Result], kept: list[Result]) -> list[dic
             "new_rank": r.new_rank,
             "rerank_score": None if r.rerank_score is None else round(r.rerank_score, 4),
             "source": r.source,
+            "document_id": r.document_id,
             "title": r.title,
+            "position": r.position,
             "page": r.page,
             "heading": r.heading,
         }
         for r in candidates
     ]
+
+
+def describe_final(first_round: list[Result], results: list[Result]) -> list[dict]:
+    """The cards that go to the Storyteller, in citation order, and which round each came from."""
+    from_first = {id(r) for r in first_round}
+    return [
+        {
+            "n": n,
+            "round": 1 if id(r) in from_first else 2,
+            "source": r.source,
+            "document_id": r.document_id,
+            "title": r.title,
+            "position": r.position,
+            "page": r.page,
+            "heading": r.heading,
+        }
+        for n, r in enumerate(results, start=1)
+    ]
+
+
+def _key(result: Result) -> tuple:
+    return (result.source, result.document_id or result.title, result.position)
+
+
+def _combine(first_round: list[Result], second_round: list[Result]) -> list[Result]:
+    """All of the first round's cards, then the second round's cards that are new."""
+    seen = {_key(r) for r in first_round}
+    return first_round + [r for r in second_round if _key(r) not in seen]
 
 
 def run_ask(
@@ -105,9 +137,15 @@ def run_ask(
     connect: Connect,
     reranker: Reranker,
     projection: Projection | None = None,
+    decider: Decider | None = None,
+    explain_words: bool = True,
 ) -> Iterator[StepEvent | DeltaEvent]:
     yield StepEvent(step="translator", status="start")
-    query, words = translate_question(embedder, request.question)
+    if explain_words:
+        query, words = translate_question(embedder, request.question)
+    else:  # the eval never looks at the word weights, so skip the extra embeddings
+        [query] = embedder.embed([request.question], input_type="query")
+        words = []
     translated: dict = {"words": words}
     if projection is not None:
         [translated["point"]] = projection.project([query])
@@ -117,7 +155,11 @@ def run_ask(
     private = [PrivateChunk(**chunk.model_dump()) for chunk in request.private_chunks]
     with connect() as conn:
         candidates = scout(conn, query, private, k=CANDIDATES, question=request.question)
-    yield StepEvent(step="scout", status="done", data={"results": describe_candidates(candidates)})
+    yield StepEvent(
+        step="scout",
+        status="done",
+        data={"results": describe_candidates(candidates), "round": 1},
+    )
 
     yield StepEvent(step="judge", status="start")
     judgement = judge(request.question, candidates, reranker)
@@ -128,8 +170,67 @@ def run_ask(
         data={
             "results": describe_judgement(judgement.candidates, results),
             "fallback": judgement.fallback,
+            "round": 1,
+            "second_look": bool(results) and second_look.enabled(),
         },
     )
+
+    if results and second_look.enabled():
+        yield StepEvent(step="second_look", status="start")
+        follow_up, probability = second_look.decide(request.question, results, llm, decider)
+        yield StepEvent(
+            step="second_look",
+            status="done",
+            data={
+                "query": follow_up,
+                "enough": None if probability is None else round(probability, 3),
+                "decided_by": (
+                    "decider"
+                    if probability is not None and probability >= second_look.SECOND_LOOK_THRESHOLD
+                    else "llm"
+                ),
+            },
+        )
+        if follow_up:
+            first_round = results
+            seen = {_key(r) for r in candidates}
+            yield StepEvent(step="translator", status="start")
+            [follow_up_vector] = embedder.embed([follow_up], input_type="query")
+            rewritten: dict = {"round": 2, "query": follow_up}
+            if projection is not None:
+                [rewritten["point"]] = projection.project([follow_up_vector])
+            yield StepEvent(step="translator", status="done", data=rewritten)
+            yield StepEvent(step="scout", status="start")
+            with connect() as conn:
+                found = scout(conn, follow_up_vector, private, k=CANDIDATES, question=follow_up)
+            new = [r for r in found if _key(r) not in seen]
+            yield StepEvent(
+                step="scout",
+                status="done",
+                data={
+                    "results": describe_candidates(new),
+                    "round": 2,
+                    "query": follow_up,
+                    "skipped": len(found) - len(new),
+                },
+            )
+
+            yield StepEvent(step="judge", status="start")
+            # Reranked against the follow-up: the linked text rarely repeats the question's words.
+            second = judge(follow_up, new, reranker, keep=second_look.SECOND_LOOK_SLOTS)
+            results = _combine(first_round, second.kept)
+            yield StepEvent(
+                step="judge",
+                status="done",
+                data={
+                    "results": describe_judgement(second.candidates, second.kept),
+                    "fallback": second.fallback,
+                    "round": 2,
+                    "query": follow_up,
+                    "final": [r.title for r in results],
+                    "final_cards": describe_final(first_round, results),
+                },
+            )
 
     if not results:
         yield StepEvent(step="storyteller", status="start")
@@ -161,9 +262,10 @@ def stream(
     connect: Connect,
     reranker: Reranker,
     projection: Projection | None,
+    decider: Decider | None,
 ) -> Iterator[str]:
     try:
-        for event in run_ask(request, embedder, llm, connect, reranker, projection):
+        for event in run_ask(request, embedder, llm, connect, reranker, projection, decider):
             yield event.to_line()
     except Exception:
         yield StepEvent(step="error", status="done", data={"message": "Ask failed"}).to_line()
@@ -177,8 +279,9 @@ def ask(
     connect: Connect = Depends(get_connect),
     reranker: Reranker = Depends(get_reranker),
     projection: Projection | None = Depends(get_projection),
+    decider: Decider | None = Depends(get_decider),
 ) -> StreamingResponse:
     return StreamingResponse(
-        stream(request, embedder, llm, connect, reranker, projection),
+        stream(request, embedder, llm, connect, reranker, projection, decider),
         media_type="application/x-ndjson",
     )

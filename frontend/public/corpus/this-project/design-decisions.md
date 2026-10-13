@@ -34,6 +34,10 @@ A single small module is the only code that calls a language model. It has two i
 
 The first version of the Scout compared fingerprints only. Kenneth then added keyword search and merged both lists with reciprocal rank fusion, and added the Judge, which reranks 20 candidates down to 5. Reranking is a common step in industry RAG systems, and having it as its own character makes the idea visible.
 
+## A second look for questions that need two searches (ADR 006)
+
+Some questions only point at a thing indirectly, so the first search finds the document that names it, and a second search for that name finds the details. One search cannot do both, because the name that links the documents is only found by reading the first results. After the Judge, a free decision model checks whether the sources answer the question, and only when it doubts does a short language model call write one follow-up search. The check reads the whole cards, and the second look only adds cards to the Judge's five; it never removes one. It runs at most once. The reasons and consequences are in ADR 006.
+
 ## The Fact-Checker was dropped to ship
 
 The original plan had an eighth character, a Fact-Checker that would check each cited claim against its source with a second language model call. Kenneth skipped it for version 1, along with the evaluation steps that depended on it, evaluation runs in continuous integration, and tracing. The reason is simple: they were not needed to ship a working product, and each one added setup and cost. They are marked as skipped in the plan and can be revisited after launch. The citation check that remains is cheaper: the code removes any citation number that does not match a real source.

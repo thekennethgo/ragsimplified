@@ -22,11 +22,21 @@ const ABOUT = {
   translator: { max_weighted_words: 40 },
   scout: { candidates: 20, rrf_k: 60, max_private_chunks: 60 },
   judge: { keep: 5, max_per_document: 2 },
+  second_look: {
+    enabled: true,
+    decider: "inception/mercury-decide:free",
+    threshold: 0.5,
+    max_cards: 7,
+    slots: 2,
+    prompt: "STUB",
+  },
   storyteller_prompt: "STUB SYSTEM PROMPT",
 };
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
+// When set, a second_look_rewrite scene never reaches its end (the rewrite is "in progress").
+const mid = vi.hoisted(() => ({ rewrite: false }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
 vi.mock("../../lib/office/useFollow", () => ({
@@ -42,7 +52,7 @@ vi.mock("../../lib/office/useSceneQueue", () => {
     ) => {
       emitted.push(event);
       hooks?.onStart?.();
-      hooks?.onEnd?.();
+      if (!(mid.rewrite && event.name === "second_look_rewrite")) hooks?.onEnd?.();
     },
     clear: () => undefined,
     skipAll: () => undefined,
@@ -55,6 +65,7 @@ beforeEach(() => {
   resetHealthCache();
   resetAboutCache();
   emitted.length = 0;
+  mid.rewrite = false;
   search.params = new URLSearchParams();
 });
 
@@ -1177,6 +1188,346 @@ test("the Clerk tab shows the question that was asked", async () => {
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  expect(screen.getByText(/You asked: When was Apple founded\?/)).toBeInTheDocument();
-  expect(screen.getByText(/Cards in your folder searched: none/)).toBeInTheDocument();
+  const card = screen.getByText("You asked").closest("div") as HTMLElement;
+  expect(card).toHaveTextContent("When was Apple founded?");
+  expect(screen.getByText("Cards from your folder searched: none")).toBeInTheDocument();
+});
+
+const SECOND_LOOK_EVENTS = [
+  ...EVENTS.slice(0, 5), // translator, scout, judge start (round 1)
+  { ...EVENTS[5], data: { ...EVENTS[5].data, round: 1, second_look: true } },
+  { step: "second_look", status: "start" },
+  {
+    step: "second_look",
+    status: "done",
+    data: { query: "Batam city overview", enough: 0.2, decided_by: "llm" },
+  },
+  { step: "translator", status: "start" },
+  {
+    step: "translator",
+    status: "done",
+    data: { round: 2, query: "Batam city overview", point: { x: 1, y: 2 } },
+  },
+  { step: "scout", status: "start" },
+  {
+    step: "scout",
+    status: "done",
+    data: {
+      round: 2,
+      query: "Batam city overview",
+      skipped: 2,
+      results: [
+        {
+          rank: 1,
+          source: "library",
+          title: "Batam",
+          document_id: 9,
+          position: 0,
+          page: null,
+          heading: null,
+          score: 0.03,
+          found_by: "both",
+        },
+      ],
+    },
+  },
+  { step: "judge", status: "start" },
+  {
+    step: "judge",
+    status: "done",
+    data: {
+      round: 2,
+      query: "Batam city overview",
+      results: [
+        {
+          n: 1,
+          kept: true,
+          old_rank: 1,
+          new_rank: 1,
+          rerank_score: 0.8,
+          source: "library",
+          document_id: 9,
+          title: "Batam",
+          position: 0,
+          page: null,
+          heading: null,
+        },
+      ],
+      fallback: false,
+      final: ["Apple Inc.", "Batam"],
+      final_cards: [
+        { n: 1, round: 1, source: "library", document_id: 1, title: "Apple Inc.", position: 0, page: null, heading: "Founding" },
+        { n: 2, round: 2, source: "library", document_id: 9, title: "Batam", position: 0, page: null, heading: null },
+      ],
+    },
+  },
+  ...EVENTS.slice(6),
+];
+
+function streamed() {
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  return { push: (event: object) => push(event), close: () => close() };
+}
+
+test("the second look's bubbles follow the story: the Judge checks, the Scout waits for the new fingerprint", async () => {
+  const { push, close } = streamed();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+
+  for (const e of SECOND_LOOK_EVENTS.slice(0, 6)) push(e);
+  push({ step: "second_look", status: "start" });
+  // The Judge is checking; the Scout has no bubble at all.
+  const checking = await screen.findByRole("group", { name: "Judge" });
+  expect(within(checking).getByText("Checking whether that's enough…")).toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: "Scout" })).toBeNull();
+
+  push({ step: "second_look", status: "done", data: { query: "Batam city overview", enough: 0.2 } });
+  push({ step: "translator", status: "start" });
+  // Round 2 translator start: the Translator works, still no second-look text for the Scout.
+  await screen.findByRole("group", { name: "Translator" });
+  expect(screen.queryByText(/Taking a second look/)).toBeNull();
+  push({ step: "translator", status: "done", data: { round: 2, query: "Batam city overview" } });
+  push({ step: "scout", status: "start" });
+  expect(
+    await screen.findByText("Taking a second look: “Batam city overview”"),
+  ).toBeInTheDocument();
+  close();
+});
+
+test("a check that says enough sends the Judge's bubble back to done", async () => {
+  const { push, close } = streamed();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is RAG?");
+  for (const e of SECOND_LOOK_EVENTS.slice(0, 6)) push(e);
+  push({ step: "second_look", status: "start" });
+  await screen.findByText("Checking whether that's enough…");
+  push({ step: "second_look", status: "done", data: { query: null, enough: 0.9, decided_by: "decider" } });
+  await waitFor(() => expect(screen.queryByRole("group", { name: "Judge" })).toBeNull());
+  close();
+});
+
+async function runSecondLook() {
+  stubAsk(SECOND_LOOK_EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+}
+
+const pressed = (name: string) => screen.getByRole("button", { name }).getAttribute("aria-pressed");
+
+test("a second look gives the Clerk, Translator, Scout and Judge a round switch, opened on round 2", async () => {
+  await runSecondLook();
+  expect(names()).toEqual(
+    expect.arrayContaining(["judge_ruled", "second_look_rewrite", "translator_start", "judge_done"]),
+  );
+  // The round 2 verdict is not "nothing found": the Clerk comes back with the answer.
+  expect(names()).toContain("clerk_back");
+  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+    fireEvent.click(screen.getByRole("button", { name: tab }));
+    expect(pressed("Second look")).toBe("true");
+    expect(pressed("Initial")).toBe("false");
+  }
+  fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
+  expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
+});
+
+test("the Clerk's round 2 page shows the new query and who decided", async () => {
+  await runSecondLook();
+  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+  const board = screen.getByText("On the board").closest("div") as HTMLElement;
+  expect(board).toHaveTextContent("Batam city overview");
+  expect(screen.getByText("Mercury Decide: 20% sure the sources were enough")).toBeInTheDocument();
+  expect(screen.getByTestId("decide-meter-fill")).toHaveStyle({ width: "20%" });
+  expect(screen.getByTestId("decide-meter-tick")).toHaveStyle({ left: "50%" });
+  expect(screen.getByText("needs 50%")).toBeInTheDocument();
+  expect(screen.queryByText("Decided by the language model")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
+  const asked = screen.getByText("You asked").closest("div") as HTMLElement;
+  expect(asked).toHaveTextContent("What is Kenneth's hometown like?");
+});
+
+test("the Clerk says the language model decided when no probability was given", async () => {
+  stubAsk(
+    SECOND_LOOK_EVENTS.map((e) =>
+      (e as { step: string; status?: string }).step === "second_look" &&
+      (e as { status?: string }).status === "done"
+        ? { ...e, data: { query: "Batam city overview", enough: null, decided_by: "llm" } }
+        : e,
+    ),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+  expect(screen.getByText("Decided by the language model")).toBeInTheDocument();
+  expect(screen.getByText("The language model decided.")).toBeInTheDocument();
+  expect(screen.queryByTestId("decide-meter-fill")).toBeNull();
+});
+
+test("the Translator's round 2 page shows the new query and no word blocks; round 1 keeps its words", async () => {
+  await runSecondLook();
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect(screen.getByText("Fingerprinted the Clerk's new query: “Batam city overview”")).toBeInTheDocument();
+  expect(
+    screen.getByText("Word weights are only worked out for your own question (see Initial)."),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/Which words mattered/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
+  expect(screen.getByText(/Which words mattered/)).toBeInTheDocument();
+});
+
+test("the Scout's round 2 page shows the skipped chip and the new list", async () => {
+  await runSecondLook();
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(screen.queryByText(/Searched for/)).toBeNull();
+  expect(screen.getByText("2 already found, skipped")).toBeInTheDocument();
+  expect(screen.getByText("1 cards found")).toBeInTheDocument();
+  expect(screen.getByText("Batam")).toBeInTheDocument();
+  expect(screen.queryByText(/Apple Inc\./)).toBeNull();
+  // Round 1 is still round 1's list.
+  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
+  expect(screen.getByText("3 cards found")).toBeInTheDocument();
+  expect(screen.queryByText(/already found, skipped/)).toBeNull();
+});
+
+test("the Judge's round 1 page says a second look is coming; round 2 shows the handed-over cards", async () => {
+  await runSecondLook();
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  // Round 2 page: two blocks.
+  expect(screen.getByText("New cards, ranked against “Batam city overview”")).toBeInTheDocument();
+  const handed = screen.getByText("Handed to the Storyteller").parentElement as HTMLElement;
+  expect(within(handed).getByText("Initial")).toBeInTheDocument();
+  expect(within(handed).getByText("Second look")).toBeInTheDocument();
+  expect(screen.queryByText("Made room for the second look")).toBeNull();
+  // Round 1 page: the banner and the way back to round 2.
+  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
+  expect(
+    screen.getByText("Not enough to answer yet. Second look: searching for “Batam city overview”"),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Kept: the best 1 of 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "See the second look" }));
+  expect(pressed("Second look")).toBe("true");
+});
+
+test("a run without a second look has no round switch and the Judge says it was enough", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+    fireEvent.click(screen.getByRole("button", { name: tab }));
+    expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
+  }
+  expect(screen.getByText("Enough to answer. These cards go to the Storyteller.")).toBeInTheDocument();
+});
+
+test("a check that says enough shows the Judge's banner with the decision", async () => {
+  stubAsk([
+    ...EVENTS.slice(0, 5),
+    { ...EVENTS[5], data: { ...EVENTS[5].data, round: 1, second_look: true } },
+    { step: "second_look", status: "start" },
+    { step: "second_look", status: "done", data: { query: null, enough: 0.9, decided_by: "decider" } },
+    ...EVENTS.slice(6),
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is RAG?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  expect(screen.getByText("Enough to answer. These cards go to the Storyteller.")).toBeInTheDocument();
+  expect(screen.getByText(/Mercury Decide judged the sources enough \(90% sure they were\)/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
+});
+
+test("a new question removes the round switch", async () => {
+  let events: object[] = SECOND_LOOK_EVENTS;
+  stubFetch(() => ndjson(events));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(screen.getByRole("button", { name: "Initial" })).toBeInTheDocument();
+  events = EVENTS;
+  ask("Another question?");
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Initial" })).toBeNull());
+});
+
+test("the Judge's tab says how the second look works, from GET /about", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  expect(await screen.findByText(/The second look is on/)).toBeInTheDocument();
+});
+
+test("the question box says what is sent to OpenRouter's Mercury Decide", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.getByText(/OpenRouter's Mercury Decide \(a yes\/no check on the library passages found\)/)).toBeInTheDocument();
+});
+
+test("while the Clerk rewrites the question the Judge and the Clerk say so", async () => {
+  mid.rewrite = true;
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  for (const e of SECOND_LOOK_EVENTS.slice(0, 6)) push(e);
+  push({ step: "second_look", status: "start" });
+  push({ step: "second_look", status: "done", data: { query: "Batam city overview", enough: 0.2 } });
+  expect(await screen.findByText("We need more on: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("Rewriting the question: “Batam city overview”")).toBeInTheDocument();
+  expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_rewrite"]));
+  close();
+});
+
+test("the second look fills the map overlay with its star and candidates, and a new question clears it", async () => {
+  let events: object[] = SECOND_LOOK_EVENTS;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url.endsWith("/health")
+          ? new Response("{}")
+          : url.endsWith("/about")
+            ? new Response(JSON.stringify(ABOUT))
+            : url.endsWith("/library")
+              ? new Response("[]")
+              : url.endsWith("/map")
+                ? new Response(
+                    JSON.stringify([
+                      { chunk_id: 1, document_id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", position: 0, heading: null, x: 0, y: 0 },
+                      { chunk_id: 2, document_id: 9, title: "Batam", filename: "rag-basics/batam.md", position: 0, heading: null, x: 1, y: 1 },
+                    ]),
+                  )
+                : ndjson(events),
+      ),
+    ),
+  );
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect((await screen.findAllByTestId("follow-up-marker")).length).toBeGreaterThan(0);
+  expect(screen.getAllByTestId("follow-up-candidate-ring").length).toBeGreaterThan(0);
+  events = EVENTS;
+  ask("Another question?");
+  await waitFor(() => expect(screen.queryByTestId("follow-up-marker")).toBeNull());
 });

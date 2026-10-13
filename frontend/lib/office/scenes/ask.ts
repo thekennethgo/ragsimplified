@@ -333,6 +333,70 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
   }
   const nothingToDo = () => gsap.timeline({ paused: true }).to({}, { duration: 0.01 });
 
+  // The Clerk's marker strokes at the whiteboard's edge, his arm in view (the board faces away).
+  function writeOnBoard(tl: gsap.core.Timeline) {
+    tl.set(q("#cl-wait, #cl-clip-side"), { opacity: 0 }, "+=0.1").set(
+      q("#cl-write"),
+      { opacity: 1, x: 0, y: 0 },
+      "<",
+    );
+    [
+      [3, -6],
+      [-2, 1],
+      [4, -4],
+      [-1, 3],
+      [3, -2],
+      [0, 4],
+    ].forEach(([x, y]) =>
+      // six strokes of the marker
+      tl.to(q("#cl-write"), { x, y, duration: 0.24, ease: "sine.inOut" }),
+    );
+    tl.to(q("#cl-write"), { x: 0, y: 0, duration: 0.15 })
+      .set(q("#cl-write"), { opacity: 0 })
+      .set(q("#cl-wait, #cl-clip-side"), { opacity: 1 }, "<");
+  }
+
+  // Judge, ruling: ranks on the board, the pile becomes the kept stack and rejects, the Judge holds them.
+  function judgeRules(tl: gsap.core.Timeline) {
+    tl.to(q("#jd-arm-up"), { x: 0, duration: 0.2 })
+      .set(q("#d-kept"), { opacity: 1 })
+      .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.12 }) // ranks on the board
+      .to(q("#j-pile"), { opacity: 0, duration: 0.25 })
+      .to(q("#kept-stack, #j-rejects"), { opacity: 1, duration: 0.25 }, "<");
+    armUp(tl, "jd", false);
+    tl.set(q("#desk-mag-lens, #desk-mag-handle"), { opacity: 1 }, "<")
+      .set(q("#kept-stack, #j-rejects"), { opacity: 0 }, "+=0.2")
+      .set(q("#jd-held-kept, #jd-held-rejects"), { opacity: 1 }, "<");
+  }
+
+  // Judge, handing over: to the Storyteller's desk, the handover, the rejects back, home.
+  function judgeHandsOver(tl: gsap.core.Timeline) {
+    // straight over to the far side of the Storyteller's desk, across from her
+    tl.call(behindDesk, undefined, "+=0.1");
+    walk(tl, "jd", P.jdAcrossDesk);
+    face(tl, "jd", true); // facing the Storyteller
+    // hand to hand: the papers go into the Storyteller's raised hand, then onto the desk
+    tl.set(q("#jd-held-kept"), { opacity: 0 }, "+=0.1")
+      .set(q("#a-handover"), { ...HANDOVER_FROM, opacity: 1 }, "<") // (a set, not a fromTo: a fromTo would show it from the start)
+      .to(q("#a-handover"), { ...HANDOVER_TO, duration: 0.45, ease: "power2.inOut" }, "<");
+    armUp(tl, "st", true);
+    tl.set(q("#a-handover"), { opacity: 0 }, "<");
+    armUp(tl, "st", false, "+=0.5");
+    tl.fromTo(
+      q("#st-kept"),
+      { ...KEPT_FROM, opacity: 0 },
+      { x: 0, y: 0, opacity: 1, duration: 0.35, ease: "power2.out" },
+      "<",
+    ).addLabel("handoff"); // the documents are on the Storyteller's desk
+    walk(tl, "jd", P.jdPastDesk, "+=0.2");
+    tl.call(inCrew);
+    walk(tl, "jd", P.jdAtFiles);
+    tl.to(q("#jd-held-rejects"), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // back into the cabinet
+      .set(q("#jd-held-rejects"), { x: 0 });
+    walk(tl, "jd", P.jdSpot, "+=0.2");
+    faceHome(tl, "jd");
+  }
+
   // ---------- scenes: each returns a paused timeline ----------
   const scenes: Record<string, (data?: Record<string, unknown>) => gsap.core.Timeline> = {
     // In through the QUERY door, behind the whiteboard, writes the question on it for the crew,
@@ -349,26 +413,8 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       tl.to(q("#a-door-open"), { opacity: 0, duration: 0.25 });
       walk(tl, "cl", P.clAtBoard, "<"); // straight along behind the whiteboard to its right end
       face(tl, "cl", true); // facing the board; his arm goes round its edge
-      tl.set(q("#cl-wait, #cl-clip-side"), { opacity: 0 }, "+=0.1").set(
-        q("#cl-write"),
-        { opacity: 1, x: 0, y: 0 },
-        "<",
-      );
-      [
-        [3, -6],
-        [-2, 1],
-        [4, -4],
-        [-1, 3],
-        [3, -2],
-        [0, 4],
-      ].forEach(([x, y]) =>
-        // six strokes of the marker, in view at the board's edge
-        tl.to(q("#cl-write"), { x, y, duration: 0.24, ease: "sine.inOut" }),
-      );
-      tl.to(q("#cl-write"), { x: 0, y: 0, duration: 0.15 })
-        .set(q("#cl-write"), { opacity: 0 })
-        .set(q("#cl-wait, #cl-clip-side"), { opacity: 1 }, "<")
-        .addLabel("handoff"); // the question is on the board: the Translator can start
+      writeOnBoard(tl);
+      tl.addLabel("handoff"); // the question is on the board: the Translator can start
       face(tl, "cl", false, "+=0.2"); // then waits beside the board, facing the room
       return tl;
     },
@@ -511,39 +557,42 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     judge_done(data = {}) {
       if (data.nothing) return judgeNothing();
       const tl = gsap.timeline({ paused: true });
-      tl.to(q("#jd-arm-up"), { x: 0, duration: 0.2 })
-        .set(q("#d-kept"), { opacity: 1 })
-        .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.12 }) // ranks on the board
-        .to(q("#j-pile"), { opacity: 0, duration: 0.25 })
-        .to(q("#kept-stack, #j-rejects"), { opacity: 1, duration: 0.25 }, "<");
-      armUp(tl, "jd", false);
-      tl.set(q("#desk-mag-lens, #desk-mag-handle"), { opacity: 1 }, "<")
-        .set(q("#kept-stack, #j-rejects"), { opacity: 0 }, "+=0.2")
-        .set(q("#jd-held-kept, #jd-held-rejects"), { opacity: 1 }, "<");
-      // straight over to the far side of the Storyteller's desk, across from her
-      tl.call(behindDesk, undefined, "+=0.1");
-      walk(tl, "jd", P.jdAcrossDesk);
-      face(tl, "jd", true); // facing the Storyteller
-      // hand to hand: the papers go into the Storyteller's raised hand, then onto the desk
-      tl.set(q("#jd-held-kept"), { opacity: 0 }, "+=0.1")
-        .set(q("#a-handover"), { ...HANDOVER_FROM, opacity: 1 }, "<") // (a set, not a fromTo: a fromTo would show it from the start)
-        .to(q("#a-handover"), { ...HANDOVER_TO, duration: 0.45, ease: "power2.inOut" }, "<");
-      armUp(tl, "st", true);
-      tl.set(q("#a-handover"), { opacity: 0 }, "<");
-      armUp(tl, "st", false, "+=0.5");
-      tl.fromTo(
-        q("#st-kept"),
-        { ...KEPT_FROM, opacity: 0 },
-        { x: 0, y: 0, opacity: 1, duration: 0.35, ease: "power2.out" },
-        "<",
-      ).addLabel("handoff"); // the documents are on the Storyteller's desk
-      walk(tl, "jd", P.jdPastDesk, "+=0.2");
-      tl.call(inCrew);
-      walk(tl, "jd", P.jdAtFiles);
-      tl.to(q("#jd-held-rejects"), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // back into the cabinet
-        .set(q("#jd-held-rejects"), { x: 0 });
-      walk(tl, "jd", P.jdSpot, "+=0.2");
+      judgeRules(tl);
+      judgeHandsOver(tl);
+      return tl;
+    },
+
+    // Judge, when a second look will follow: rules and keeps the cards at the desk.
+    judge_ruled() {
+      const tl = gsap.timeline({ paused: true });
+      judgeRules(tl);
+      return tl;
+    },
+
+    // Judge, when the check says the sources are enough: hands the cards over.
+    judge_handover() {
+      const tl = gsap.timeline({ paused: true });
+      judgeHandsOver(tl);
+      return tl;
+    },
+
+    // Judge asks the Clerk to rewrite the question: the Clerk writes again at the board, the Judge
+    // walks home still holding the cards and puts them back on the desk pile for the second round.
+    second_look_rewrite() {
+      const tl = gsap.timeline({ paused: true });
+      walk(tl, "jd", P.jdAtClerk);
+      face(tl, "jd", true); // turn to the Clerk
+      face(tl, "cl", false, "<"); // and the Clerk turns to the Judge
+      tl.to({}, { duration: 0.8 }); // the Judge makes the request
+      face(tl, "cl", true); // the Clerk turns to the board
+      writeOnBoard(tl);
+      tl.addLabel("handoff"); // the board is rewritten: the Translator can start again
+      face(tl, "cl", false, "+=0.2");
+      walk(tl, "jd", P.jdSpot, "<");
       faceHome(tl, "jd");
+      tl.set(q("#jd-held-kept, #jd-held-rejects"), { opacity: 0 }, "+=0.1") // the cards back on the pile
+        .set(q("#d-kept"), { opacity: 0 }, "<")
+        .to(q("#j-pile"), { opacity: 1, duration: 0.25 }, "<");
       return tl;
     },
 

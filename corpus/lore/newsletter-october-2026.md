@@ -44,7 +44,7 @@ One blue scarf, one pair of reading glasses and a single left glove are at the Q
 
 ## Staff spotlight: the facilities team
 
-The facilities team has had a busy first month. It has fitted three radiators, replaced the Query Desk bell cord twice, found the missing key to the Map Room, and learned that the lift stops when the building goes to sleep. The team lead says the best part of the job is the quiet at 06:45, before the building wakes up. The worst part is the yoghurts.
+The facilities team has had a busy first month. It has fitted three radiators, replaced the Query Desk bell cord twice, found the missing key to the Map Room, and learned that the lift stops when the building goes to sleep. It also counted the chairs in the Reading Room, which has nine, one of which is always taken. The team lead says the best part of the job is the quiet at 06:45, before the building wakes up. The worst part is the yoghurts.
 
 ## From the Map Room
 

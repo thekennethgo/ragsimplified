@@ -15,7 +15,6 @@ The Wikipedia articles below were the placeholder library before the launch libr
 | `android.pdf` | https://en.wikipedia.org/wiki/Android_(operating_system), rendered to a 27-page PDF (so page numbers and the PDF path are tested) |
 | `samsung-galaxy.md` | https://en.wikipedia.org/wiki/Samsung_Galaxy |
 | `microsoft.md` | https://en.wikipedia.org/wiki/Microsoft |
-| `search-engine.md` | https://en.wikipedia.org/wiki/Search_engine |
 | `star-wars.md` | https://en.wikipedia.org/wiki/Star_Wars |
 | `star-wars-film.md` | https://en.wikipedia.org/wiki/Star_Wars_(film) |
 | `the-empire-strikes-back.md` | https://en.wikipedia.org/wiki/The_Empire_Strikes_Back |

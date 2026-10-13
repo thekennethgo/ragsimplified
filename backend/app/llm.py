@@ -27,8 +27,13 @@ class Message(TypedDict):
 
 
 class LLM(Protocol):
-    def stream(self, system: str, messages: list[Message]) -> Iterator[str]:
-        """Yield the reply as it is generated, piece by piece."""
+    def stream(
+        self, system: str, messages: list[Message], *, max_tokens: int | None = None
+    ) -> Iterator[str]:
+        """Yield the reply as it is generated, piece by piece.
+
+        `max_tokens` caps the reply's length when set; otherwise the provider's default applies.
+        """
         ...
 
 
@@ -77,12 +82,16 @@ class OpenAICompatibleLLM:
         self.model = model
         self.client = client or httpx.Client(timeout=httpx.Timeout(60, read=120))
 
-    def stream(self, system: str, messages: list[Message]) -> Iterator[str]:
+    def stream(
+        self, system: str, messages: list[Message], *, max_tokens: int | None = None
+    ) -> Iterator[str]:
         body = {
             "model": self.model,
             "stream": True,
             "messages": [{"role": "system", "content": system}, *messages],
         }
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
         headers = {"Authorization": f"Bearer {self.api_key}"}
         for event in _data_lines(_open_stream(self.client, self.url, headers, body)):
             for choice in event.get("choices", []):
@@ -97,10 +106,12 @@ class AnthropicLLM:
         self.model = model
         self.client = client or httpx.Client(timeout=httpx.Timeout(60, read=120))
 
-    def stream(self, system: str, messages: list[Message]) -> Iterator[str]:
+    def stream(
+        self, system: str, messages: list[Message], *, max_tokens: int | None = None
+    ) -> Iterator[str]:
         body = {
             "model": self.model,
-            "max_tokens": ANTHROPIC_MAX_TOKENS,
+            "max_tokens": max_tokens if max_tokens is not None else ANTHROPIC_MAX_TOKENS,
             "stream": True,
             "system": system,
             "messages": messages,
@@ -120,7 +131,9 @@ class FakeLLM:
         self.reply = reply
         self.calls: list[tuple[str, list[Message]]] = []
 
-    def stream(self, system: str, messages: list[Message]) -> Iterator[str]:
+    def stream(
+        self, system: str, messages: list[Message], *, max_tokens: int | None = None
+    ) -> Iterator[str]:
         self.calls.append((system, messages))
         words = self.reply.split(" ")
         for i, word in enumerate(words):

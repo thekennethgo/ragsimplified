@@ -5,13 +5,18 @@ import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
+from app import ask as ask_module
 from app.ask import MAX_PRIVATE_CHUNKS, NOTHING_FOUND, get_connect
 from app.llm import FakeLLM, get_llm
 from app.main import app
+from app.map import get_projection
+from app.pipeline import second_look
 from app.pipeline.archivist import hash_pages, save_document
 from app.pipeline.chopper import Chunk
 from app.pipeline.collector import Page
+from app.pipeline.decider import FakeDecider, get_decider
 from app.pipeline.judge import FakeReranker, get_reranker
+from app.pipeline.scout import Result
 from app.pipeline.translator import FakeEmbedder
 from app.upload import get_embedder
 
@@ -22,13 +27,33 @@ QUESTION = "ask-test unique question text 4417"
 fake = FakeEmbedder()
 
 
+class RoutingLLM(FakeLLM):
+    """Answers the second look's call with `look_reply` and every other call with `reply`.
+
+    `calls` holds only the Storyteller's calls; the second look's are in `look_calls`.
+    """
+
+    def __init__(self, reply: str, look_reply: str = "DONE") -> None:
+        super().__init__(reply)
+        self.look_reply = look_reply
+        self.look_calls: list[tuple[str, list]] = []
+
+    def stream(self, system, messages, *, max_tokens=None):
+        if system == second_look.PROMPT:
+            self.look_calls.append((system, messages))
+            yield self.look_reply
+            return
+        yield from super().stream(system, messages, max_tokens=max_tokens)
+
+
 @pytest.fixture
 def llm():
-    return FakeLLM("The answer is here [1].")
+    return RoutingLLM("The answer is here [1].")
 
 
 @pytest.fixture
 def client(llm):
+    app.dependency_overrides[get_decider] = lambda: None
     app.dependency_overrides[get_embedder] = lambda: fake
     app.dependency_overrides[get_llm] = lambda: llm
     app.dependency_overrides[get_reranker] = lambda: FakeReranker()
@@ -81,6 +106,8 @@ def test_streams_steps_then_answer_from_the_library(client, llm, library_chunk):
         ("scout", "done"),
         ("judge", "start"),
         ("judge", "done"),
+        ("second_look", "start"),
+        ("second_look", "done"),
         ("storyteller", "start"),
         ("storyteller", "done"),
     ]
@@ -262,3 +289,265 @@ def test_translator_event_carries_word_weights_and_scout_event_carries_both_rank
     assert mine["vector_rank"] is not None and mine["vector_score"] == 1.0
     assert mine["found_by"] in {"vector", "both"}
     assert set(mine) >= {"keyword_rank", "keyword_score", "matched_words", "found_by"}
+
+
+# --- the second look (no database: the Scout is faked) ---------------------------------------
+
+
+class _Conn:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+class RecordingReranker(FakeReranker):
+    def __init__(self):
+        self.queries = []
+
+    def rerank(self, query, documents):
+        self.queries.append(query)
+        return super().rerank(query, documents)
+
+
+def lib(doc_id, title, text, position=0):
+    return Result("library", 0.5, title, position, None, None, text, doc_id)
+
+
+ROUND_1 = [lib(i, f"Doc {i}", f"profile text {i}") for i in range(1, 7)]
+ROUND_2 = [
+    lib(1, "Doc 1", "profile text 1"),  # already seen in round 1: dropped
+    lib(20, "Batam", "Batam city overview of the island"),
+    lib(21, "Other", "something else entirely"),
+    lib(22, "Third", "more unrelated words"),
+]
+HOMETOWN = "What is Kenneth's hometown like?"
+
+
+@pytest.fixture
+def looking(client, llm, monkeypatch):
+    """A client whose Scout returns ROUND_1 and then ROUND_2; returns (reranker, scout calls)."""
+    reranker = RecordingReranker()
+    calls = []
+
+    def fake_scout(conn, query, private_chunks=None, k=5, question=None):
+        calls.append(question)
+        return list(ROUND_1 if len(calls) == 1 else ROUND_2)
+
+    monkeypatch.setattr(ask_module, "scout", fake_scout)
+    app.dependency_overrides[get_connect] = lambda: lambda: _Conn()
+    app.dependency_overrides[get_reranker] = lambda: reranker
+    return reranker, calls
+
+
+def done_events(got, step):
+    return [e for e in got if e.get("step") == step and e["status"] == "done"]
+
+
+def test_second_look_done_ends_after_one_round(client, llm, looking):
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert steps(got) == [
+        ("translator", "start"),
+        ("translator", "done"),
+        ("scout", "start"),
+        ("scout", "done"),
+        ("judge", "start"),
+        ("judge", "done"),
+        ("second_look", "start"),
+        ("second_look", "done"),
+        ("storyteller", "start"),
+        ("storyteller", "done"),
+    ]
+    assert done_events(got, "second_look")[0]["data"] == {
+        "query": None,
+        "enough": None,
+        "decided_by": "llm",
+    }
+    assert done_events(got, "scout")[0]["data"]["round"] == 1
+    assert done_events(got, "judge")[0]["data"]["round"] == 1
+    assert done_events(got, "judge")[0]["data"]["second_look"] is True
+    assert len(llm.look_calls) == 1 and len(llm.calls) == 1
+
+
+def test_second_look_follow_up_runs_a_second_round(client, llm, looking):
+    reranker, scout_questions = looking
+    llm.look_reply = "Batam city overview"
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert steps(got)[6:] == [
+        ("second_look", "start"),
+        ("second_look", "done"),
+        ("translator", "start"),
+        ("translator", "done"),
+        ("scout", "start"),
+        ("scout", "done"),
+        ("judge", "start"),
+        ("judge", "done"),
+        ("storyteller", "start"),
+        ("storyteller", "done"),
+    ]
+    assert done_events(got, "second_look")[0]["data"]["query"] == "Batam city overview"
+    assert done_events(got, "judge")[0]["data"]["second_look"] is True
+    rewrite = done_events(got, "translator")[1]["data"]
+    assert (rewrite["round"], rewrite["query"]) == (2, "Batam city overview")
+    assert "words" not in rewrite
+    assert scout_questions == [HOMETOWN, "Batam city overview"]
+    scout_two = done_events(got, "scout")[1]["data"]
+    assert scout_two["round"] == 2
+    assert scout_two["query"] == "Batam city overview"
+    assert scout_two["skipped"] == 1  # "Doc 1" was already found in round 1
+    assert [r["title"] for r in scout_two["results"]] == ["Batam", "Other", "Third"]  # no repeat
+    # Round 2 is reranked against the follow-up query, not the question.
+    assert reranker.queries == [HOMETOWN, "Batam city overview"]
+    judge_two = done_events(got, "judge")[1]["data"]
+    assert judge_two["round"] == 2
+    assert [r["title"] for r in judge_two["results"] if r["kept"]] == ["Batam", "Other"]
+    # All 5 of round 1, then round 2's 2 new cards: 7, none removed.
+    expected = ["Doc 1", "Doc 2", "Doc 3", "Doc 4", "Doc 5", "Batam", "Other"]
+    assert judge_two["final"] == expected
+    assert judge_two["query"] == "Batam city overview"
+    cards = judge_two["final_cards"]
+    assert [(c["n"], c["round"], c["title"]) for c in cards] == [
+        (1, 1, "Doc 1"),
+        (2, 1, "Doc 2"),
+        (3, 1, "Doc 3"),
+        (4, 1, "Doc 4"),
+        (5, 1, "Doc 5"),
+        (6, 2, "Batam"),
+        (7, 2, "Other"),
+    ]
+    assert cards[5]["document_id"] == 20 and cards[5]["position"] == 0
+    assert {"source", "page", "heading"} <= set(cards[0])
+    assert all("document_id" in r and "position" in r for r in judge_two["results"])
+    prompt = next(e for e in got if e["step"] == "storyteller" and e["status"] == "start")
+    titles = [t for t in expected if f'title="{t}"' in prompt["data"]["prompt"]]
+    assert titles == expected
+
+
+def test_round_two_translator_carries_the_projected_point(client, llm, looking):
+    class FakeProjection:
+        def project(self, vectors):
+            return [{"x": float(len(vectors)), "y": 2.0} for _ in vectors]
+
+    app.dependency_overrides[get_projection] = lambda: FakeProjection()
+    llm.look_reply = "Batam city overview"
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    first, second = done_events(got, "translator")
+    assert first["data"]["point"] == {"x": 1.0, "y": 2.0}
+    assert second["data"]["point"] == {"x": 1.0, "y": 2.0}
+    assert second["data"]["round"] == 2
+
+
+def test_combine_keeps_every_first_round_card_and_adds_only_new_ones():
+    first = ROUND_1[:5]
+    second = [first[1], lib(20, "Batam", "Batam text"), lib(21, "Other", "other text"), first[0]]
+    combined = ask_module._combine(first, second)
+    assert [r.title for r in combined] == [
+        "Doc 1",
+        "Doc 2",
+        "Doc 3",
+        "Doc 4",
+        "Doc 5",
+        "Batam",
+        "Other",
+    ]
+    assert len(combined) == 7
+    assert [r.title for r in ask_module._combine(first, [first[2]])] == [r.title for r in first]
+
+
+def test_second_look_keeps_the_first_round_when_round_two_finds_less(
+    client, llm, looking, monkeypatch
+):
+    llm.look_reply = "Batam city overview"
+    calls = []
+
+    def fake_scout(conn, query, private_chunks=None, k=5, question=None):
+        calls.append(question)
+        return list(ROUND_1 if len(calls) == 1 else [ROUND_2[1]])
+
+    monkeypatch.setattr(ask_module, "scout", fake_scout)
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    final = done_events(got, "judge")[1]["data"]["final"]
+    assert final == ["Doc 1", "Doc 2", "Doc 3", "Doc 4", "Doc 5", "Batam"]
+
+
+def test_second_look_off_emits_no_second_look_events(client, llm, looking, monkeypatch):
+    monkeypatch.setenv("SECOND_LOOK", "off")
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert "second_look" not in {e.get("step") for e in got}
+    assert done_events(got, "judge")[0]["data"]["second_look"] is False
+    assert llm.look_calls == []
+
+
+def test_a_confident_decider_skips_the_llm_call(client, llm, looking):
+    decider = FakeDecider(0.9)
+    app.dependency_overrides[get_decider] = lambda: decider
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert done_events(got, "second_look")[0]["data"] == {
+        "query": None,
+        "enough": 0.9,
+        "decided_by": "decider",
+    }
+    assert llm.look_calls == []
+    assert len(decider.states) == 1
+
+
+@pytest.mark.parametrize(
+    ("decider", "decided_by"),
+    [(FakeDecider(0.9), "decider"), (FakeDecider(0.1), "llm"), (None, "llm")],
+)
+def test_second_look_done_says_who_decided(client, llm, looking, decider, decided_by):
+    app.dependency_overrides[get_decider] = lambda: decider
+    got = events(client.post("/ask", json={"question": HOMETOWN}))
+    assert done_events(got, "second_look")[0]["data"]["decided_by"] == decided_by
+
+
+def test_nothing_found_emits_no_second_look_events(client, llm):
+    class EmptyConn(_Conn):
+        def execute(self, *args, **kwargs):
+            class Rows:
+                def fetchall(self):
+                    return []
+
+            return Rows()
+
+    app.dependency_overrides[get_connect] = lambda: lambda: EmptyConn()
+    got = events(client.post("/ask", json={"question": "anything"}))
+    assert "second_look" not in {e.get("step") for e in got}
+    assert llm.look_calls == []
+    assert done_events(got, "judge")[0]["data"]["second_look"] is False
+
+
+def test_explain_words_false_embeds_only_the_question(monkeypatch):
+    monkeypatch.setenv("SECOND_LOOK", "off")
+    monkeypatch.setattr(ask_module, "scout", lambda *a, **k: list(ROUND_1))
+
+    class CountingEmbedder(FakeEmbedder):
+        def __init__(self):
+            self.calls = []
+
+        def embed(self, texts, input_type="document"):
+            self.calls.append((list(texts), input_type))
+            return super().embed(texts, input_type)
+
+    def translator_data(**kwargs):
+        embedder = CountingEmbedder()
+        events = ask_module.run_ask(
+            ask_module.AskRequest(question="What is Kenneth's hometown like?"),
+            embedder,
+            FakeLLM("Answer [1]."),
+            lambda: _Conn(),
+            FakeReranker(),
+            **kwargs,
+        )
+        done = next(
+            e for e in events if getattr(e, "step", "") == "translator" and e.status == "done"
+        )
+        return embedder.calls, done.data
+
+    calls, data = translator_data(explain_words=False)
+    assert calls == [(["What is Kenneth's hometown like?"], "query")]
+    assert data["words"] == []
+
+    calls, data = translator_data()
+    assert len(calls[0][0]) > 1 and data["words"]

@@ -112,7 +112,14 @@ export default function VectorMap({
   const { texts } = usePrivateTexts();
   const bounds = useMemo(() => (points && points.length ? boundsOf(points) : null), [points]);
   const fitted = useMemo(() => {
-    if (!bounds || !points || variant !== "compact" || !overlay?.candidates?.length) return bounds;
+    if (
+      !bounds ||
+      !points ||
+      variant !== "compact" ||
+      !(overlay?.candidates?.length || overlay?.followUpCandidates?.length)
+    ) {
+      return bounds;
+    }
     const where = new Map<string, Point>();
     for (const p of points) where.set(keyOf({ source: "library", ...p }), { x: p.x, y: p.y });
     for (const item of texts) {
@@ -131,8 +138,10 @@ export default function VectorMap({
         }
       });
     }
-    const spots = overlay.candidates.flatMap((c) => where.get(keyOf(c)) ?? []);
+    const everyCandidate = [...(overlay.candidates ?? []), ...(overlay.followUpCandidates ?? [])];
+    const spots = everyCandidate.flatMap((c) => where.get(keyOf(c)) ?? []);
     if (overlay.question) spots.push(overlay.question);
+    if (overlay.followUp) spots.push(overlay.followUp.point);
     return spots.length ? fittedTo(spots, bounds) : bounds;
   }, [bounds, points, variant, overlay, texts]);
   const [view, setView] = useState<View | null>(null);
@@ -224,8 +233,14 @@ export default function VectorMap({
     );
   const candidates = overlay?.candidates ?? [];
   const question = overlay?.question;
-  const foundBy = new Map(candidates.map((c) => [keyOf(c), c.found_by]));
-  const dim = candidates.length > 0;
+  const followUp = overlay?.followUp;
+  // A chunk in both lists is drawn once, as round 1.
+  const firstKeys = new Set(candidates.map(keyOf));
+  const followUps = (overlay?.followUpCandidates ?? []).filter((c) => !firstKeys.has(keyOf(c)));
+  const foundBy = new Map(
+    [...followUps, ...candidates].map((c) => [keyOf(c), c.found_by] as const),
+  );
+  const dim = candidates.length > 0 || followUps.length > 0;
   const compact = variant === "compact";
 
   const privateDots = texts.flatMap((item) =>
@@ -361,35 +376,28 @@ export default function VectorMap({
                   )
                 );
               })}
-            {candidates.map((c) => {
+            {[
+              ...candidates.map((c) => ({ c, testid: "candidate-ring" })),
+              ...followUps.map((c) => ({ c, testid: "follow-up-candidate-ring" })),
+            ].map(({ c, testid }) => {
               const at = where.get(keyOf(c));
               if (!at) return null;
               const key = keyOf(c);
               const width = focus === key ? 2.5 : 1.5;
               const faded = focus !== null && focus !== key ? 0.4 : 1;
               return c.found_by === "both" ? (
-                <g
-                  key={`ring:${key}`}
-                  data-testid="candidate-ring"
-                  data-found="both"
-                  opacity={faded}
-                >
+                <g key={`${testid}:${key}`} data-testid={testid} data-found="both" opacity={faded}>
                   {ring("a", at, 2.2 * r, FOUND_COLOR.vector, width)}
                   {ring("b", at, 3.2 * r, FOUND_COLOR.keyword, width)}
                 </g>
               ) : (
-                <g
-                  key={`ring:${key}`}
-                  data-testid="candidate-ring"
-                  data-found={c.found_by}
-                  opacity={faded}
-                >
+                <g key={`${testid}:${key}`} data-testid={testid} data-found={c.found_by} opacity={faded}>
                   {ring("a", at, 2.4 * r, FOUND_COLOR[c.found_by], width)}
                 </g>
               );
             })}
             {compact &&
-              candidates.map((c) => {
+              [...candidates, ...followUps].map((c) => {
                 const at = where.get(keyOf(c));
                 return (
                   at && (
@@ -412,6 +420,48 @@ export default function VectorMap({
                   )
                 );
               })}
+            {followUp &&
+              followUps.map((c) => {
+                const to = where.get(keyOf(c));
+                return (
+                  to && (
+                    <line
+                      key={`follow-line:${keyOf(c)}`}
+                      data-testid="follow-up-candidate-line"
+                      x1={followUp.point.x}
+                      y1={-followUp.point.y}
+                      x2={to.x}
+                      y2={-to.y}
+                      stroke={c.found_by === "keyword" ? FOUND_COLOR.keyword : FOUND_COLOR.vector}
+                      strokeOpacity={0.45}
+                      strokeWidth={stroke}
+                      strokeDasharray="4 3"
+                    />
+                  )
+                );
+              })}
+            {question && followUp && (
+              <line
+                data-testid="follow-up-link"
+                x1={question.x}
+                y1={-question.y}
+                x2={followUp.point.x}
+                y2={-followUp.point.y}
+                stroke={QUESTION_COLOR}
+                strokeWidth={stroke}
+                strokeDasharray="4 3"
+              />
+            )}
+            {followUp && (
+              <g data-testid="follow-up-marker">
+                <path
+                  d={starPath(followUp.point.x, -followUp.point.y, 3.4 * r, 1.4 * r)}
+                  fill="none"
+                  stroke={QUESTION_COLOR}
+                  strokeWidth={1.5 * stroke}
+                />
+              </g>
+            )}
             {question && (
               <g data-testid="question-marker">
                 <path
@@ -492,7 +542,7 @@ export default function VectorMap({
               ))}
             </ul>
           )}
-          {((!compact && privateDots.length > 0) || question || candidates.length > 0) && (
+          {((!compact && privateDots.length > 0) || question || followUp || candidates.length > 0) && (
             <ul className={`${styles.legend} ${styles.keys}`} aria-label="Map key">
               {!compact && privateDots.length > 0 && (
                 <li>
@@ -513,7 +563,20 @@ export default function VectorMap({
                   Your question
                 </li>
               )}
-              {candidates.length > 0 &&
+              {followUp && (
+                <li>
+                  <svg width="14" height="14" viewBox="-7 -7 14 14" aria-hidden="true">
+                    <path
+                      d={starPath(0, 0, 6.5, 2.7)}
+                      fill="none"
+                      stroke={QUESTION_COLOR}
+                      strokeWidth={1.5}
+                    />
+                  </svg>
+                  Second look: “{followUp.query}”
+                </li>
+              )}
+              {(candidates.length > 0 || followUps.length > 0) &&
                 (["vector", "keyword", "both"] as const).map((kind) => (
                   <li key={kind}>
                     <span

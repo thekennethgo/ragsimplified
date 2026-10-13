@@ -10,7 +10,7 @@ ragsimplified is a public web app that explains retrieval-augmented generation (
 
 When you paste a text on the Upload page, it is sent to the backend, which cuts it into chunks and asks Voyage AI to turn each chunk into a vector of numbers. The chunks and vectors come straight back to your browser. The server does not store them.
 
-When you ask a question, your chunks travel with it so they can be searched along with the library. The matching passages are then sent to the language model so it can write the answer. So your text does reach Voyage AI, and parts of it can reach the language model provider.
+When you ask a question, your chunks travel with it so they can be searched along with the library. The matching passages are then sent to the language model so it can write the answer. So your text does reach Voyage AI, and parts of it can reach the language model provider. Your pasted text is never sent to OpenRouter.
 
 ## Is it stored?
 
@@ -26,7 +26,7 @@ Today, a pasted text can be at most 20,000 characters, a question at most 1,000 
 
 ## Which AI models does it use?
 
-There are three. Voyage AI's `voyage-4` model turns text into vectors of 1,024 numbers. Voyage AI's `rerank-3-lite` model reranks the 20 candidate passages and keeps the best 5. Claude Haiku 4.5 writes the answer on the live site. The answer model is set with the `LLM_MODEL` environment variable, and during development a free Gemini model can be used instead.
+There are four. Voyage AI's `voyage-4` model turns text into vectors of 1,024 numbers. Voyage AI's `rerank-3-lite` model reranks the 20 candidate passages and keeps the best 5. Inception's Mercury Decide, a free decision model reached through OpenRouter, checks whether those 5 passages answer the question (the second look); it reads the library passages that were found, never your pasted texts (when your own text is among the results, the check is skipped). Claude Haiku 4.5 writes the answer on the live site, and also writes the follow-up search when the check says the passages are not enough. The answer model is set with the `LLM_MODEL` environment variable, and during development a free Gemini model can be used instead.
 
 ## Why does it sometimes say it cannot answer?
 

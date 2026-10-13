@@ -10,6 +10,11 @@ export function sceneReducer(s: Record<string, Phase>, e: StepEvent): Record<str
       Object.entries(s).map(([k, v]) => [k, v === "working" ? "error" : v]),
     );
   }
+  if (e.step === "second_look") {
+    // The Judge carries the second look: checking whether the cards are enough, then done again.
+    // (With a query the Judge and the Clerk then speak during the rewrite scene.)
+    return { ...s, judge: e.status === "start" ? "working" : "done" };
+  }
   return { ...s, [e.step]: e.status === "start" ? "working" : "done" };
 }
 
@@ -17,8 +22,21 @@ export function sceneReducer(s: Record<string, Phase>, e: StepEvent): Record<str
 export function toSceneEvents(e: StepEvent): SceneEvent[] {
   if (e.step === "error") return [{ name: "error" }];
   if (e.step === "judge" && e.status === "done") {
+    // The second round's verdict never means "nothing found": the first round kept something.
+    if (e.data?.round === 2) return [{ name: "judge_done", data: { nothing: false } }];
     const results = (e.data?.results ?? []) as { kept?: boolean }[];
-    return [{ name: "judge_done", data: { nothing: !results.some((r) => r.kept) } }];
+    const nothing = !results.some((r) => r.kept);
+    // Rules, but keeps the cards: the second look decides whether they go to the Storyteller.
+    if (e.data?.second_look === true && !nothing) return [{ name: "judge_ruled" }];
+    return [{ name: "judge_done", data: { nothing } }];
+  }
+  if (e.step === "second_look" && e.status === "done") {
+    const query = e.data?.query;
+    // A query: the Judge has the Clerk rewrite the board. None: the sources are enough, hand over.
+    if (typeof query === "string" && query) {
+      return [{ name: "second_look_rewrite", data: { query } }];
+    }
+    return [{ name: "judge_handover" }];
   }
   return [{ name: `${e.step}_${e.status}` }];
 }

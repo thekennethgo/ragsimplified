@@ -85,6 +85,50 @@ test("draws the question, a line per candidate and two rings for a both candidat
   expect(container.querySelector("circle[data-key='l:1:1']")).toHaveAttribute("opacity", "0.35");
 });
 
+test("the second look draws an outlined star, a dashed link, round 2 rings and a legend row", () => {
+  const overlay: MapOverlay = {
+    question: { x: 0.2, y: 0.2 },
+    candidates: [
+      { source: "library", document_id: 1, title: "Apple Inc.", position: 0, rank: 1, found_by: "both" },
+    ],
+    followUp: { point: { x: 1.5, y: 0.5 }, query: "Batam city overview" },
+    followUpCandidates: [
+      // also in round 1: drawn once, as round 1
+      { source: "library", document_id: 1, title: "Apple Inc.", position: 0, rank: 1, found_by: "both" },
+      { source: "library", document_id: 1, title: "Apple Inc.", position: 1, rank: 2, found_by: "vector" },
+      { source: "library", document_id: 2, title: "Vector database", position: 0, rank: 3, found_by: "keyword" },
+    ],
+  };
+  renderMap({ overlay });
+  const star = screen.getByTestId("follow-up-marker").querySelector("path")!;
+  expect(star).toHaveAttribute("fill", "none");
+  expect(screen.getByTestId("follow-up-link")).toHaveAttribute("stroke-dasharray", "4 3");
+  expect(screen.getAllByTestId("follow-up-candidate-ring")).toHaveLength(2);
+  const lines = screen.getAllByTestId("follow-up-candidate-line");
+  expect(lines).toHaveLength(2);
+  expect(lines[0]).toHaveAttribute("stroke-dasharray", "4 3");
+  expect(screen.getAllByTestId("candidate-ring")).toHaveLength(1);
+  expect(screen.getByRole("list", { name: "Map key" })).toHaveTextContent(
+    "Second look: “Batam city overview”",
+  );
+});
+
+test("without a second look none of its parts render", () => {
+  renderMap({
+    overlay: {
+      question: { x: 0.2, y: 0.2 },
+      candidates: [
+        { source: "library", document_id: 1, title: "Apple Inc.", position: 0, rank: 1, found_by: "vector" },
+      ],
+    },
+  });
+  expect(screen.queryByTestId("follow-up-marker")).toBeNull();
+  expect(screen.queryByTestId("follow-up-link")).toBeNull();
+  expect(screen.queryAllByTestId("follow-up-candidate-ring")).toHaveLength(0);
+  expect(screen.queryAllByTestId("follow-up-candidate-line")).toHaveLength(0);
+  expect(screen.getByRole("list", { name: "Map key" })).not.toHaveTextContent("Second look");
+});
+
 test("hovering a dot shows its title and heading, leaving hides them", () => {
   const { container } = renderMap({});
   const dot = container.querySelector("circle[data-key='l:1:0']")!;

@@ -72,6 +72,38 @@ def test_anthropic_streams_text_and_sends_the_request():
     assert seen["body"]["max_tokens"] > 0
 
 
+def test_openai_compatible_sends_max_tokens_only_when_set():
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, content=openai_body())
+
+    client = make(handler)
+    "".join(client.stream("s", MESSAGES))
+    "".join(client.stream("s", MESSAGES, max_tokens=30))
+    assert "max_tokens" not in bodies[0]
+    assert bodies[1]["max_tokens"] == 30
+
+
+def test_anthropic_uses_max_tokens_when_set():
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return httpx.Response(200, content=sse({"type": "message_stop"}))
+
+    client = make(handler, AnthropicLLM)
+    "".join(client.stream("s", MESSAGES))
+    "".join(client.stream("s", MESSAGES, max_tokens=30))
+    assert bodies[0]["max_tokens"] == llm.ANTHROPIC_MAX_TOKENS
+    assert bodies[1]["max_tokens"] == 30
+
+
+def test_fake_llm_accepts_and_ignores_max_tokens():
+    assert "".join(FakeLLM("ok").stream("s", MESSAGES, max_tokens=5)) == "ok"
+
+
 def test_retries_503_then_succeeds(no_sleep):
     attempts = []
 

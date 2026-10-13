@@ -267,8 +267,8 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Done when: the hometown question plays the rewrite and the second round on localhost, and a question that needs no second look plays exactly as before.
   - Out of scope: new characters, changes to how the second look decides.
   - Plan: `docs/plans/phase-5-features.md` (F6).
-- [ ] 5.7j Meow, the office cat (moved up from 7.2)
-  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says.
+- [ ] 5.7j Meow, the office cat, a RAG.co rug, a taller viewer, shelf cards, Central Asia, and eval edge cases on the home page (moved up from 7.2)
+  - Do: add Meow, the RAG.co office cat from the `lore/` documents, to the office rooms: a cat group `meow` in `frontend/public/office/upload-room.svg` and `ask-room.svg` (and the static `break-room.svg`), drawn in the rooms' style and named by the office animation convention in `CLAUDE.md`, with an idle loop (sleeping, tail flick, an occasional stretch) that ignores the step events and stops under reduced motion. Meow sleeps on the warm shelves, as the lore says. Also a flat RAG.co rug on each room's floor, a taller File cabinet viewer where a whole PDF page fits, starter questions as shelf cards, a Central Asia document with a trip section in `personal.md`, a "How we test it" section on the home page showing the eval edge cases, and a clearer split between `personal.md` and the FAQ (details in `docs/plans/phase-5-features.md` F7).
   - Done when: Meow shows in every room, the idle loop plays and stops with reduced motion, and the scene id tests still pass.
   - Out of scope: making Meow react to the pipeline, a character tab for Meow.
   - Plan: `docs/plans/phase-5-features.md` (F7).
