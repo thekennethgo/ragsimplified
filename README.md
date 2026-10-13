@@ -170,20 +170,6 @@ Open http://localhost:3000.
 | `make eval` | Runs the eval questions and reports the metrics above |
 | `make eval ARGS="--only second-look"` | Runs only one case (or id prefixes, comma-separated) |
 
-## Deploy your own
-
-1. **Supabase.** Create a project, enable the `vector` extension, then run `make migrate` and `make seed` with its connection string as `DATABASE_URL` in `.env`.
-2. **Render** (free web service, native Python runtime, root `backend/`). Build: `pip install -r requirements.txt`. Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Environment variables: `DATABASE_URL`, `VOYAGE_API_KEY`, `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` (or `ANTHROPIC_API_KEY` for Claude), optionally `OPENROUTER_API_KEY` and `SECOND_LOOK`, and `CORS_ORIGINS` set to your frontend's URL.
-3. **Vercel.** Import the repo with root directory `frontend/` and set `NEXT_PUBLIC_BACKEND_URL` to your Render URL.
-4. **Keep it awake** (optional). Set the repository variable `BACKEND_URL` to your Render URL; [`.github/workflows/keep-awake.yml`](.github/workflows/keep-awake.yml) pings `/health` every 10 minutes and `/library` daily.
-
-## Roadmap
-
-- [ ] Rate limits and per-IP quotas (6.1)
-- [ ] Auto migrations on deploy (6.2)
-- [ ] Page polish (5.7b)
-- [ ] `v1.0.0` release (6.4)
-
 ## Learn more
 
 - [Architecture decisions](docs/adr/)
