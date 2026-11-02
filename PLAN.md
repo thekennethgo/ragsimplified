@@ -335,6 +335,82 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
   - Do: tag release `v1.0.0` and share the link.
   - Done when: the release page lists the changelog.
 
+## Phase 7: Post-launch redesign (one-screen Ask)
+
+After v1.0.0. The Ask page becomes one screen: answer first, the office animation alongside, the details on demand; then Home and Upload follow it. Each round is agreed with the owner in the browser before it is built.
+
+- Branches: `alt-main` (cut from `codex/rag-visualised-rework` at `e7c3ac6`) is the alternative main for Phase 7. Every step gets its own branch cut from `alt-main` and its PR targets it: `gh pr create --base alt-main`. Nothing from Phase 7 goes to `main` until the owner decides in 7.11.
+- Current step: on `alt-main` and its step branches, the current step is the first unticked Phase 7 step, even while steps in Phases 5 and 6 are still open on `main`.
+- Who does what: Claude Opus plans and writes the instructions; Claude Sonnet writes all the code, one step per session, following the step exactly.
+- Mockup: `docs/mockups/ask.html` (serve the repo root with the `mockup` entry in `.claude/launch.json`, open `http://localhost:8765/docs/mockups/ask.html`). It is the target layout for 7.2 to 7.5; the copy and numbers in it are made up.
+- Every step ends with `make lint` and `make test` passing, plus the browser checks it lists, at 390×844, 768×1024, 1024×768 and 1440×900 with no page-wide horizontal scroll.
+- Out of scope: the eval changes (a later step), the scenes in 5.8 and 5.9, new room art.
+
+- [x] 7.1 (You) Agree the Ask mockup
+  - Do: the owner reviews `docs/mockups/ask.html` at 1440×900 and 390×844 and asks for changes until it is right; changes go into the mockup file, not the app.
+  - Done when: the owner signs off on the mockup.
+- [ ] 7.2 Answer first, animation second
+  - Do: in `frontend/app/ask/page.tsx`, real results no longer wait for scenes.
+    - Keep two copies of the step states: `states` (what the backend has finished) is updated the moment each event arrives; a new `shown` state (what the office has played) is updated in the scene `onEnd` hooks exactly as `states` is today. The speech bubbles, `useFollow` and `clerkAway` read `shown`; everything else (chips, answer panel, tab data) reads `states`.
+    - Deltas always append to `answer`, with animations on or off; delete the `pending` ref.
+    - On the Storyteller's done event, call `setAnswer(final)`, `setCitations(sources)` and `setQuestion("")` at once, not in the `clerk_back` hook. The data setters (`setWords`, `setScout`, `setJudge`, `setLook`, `setTranslator2`, `setScout2`, `setJudge2`, `setRound2`, `setOverlay`, `setPrivateSent`, `setSentPrompt`) also run on arrival instead of in `onEnd`; the office-only ones (`setChecking`, `setScoutLook`, `setRewriting`, `setNoFile`) stay in the hooks.
+    - `running` becomes `busy` only (the request), so the Ask button unlocks when the stream ends. Submitting while scenes are still playing calls `queue.skipAll()` first, then starts the new run.
+  - Tests in `frontend/app/ask/page.test.tsx`: with animations on and a mocked stream that ends at once, the final answer and its citations are on screen before any scene ends; turning animations off mid-run keeps the answer; the Ask button is enabled as soon as the stream ends while the office is still animating.
+  - Done when: the tests pass and, on localhost with animations on, the answer appears while the Clerk is still walking.
+  - Out of scope: layout changes, pause or replay controls.
+- [ ] 7.3 Answer card and "How it got there" tabs
+  - Do: split `frontend/components/ask/AnswerPanel.tsx` into two components in the same folder.
+    - `AnswerCard.tsx`: the question asked, the answer with its `[n]` markers, the sources list, one meta line (`<n> cards found · <n> kept · <model>`), and an inline source viewer: clicking a source's "Open" or a `[n]` marker renders `<DocViewer target={…} />` (from `components/viewer/DocViewer.tsx`) inside the card under the sources, with a Close button that returns focus to the link that opened it. Nothing scrolls the page.
+    - `StepDetails.tsx`: a section headed "How it got there" with one tab per character (Clerk, Translator, Scout, Judge, Storyteller), each tab body exactly as the current AnswerPanel tab body, round switch included. No "Answer" tab. Its open tab is controlled by props (`tab`, `onTab`) so the page can open it from the step strip in 7.4. While running it follows the working step unless the visitor picked a tab (the current `touched` rule); once the run is done it stays where it is.
+    - Delete `AnswerPanel.tsx` and `AnswerPanel.module.css` once nothing imports them; move their styles into `AnswerCard.module.css` and `StepDetails.module.css`. In `page.tsx`, `openViewer` no longer scrolls to `#library`; the answer's source target is a new `source` state passed to `AnswerCard`, separate from the `viewer` state the LibraryPanel uses.
+  - Tests: move the AnswerPanel assertions in `page.test.tsx` to the new components; add one test that opening a citation shows the passage inside the answer card and keeps the answer text on screen.
+  - Done when: the tests pass and every tab still shows this run's real data on localhost.
+  - Out of scope: the page layout (7.4).
+- [ ] 7.4 One-screen Ask layout
+  - Do: rebuild the Ask page's layout to match the mockup, in `frontend/app/ask/page.tsx`, `page.module.css` and `frontend/components/ask/QuestionBubble.tsx` (+ `.module.css`).
+    - Order: header → question bar → starter row → a grid of the office scene (left) and `AnswerCard` (right) → `StepDetails` → the library.
+    - Question bar: one-line input and the Ask button on one row (the input may grow to 3 lines when the text wraps). The starter row under it: a "See an example" button (wired in 7.5; until then hidden), the first 3 example questions from `examplesFor(library)` as chips, and a "Browse all topics" `<details>` that reveals the rest of the current example cards.
+    - The Query room `OfficeRoom` and the `clerkSays` block are removed from the Ask page; the Clerk's current line shows as the scene's caption under the room. `frontend/public/office/query-room.svg` and `scenes/query.ts` stay in the repo.
+    - The office scene is a dark bounded panel (`--room`) holding the Ask room, the caption, and a step strip of five buttons (Clerk, Translator, Scout, Judge, Storyteller) with a ✓ or "now" state from `states` and a 3px top border in the character's colour; clicking one opens that tab in `StepDetails`. Add the five colours as tokens in `frontend/app/globals.css`: `--clerk: #7a5236; --translator: #2f6f73; --scout: #a8721a; --judge: #9b3b2e; --storyteller: #4b6b3a;`, also used for the selected tab's underline in `StepDetails`. The AnimationToggle moves into the scene's caption row.
+    - Grid: two columns (`minmax(0, 1.15fr) minmax(0, 1fr)`) from 900px wide; one column below. Under 760px the room picture is hidden behind a "Watch the office" button (`aria-expanded`), and the step strip shows short labels (Clerk, Words, Search, Check, Write).
+    - The `LibraryPanel` moves into a closed `<details>` at the bottom headed "Browse the library" (it stays mounted so `onLoad` still fills the example questions).
+    - `HealthBadge` moves to the header's right end.
+  - Tests: update `page.test.tsx` for the removed Query room and the new starter row; the existing scene id tests still pass.
+  - Done when: on localhost the question input and the answer card's top are visible without scrolling at 1440×900 and 1024×768, the input is visible without scrolling at 390×844, and there is no horizontal scroll at the four sizes.
+  - Out of scope: Home and Upload (7.9), new room art.
+- [ ] 7.5 Recorded example run
+  - Do: a "See an example" button plays a real recorded run with no backend call.
+    - Record: `curl -sN -X POST "$BACKEND/ask" -H 'Content-Type: application/json' -d '{"question":"Where did Kenneth grow up?","private_chunks":[]}' > frontend/public/examples/grew-up.stream` against the live backend, saved byte for byte as the backend sent it. The hometown question is chosen because it plays the second look.
+    - Play: in `page.tsx`, move the body of the `for await` loop into `handleEvents(events: AsyncIterable<StreamEvent>)`. A live question passes `readEvents(response)`; the example passes `readEvents(new Response(await (await fetch("/examples/grew-up.stream")).text()))` wrapped in a generator that waits 400 ms before each step event and 15 ms before each delta, so it reads like a live run.
+    - The answer card's meta line says "Recorded example, <date of the recording>" instead of the model during an example. The example never sends `private_chunks`.
+    - Home: the hero's primary button stays "Ask a question"; add a secondary link "See an example" to `/ask?example=1`, which starts the example on load.
+  - Tests: the example plays from a mocked `fetch` of the file and ends with the recorded answer and citations; `/ask?example=1` starts it.
+  - Done when: the example plays on localhost with the backend stopped.
+- [ ] 7.6 Honest status and bounded requests
+  - Do:
+    - `frontend/components/HealthBadge.tsx` labels: `checking` → "Waking the server…", `online` → "Server awake", `offline` → "Server unreachable". The offline note in `QuestionBubble.tsx` says "The server isn't answering right now. It may be waking up; try again in a minute."
+    - `page.tsx`: each run gets an `AbortController`; the fetch uses `AbortSignal.any([controller.signal, AbortSignal.timeout(90_000)])`. While busy the Ask button becomes "Cancel" and aborts. Cancel shows "Stopped." and a timeout shows "This took too long. Try again." Neither is the generic "Could not reach the backend".
+    - A stream that ends without a Storyteller done event or an error event shows "The answer was cut off. Try again." and marks the working steps as failed.
+    - The question is never cleared on any failure, so the Ask button retries it as is.
+  - Tests: cancel, timeout (fake timers) and cut-off stream each end in their message with the question kept and the Ask button enabled.
+  - Done when: the tests pass and no state leaves the button on "Asking…".
+  - Out of scope: backend changes, request ids, dependency checks in `/health`.
+- [ ] 7.7 Measure the word attribution
+  - Do: add `backend/scripts/time_translator.py`, which uses `VoyageEmbedder` with `VOYAGE_API_KEY` from the environment to time, for each of these 5 questions, `embedder.embed([q], input_type="query")` against `translate_question(embedder, q)`, 5 runs each, and prints the median of each and the difference: "Where did Kenneth grow up?", "What was Kenneth's first job after university?", "What is the coffee machine policy at RAG.co?", "Which projects has Kenneth built with Python and what did each one do?", "What does Meow do all day?". Run it with `cd backend && .venv/bin/python scripts/time_translator.py`.
+  - Done when: the numbers are pasted into the PR description.
+- [ ] 7.8 Word attribution off the critical path (only if 7.7's median difference is 200 ms or more; otherwise tick it as skipped with the numbers)
+  - Do: in `backend/app/ask.py` `run_ask`, round 1 embeds the question alone, emits the Translator's done event with `words: []` and the point, and starts `translate_question` in a `concurrent.futures.ThreadPoolExecutor(max_workers=1)` before the Scout runs. Right after the Scout's done event it emits `StepEvent(step="translator_words", status="done", data={"words": words})`. If attribution raises, it logs `translator_words failed` with the exception type only (no question text) and emits `words: []`; the answer still runs. `explain_words=False` emits no `translator_words` event. Frontend: `page.tsx` sets `words` from `translator_words` and passes it to no scene; `sceneReducer` ignores the step.
+  - Tests: `backend/tests/test_ask.py` checks the event order, that a failing attribution still yields an answer, and that `explain_words=False` emits no `translator_words` event; `page.test.tsx` checks the words appear on the Translator tab after a `translator_words` event.
+  - Done when: the tests pass and 7.7's script, rerun, is pasted into the PR with the before/after numbers.
+- [ ] 7.9 (You) Home and Upload round
+  - Do: agree with the owner in the browser how Home and Upload take on the Ask page's rules (one screen, one primary action, details behind a disclosure), then build what was agreed.
+  - Done when: the owner signs off on Home and Upload.
+- [ ] 7.10 (You) Release review on alt-main
+  - Do: deploy `alt-main` as a Vercel preview (and the backend if 7.8 shipped) and check keyboard use, reduced motion, the four sizes, a live run, the example run and a failed request.
+  - Done when: the owner signs off on the preview.
+- [ ] 7.11 (You) Decide alt-main → main
+  - Do: the owner decides whether to merge `alt-main` into `main` as is, in part, or not at all.
+
 ## Milestones
 
 - [x] Phase 0: public repo, step skills and protections in place
@@ -344,3 +420,4 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 - [x] Phase 4: hybrid search, Judge and Dependabot shipped (Fact-Checker, LLM-judged evals, evals in CI and tracing skipped)
 - [ ] Phase 5: all seven characters animating in the office rooms, a home page that explains RAG and the project, and the vector map with character tabs, the launch library, downloads, PDF highlighting and the second look (data-driven scenes, accessibility and source side panel skipped)
 - [ ] Phase 6: launch documents, limits and README done; v1.0.0 released
+- [ ] Phase 7: one-screen Ask with the answer first, a recorded example run, honest status and bounded requests; Home and Upload follow it
