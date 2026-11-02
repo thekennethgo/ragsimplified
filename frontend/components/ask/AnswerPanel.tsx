@@ -277,11 +277,11 @@ export default function AnswerPanel({
   useEffect(() => {
     touched.current = false;
   }, [run]);
+  const hasAnswer = Boolean(answer);
   useEffect(() => {
     if (touched.current) return;
-    if (follow && latest) setTab(latest);
-  }, [follow, latest]);
-  const hasAnswer = Boolean(answer);
+    if (follow && latest && !hasAnswer) setTab(latest);
+  }, [follow, latest, hasAnswer]);
   useEffect(() => {
     if (touched.current) return;
     if (hasAnswer) setTab("answer");

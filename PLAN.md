@@ -339,7 +339,8 @@ Steps 5.5 to 5.7 (Figma characters, Figma layouts, per-character Rive) were remo
 
 After v1.0.0. The Ask page becomes one screen: answer first, the office animation alongside, the details on demand; then Home and Upload follow it. Each round is agreed with the owner in the browser before it is built.
 
-- Branches: `alt-main` (cut from `codex/rag-visualised-rework` at `e7c3ac6`) is the alternative main for Phase 7. Every step gets its own branch cut from `alt-main` and its PR targets it: `gh pr create --base alt-main`. Nothing from Phase 7 goes to `main` until the owner decides in 7.11.
+- Branches: `alt-main` (cut from `codex/rag-visualised-rework` at `e7c3ac6`) is the alternative main for Phase 7. Sonnet builds each step on its own branch in a worktree cut from `alt-main`; `/ship-step` rebases it onto `origin/alt-main` and pushes it straight to `alt-main`, with no PR. Nothing from Phase 7 goes to `main` until the owner decides in 7.11.
+- Browser review: after every step that changes the frontend, Opus runs the step's branch next to the current `alt-main` against the local Docker database and shows the owner the before and after in the browser. The step ships only after the owner approves it; the next step starts only after that.
 - Current step: on `alt-main` and its step branches, the current step is the first unticked Phase 7 step, even while steps in Phases 5 and 6 are still open on `main`.
 - Who does what: Claude Opus plans and writes the instructions; Claude Sonnet writes all the code, one step per session, following the step exactly.
 - Mockup: `docs/mockups/ask.html` (serve the repo root with the `mockup` entry in `.claude/launch.json`, open `http://localhost:8765/docs/mockups/ask.html`). It is the target layout for 7.2 to 7.5; the copy and numbers in it are made up.
@@ -349,7 +350,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
 - [x] 7.1 (You) Agree the Ask mockup
   - Do: the owner reviews `docs/mockups/ask.html` at 1440×900 and 390×844 and asks for changes until it is right; changes go into the mockup file, not the app.
   - Done when: the owner signs off on the mockup.
-- [ ] 7.2 Answer first, animation second
+- [x] 7.2 Answer first, animation second
   - Do: in `frontend/app/ask/page.tsx`, real results no longer wait for scenes.
     - Keep two copies of the step states: `states` (what the backend has finished) is updated the moment each event arrives; a new `shown` state (what the office has played) is updated in the scene `onEnd` hooks exactly as `states` is today. The speech bubbles, `useFollow` and `clerkAway` read `shown`; everything else (chips, answer panel, tab data) reads `states`.
     - Deltas always append to `answer`, with animations on or off; delete the `pending` ref.
@@ -358,6 +359,15 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests in `frontend/app/ask/page.test.tsx`: with animations on and a mocked stream that ends at once, the final answer and its citations are on screen before any scene ends; turning animations off mid-run keeps the answer; the Ask button is enabled as soon as the stream ends while the office is still animating.
   - Done when: the tests pass and, on localhost with animations on, the answer appears while the Clerk is still walking.
   - Out of scope: layout changes, pause or replay controls.
+- [ ] 7.2a Faster office
+  - Do: make one run's office animation short enough not to bore.
+    - Measure first. In `frontend/app/ask/page.tsx`, record `performance.now()` when a run starts, when the stream ends, and when the last scene's hook runs (where `setAnimating(false)` is called); in development only (`process.env.NODE_ENV === "development"`) log `[office] stream <a> s, office <b> s, tail <b - a> s`. Run "Where did Kenneth grow up?" and "What was Kenneth's first job after university?" on localhost with animations on, 3 times each, before any other change, and note the medians.
+    - Pace, in `frontend/lib/office/scenes/ask.ts`: `MIN_WALK` 0.4 → 0.25; `SPEED` `{ clerk: 260, crew: 200 }`; the Scout's lantern sweep durations 0.8/1.1/0.9/0.6 → 0.3/0.4/0.3/0.2; the Judge's speech hold `"+=1.8"` → `"+=0.8"`; the Judge's head-tilt durations 0.25/0.4/0.4/0.25 → 0.15/0.25/0.25/0.15. Nothing else in the scenes changes.
+    - Gaps, in `frontend/lib/office/useSceneQueue.ts` and `sceneQueue.ts`: `gapMs` 800 → 250 and the default `holdMs` 1000 → 300.
+    - Catch-up: add `setSpeed(factor: number)` to the queue in `sceneQueue.ts`. It calls `timeScale(factor)` on the playing timeline and on every timeline it starts later, and divides the hold and gap waits by `factor`. `page.tsx` calls `queue.setSpeed(2)` when the stream ends and `queue.setSpeed(1)` when a run starts.
+  - Tests: add a test in `frontend/lib/office/sceneQueue.test.ts` that `setSpeed(2)` halves a timeline's play time and the hold.
+  - Done when: the tests pass, and the log on the same two questions, 3 runs each, shows a median `office` of 8 s or less for the first-job question and a median `tail` of 3 s or less for both. Paste the before and after medians into the report. If the targets are missed, stop and report the numbers instead of cutting more.
+  - Out of scope: the Clerk (7.4a), new scenes or art, removing any character, the reduced-motion path.
 - [ ] 7.3 Answer card and "How it got there" tabs
   - Do: split `frontend/components/ask/AnswerPanel.tsx` into two components in the same folder.
     - `AnswerCard.tsx`: the question asked, the answer with its `[n]` markers, the sources list, one meta line (`<n> cards found · <n> kept · <model>`), and an inline source viewer: clicking a source's "Open" or a `[n]` marker renders `<DocViewer target={…} />` (from `components/viewer/DocViewer.tsx`) inside the card under the sources, with a Close button that returns focus to the link that opened it. Nothing scrolls the page.
@@ -378,6 +388,12 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: update `page.test.tsx` for the removed Query room and the new starter row; the existing scene id tests still pass.
   - Done when: on localhost the question input and the answer card's top are visible without scrolling at 1440×900 and 1024×768, the input is visible without scrolling at 390×844, and there is no horizontal scroll at the four sizes.
   - Out of scope: Home and Upload (7.9), new room art.
+- [ ] 7.4a Clerk as bookends
+  - Do: keep the Clerk at the whiteboard.
+    - In `frontend/lib/office/scenes/ask.ts`: `reset()` places the Clerk at `P.clAtBoard`, facing the room, visible (opacity 1), so the Clerk is in the room before any question. `clerk_start` no longer opens the door or walks: it turns the Clerk to the board, runs `writeOnBoard(tl)`, adds the `handoff` label, and turns the Clerk back to the room. `clerk_done` no longer walks to the Storyteller or out of the door: when something was found it fades `#a-answer` out over 0.25 s after a 0.3 s pause; when nothing was found it returns `nothingToDo()`. `second_look_rewrite` is unchanged.
+  - Tests: `frontend/lib/office/scenes/build.test.ts` keeps passing (`clerk_done` is still longer when something was found).
+  - Done when: the tests pass and, on localhost, the Clerk stands at the whiteboard before any question, writes the question without walking in, and stays in the room after the answer.
+  - Out of scope: pacing (done in 7.2a).
 - [ ] 7.5 Recorded example run
   - Do: a "See an example" button plays a real recorded run with no backend call.
     - Record: `curl -sN -X POST "$BACKEND/ask" -H 'Content-Type: application/json' -d '{"question":"Where did Kenneth grow up?","private_chunks":[]}' > frontend/public/examples/grew-up.stream` against the live backend, saved byte for byte as the backend sent it. The hometown question is chosen because it plays the second look.

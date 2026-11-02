@@ -81,8 +81,6 @@ function AskOffice() {
     if (!animationsOn) queue.skipAll();
   }, [animationsOn, queue]);
   const officeRef = useRef<HTMLElement>(null);
-  // With the office on, the streamed answer waits here until the Clerk is back.
-  const pending = useRef("");
   const answerRef = useRef<HTMLDivElement>(null);
   const { texts } = usePrivateTexts();
   // /ask?q=... opens with the question filled in (the Home page's "Ask the office about me").
@@ -97,7 +95,9 @@ function AskOffice() {
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [run, setRun] = useState(0);
+  // `states` is what the backend has finished; `shown` is what the office has played so far.
   const [states, setStates] = useState<Record<string, Phase>>({});
+  const [shown, setShown] = useState<Record<string, Phase>>({});
   const [words, setWords] = useState<Word[]>([]);
   const [scout, setScout] = useState<ScoutResult[] | null>(null);
   const [judge, setJudge] = useState<JudgeResult[] | null>(null);
@@ -155,11 +155,16 @@ function AskOffice() {
     queue.emit({ name: "error" });
     // Whatever was running when it failed shows as failed.
     setStates((now) => sceneReducer(now, { step: "error", status: "done" }));
+    setShown((now) => sceneReducer(now, { step: "error", status: "done" }));
     setAnimating(false);
   }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
+    if (animating) {
+      queue.skipAll();
+      setAnimating(false);
+    }
     setRun((n) => n + 1);
     setBusy(true);
     setAnimating(true);
@@ -169,6 +174,7 @@ function AskOffice() {
     setAnswer("");
     setCitations([]);
     setStates({});
+    setShown({});
     setWords([]);
     setScout(null);
     setJudge(null);
@@ -184,7 +190,6 @@ function AskOffice() {
     setOverlay({});
     setPrivateSent(privateChunks.length);
     setSentPrompt(null);
-    pending.current = "";
     if (!onRef.current) {
       answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -207,14 +212,11 @@ function AskOffice() {
       }
       for await (const e of readEvents(response)) {
         if ("delta" in e) {
-          if (!onRef.current) {
-            setAnswer((text) => text + e.delta);
-          } else {
-            pending.current += e.delta;
-          }
+          setAnswer((text) => text + e.delta);
           continue;
         }
-        const update = () => setStates((now) => sceneReducer(now, e));
+        setStates((now) => sceneReducer(now, e));
+        const update = () => setShown((now) => sceneReducer(now, e));
         const [sceneEvent] = toSceneEvents(e);
         if (e.status === "start") starts[e.step] = (starts[e.step] ?? 0) + 1;
         const second = e.status === "start" && starts[e.step] > 1;
@@ -227,6 +229,20 @@ function AskOffice() {
           const query = typeof e.data?.query === "string" && e.data.query ? e.data.query : null;
           if (query) followUp = query;
           if (e.data?.nothing === true) nothingFound = true;
+          if (e.status === "done" && e.data?.round === 2) {
+            // The final check after the second round: the Judge's second page shows it.
+            const part = typeof e.data?.part === "number" ? e.data.part : null;
+            const nothing = e.data?.nothing === true;
+            setJudge2((now) => (now ? { ...now, check: { part, nothing } } : now));
+          } else if (e.status === "done") {
+            setLook({
+              query,
+              enough: typeof e.data?.enough === "number" ? e.data.enough : null,
+              relevant: typeof e.data?.relevant === "number" ? e.data.relevant : null,
+              nothing: e.data?.nothing === true,
+              decidedBy: e.data?.decided_by === "decider" ? "decider" : "llm",
+            });
+          }
           queue.emit(sceneEvent, {
             onStart: () => {
               if (query && e.status === "done") setRewriting(query);
@@ -237,20 +253,6 @@ function AskOffice() {
               setRewriting(null);
               setNoFile(false);
               setChecking(e.status === "start");
-              if (e.status === "done" && e.data?.round === 2) {
-                // The final check after the second round: the Judge's second page shows it.
-                const part = typeof e.data?.part === "number" ? e.data.part : null;
-                const nothing = e.data?.nothing === true;
-                setJudge2((now) => (now ? { ...now, check: { part, nothing } } : now));
-              } else if (e.status === "done") {
-                setLook({
-                  query,
-                  enough: typeof e.data?.enough === "number" ? e.data.enough : null,
-                  relevant: typeof e.data?.relevant === "number" ? e.data.relevant : null,
-                  nothing: e.data?.nothing === true,
-                  decidedBy: e.data?.decided_by === "decider" ? "decider" : "llm",
-                });
-              }
             },
           });
         } else if (e.status === "start") {
@@ -258,11 +260,11 @@ function AskOffice() {
           if (e.step === "storyteller" && typeof e.data?.prompt === "string") {
             setSentPrompt(e.data.prompt);
           }
+          if (second) setRound2((now) => ({ ...now, [e.step]: "working" }));
           queue.emit(sceneEvent, {
             onStart: () => {
               update();
               if (second) {
-                setRound2((now) => ({ ...now, [e.step]: "working" }));
                 // Only now, after the follow-up's fingerprint, does the Scout set off again.
                 if (e.step === "scout") setScoutLook(`Taking a second look: “${followUp}”`);
               }
@@ -272,110 +274,86 @@ function AskOffice() {
           // The Clerk's rewrite: the follow-up's star on the map; the question's words stay.
           const point = e.data?.point as Point | undefined;
           const followUpQuery = typeof e.data?.query === "string" ? e.data.query : followUp;
-          queue.emit(sceneEvent, {
-            onEnd: () => {
-              update();
-              setTranslator2({ query: followUpQuery });
-              setRound2((now) => ({ ...now, translator: "done" }));
-              if (point) {
-                setOverlay((now) => ({ ...now, followUp: { point, query: followUpQuery } }));
-              }
-            },
-          });
+          setTranslator2({ query: followUpQuery });
+          setRound2((now) => ({ ...now, translator: "done" }));
+          if (point) {
+            setOverlay((now) => ({ ...now, followUp: { point, query: followUpQuery } }));
+          }
+          queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "translator") {
           const found = (e.data?.words ?? []) as Word[];
           const point = e.data?.point as Point | undefined;
-          queue.emit(sceneEvent, {
-            onEnd: () => {
-              update();
-              setWords(found);
-              if (point) setOverlay((now) => ({ ...now, question: point }));
-            },
-          });
+          setWords(found);
+          if (point) setOverlay((now) => ({ ...now, question: point }));
+          queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "scout" && e.data?.round === 2) {
           const found = (e.data?.results ?? []) as ScoutResult[];
+          setScout2({
+            query: typeof e.data?.query === "string" ? e.data.query : followUp,
+            skipped: typeof e.data?.skipped === "number" ? e.data.skipped : 0,
+            results: found,
+          });
+          setRound2((now) => ({ ...now, scout: "done" }));
+          setOverlay((now) => ({
+            ...now,
+            followUpCandidates: found.map((r) => ({
+              source: r.source,
+              document_id: r.document_id,
+              title: r.title,
+              position: r.position,
+              rank: r.rank,
+              found_by: r.found_by,
+            })),
+          }));
           queue.emit(sceneEvent, {
             onEnd: () => {
               update();
-              setScout2({
-                query: typeof e.data?.query === "string" ? e.data.query : followUp,
-                skipped: typeof e.data?.skipped === "number" ? e.data.skipped : 0,
-                results: found,
-              });
-              setRound2((now) => ({ ...now, scout: "done" }));
               setScoutLook(null);
-              setOverlay((now) => ({
-                ...now,
-                followUpCandidates: found.map((r) => ({
-                  source: r.source,
-                  document_id: r.document_id,
-                  title: r.title,
-                  position: r.position,
-                  rank: r.rank,
-                  found_by: r.found_by,
-                })),
-              }));
             },
           });
         } else if (e.step === "judge" && e.data?.round === 2) {
           // The first round's verdict stays on the Judge's tab; this one is its second page.
           const results = (e.data?.results ?? []) as JudgeResult[];
           const finalCards = (e.data?.final_cards ?? []) as FinalCard[];
-          queue.emit(sceneEvent, {
-            onEnd: () => {
-              update();
-              setJudge2({
-                query: typeof e.data?.query === "string" ? e.data.query : followUp,
-                results,
-                finalCards,
-              });
-              setRound2((now) => ({ ...now, judge: "done" }));
-            },
+          setJudge2({
+            query: typeof e.data?.query === "string" ? e.data.query : followUp,
+            results,
+            finalCards,
           });
+          setRound2((now) => ({ ...now, judge: "done" }));
+          queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "scout") {
           const found = (e.data?.results ?? []) as ScoutResult[];
-          queue.emit(sceneEvent, {
-            onEnd: () => {
-              update();
-              setScout(found);
-              setOverlay((now) => ({
-                ...now,
-                candidates: found.map((r) => ({
-                  source: r.source,
-                  document_id: r.document_id,
-                  title: r.title,
-                  position: r.position,
-                  rank: r.rank,
-                  found_by: r.found_by,
-                })),
-              }));
-            },
-          });
+          setScout(found);
+          setOverlay((now) => ({
+            ...now,
+            candidates: found.map((r) => ({
+              source: r.source,
+              document_id: r.document_id,
+              title: r.title,
+              position: r.position,
+              rank: r.rank,
+              found_by: r.found_by,
+            })),
+          }));
+          queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "judge") {
           const results = (e.data?.results ?? []) as JudgeResult[];
           nothingFound = !results.some((r) => r.kept);
-          queue.emit(sceneEvent, {
-            onEnd: () => {
-              update();
-              setJudge(results);
-            },
-          });
+          setJudge(results);
+          queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "storyteller" && e.data) {
           // The final answer has made-up [n] markers removed.
           const final = String(e.data.answer ?? "");
           const sources = (e.data.citations ?? []) as Citation[];
+          setAnswer(final);
+          setQuestion("");
+          setCitations(sources);
           queue.emit(sceneEvent, { onEnd: update });
           queue.emit({ name: "clerk_done" });
           queue.emit(
             { name: nothingFound ? "clerk_shrug" : "clerk_back" },
-            {
-              onEnd: () => {
-                setAnswer(final);
-                setQuestion("");
-                setCitations(sources);
-                setAnimating(false);
-              },
-            },
+            { onEnd: () => setAnimating(false) },
           );
         } else {
           queue.emit(sceneEvent, { onEnd: update });
@@ -389,6 +367,7 @@ function AskOffice() {
   }
 
   const phase = (step: string): Phase => states[step] ?? "waiting";
+  const shownPhase = (step: string): Phase => shown[step] ?? "waiting";
   const nothingFound =
     (judge !== null && !judge.some((r) => r.kept)) ||
     look?.nothing === true ||
@@ -397,8 +376,9 @@ function AskOffice() {
   const working = CREW.filter(
     (step) => phase(step) === "working" && !(nothingFound && step === "storyteller"),
   );
-  const running = busy || animating;
-  const clerkAway = running && Object.keys(states).length > 0 && phase("storyteller") !== "done";
+  const running = busy;
+  const officeBusy = busy || animating;
+  const clerkAway = officeBusy && Object.keys(shown).length > 0 && shownPhase("storyteller") !== "done";
   const storytellerDone = phase("storyteller") === "done";
   const finished = storytellerDone && !animating;
 
@@ -435,21 +415,21 @@ function AskOffice() {
                 ? "Got it. Pinning it up in the office."
                 : "Hi, I'm the Clerk. What do you want to know?";
   const crewAt = {
-    translator: useFollow(officeRef, "translator", animationsOn && phase("translator") === "working"),
-    scout: useFollow(officeRef, "scout", animationsOn && phase("scout") === "working"),
+    translator: useFollow(officeRef, "translator", animationsOn && shownPhase("translator") === "working"),
+    scout: useFollow(officeRef, "scout", animationsOn && shownPhase("scout") === "working"),
     judge: useFollow(
       officeRef,
       "judge",
-      animationsOn && (phase("judge") === "working" || rewriting !== null),
+      animationsOn && (shownPhase("judge") === "working" || rewriting !== null),
     ),
     storyteller: useFollow(
       officeRef,
       "storyteller",
-      animationsOn && working.includes("storyteller"),
+      animationsOn && shownPhase("storyteller") === "working" && !nothingFound,
     ),
   };
   const clerkAt = useFollow(officeRef, "clerk", animationsOn && clerkAway);
-  const clerkHere = !asked || !running;
+  const clerkHere = !asked || !officeBusy;
 
   return (
     <>

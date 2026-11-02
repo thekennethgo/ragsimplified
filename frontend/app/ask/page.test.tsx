@@ -35,8 +35,9 @@ const ABOUT = {
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
+// When `hold` is set no scene ever ends: the office is still playing when the stream is over.
 // When set, a second_look_rewrite or second_look_nothing scene never reaches its end ("in progress").
-const mid = vi.hoisted(() => ({ rewrite: false, nothing: false }));
+const mid = vi.hoisted(() => ({ rewrite: false, nothing: false, hold: false }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
 vi.mock("../../lib/office/useFollow", () => ({
@@ -55,7 +56,7 @@ vi.mock("../../lib/office/useSceneQueue", () => {
       const playing =
         (mid.rewrite && event.name === "second_look_rewrite") ||
         (mid.nothing && event.name === "second_look_nothing");
-      if (!playing) hooks?.onEnd?.();
+      if (!playing && !mid.hold) hooks?.onEnd?.();
     },
     clear: () => undefined,
     skipAll: () => undefined,
@@ -70,6 +71,7 @@ beforeEach(() => {
   emitted.length = 0;
   mid.rewrite = false;
   mid.nothing = false;
+  mid.hold = false;
   search.params = new URLSearchParams();
 });
 
@@ -862,16 +864,77 @@ test("with the animations off the streamed answer is visible", async () => {
   }
 });
 
-test("with the animations on the streamed answer waits for the Clerk", async () => {
+test("with the animations on the final answer and its citation show before any scene ends", async () => {
+  mid.hold = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  expect(await screen.findByRole("button", { name: "Source 1" })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
+    "Apple was founded in 1976 [1]. Also.",
+  );
+  expect(names()).toContain("clerk_back");
+});
+
+test("turning the animations off mid-run keeps the answer that has arrived", async () => {
+  mid.hold = true;
   stubAsk([
     { step: "storyteller", status: "start" },
-    { step: "answer", delta: "Streamed words that must wait." },
+    { step: "answer", delta: "Streamed words that stay." },
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
-  await waitFor(() => expect(names()).toContain("storyteller_start"));
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(screen.queryByText(/Streamed words that must wait/)).toBeNull();
+  expect(await screen.findByText(/Streamed words that stay/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("switch", { name: /Animations/ }));
+  expect(screen.getByText(/Streamed words that stay/)).toBeInTheDocument();
+  localStorage.removeItem("ragsimplified.animations");
+});
+
+test("the Ask button is enabled once the stream ends while scenes are still playing", async () => {
+  mid.hold = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.change(screen.getByLabelText("Your question"), {
+    target: { value: "Another question?" },
+  });
+  expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled();
+});
+
+test("while scenes are still playing the Ask button is enabled and the Clerk's waiting bubble stays", async () => {
+  mid.hold = true;
+  stubAsk([
+    { step: "translator", status: "start" },
+    { step: "translator", status: "done", data: { words: [] } },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("translator_done"));
+  fireEvent.change(screen.getByLabelText("Your question"), {
+    target: { value: "Another question?" },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled(),
+  );
+  expect(
+    screen.getByRole("img", { name: "The Clerk is waiting for a reply" }),
+  ).toBeInTheDocument();
+});
+
+test("with the animations on the Answer tab stays selected once the stream ends", async () => {
+  mid.hold = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
+    "Apple was founded in 1976",
+  );
 });
 
 test("each tab opens when its results arrive, and a starting step does not steal focus", async () => {
