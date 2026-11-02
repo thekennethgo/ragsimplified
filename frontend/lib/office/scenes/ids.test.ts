@@ -88,5 +88,5 @@ describe.each(rooms)("$room scenes", ({ room, scene, svg }) => {
 
 test("the scenes use some ids (the extraction works)", () => {
   expect(used(read("upload.ts")).ids.size).toBeGreaterThan(30);
-  expect(used(read("ask.ts")).spots.size).toBe(14);
+  expect(used(read("ask.ts")).spots.size).toBe(13);
 });

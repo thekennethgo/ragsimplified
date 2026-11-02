@@ -388,12 +388,30 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: update `page.test.tsx` for the removed Query room and the new starter row; the existing scene id tests still pass.
   - Done when: on localhost the question input and the answer card's top are visible without scrolling at 1440×900 and 1024×768, the input is visible without scrolling at 390×844, and there is no horizontal scroll at the four sizes.
   - Out of scope: Home and Upload (7.9), new room art.
-- [ ] 7.4a Clerk as bookends
+- [x] 7.4a Clerk as bookends
   - Do: keep the Clerk at the whiteboard.
     - In `frontend/lib/office/scenes/ask.ts`: `reset()` places the Clerk at `P.clAtBoard`, facing the room, visible (opacity 1), so the Clerk is in the room before any question. `clerk_start` no longer opens the door or walks: it turns the Clerk to the board, runs `writeOnBoard(tl)`, adds the `handoff` label, and turns the Clerk back to the room. `clerk_done` no longer walks to the Storyteller or out of the door: when something was found it fades `#a-answer` out over 0.25 s after a 0.3 s pause; when nothing was found it returns `nothingToDo()`. `second_look_rewrite` is unchanged.
   - Tests: `frontend/lib/office/scenes/build.test.ts` keeps passing (`clerk_done` is still longer when something was found).
   - Done when: the tests pass and, on localhost, the Clerk stands at the whiteboard before any question, writes the question without walking in, and stays in the room after the answer.
   - Out of scope: pacing (done in 7.2a).
+- [ ] 7.4b Office in step with the answer
+  - Do: the answer appears as the office reaches the Storyteller, not before, and the office is short enough that this costs at most a short pause. No character or scene is removed.
+    - Shorter scenes, in `frontend/lib/office/scenes/ask.ts` (only these values change):
+      - `writeOnBoard`: the six pen strokes become three, `[3, -6]`, `[-2, 1]`, `[3, -2]`, each `duration: 0.2`.
+      - `translator_start`: the look back `"+=0.3"` → `"+=0.15"`; each `.crt-line` offset `"+=0.15"` → `"+=0.06"`; the `.crt-bar` stagger 0.15 → 0.08.
+      - `translator_done`: the slip's `duration: 0.5` → 0.3; the pick-up offset `"+=0.2"` → `"+=0.1"`; `TRANSLATOR_PACE` 1.6 → 2.5.
+      - `scout_start`: the beam's `duration: 0.6` → 0.3.
+      - `scout_done`: each sheet's start `0.25 + i * 0.12` → `0.15 + i * 0.08` and its flight `duration: 0.45` → 0.3; the pile's `duration: 0.5` → 0.3.
+      - `judgeHandsOver`: the handover `duration: 0.45` → 0.3; the Storyteller's arm `"+=0.5"` → `"+=0.2"`.
+      - `storyteller_done`: the held page `"+=0.8"` → `"+=0.4"`; the arm `"+=0.2"` → `"+=0.1"`.
+    - Reveal, in `frontend/app/ask/page.tsx`: a new `revealed` state, `false` at the start of each run. It becomes `true` in the `onStart` hook of the `storyteller_start` scene (which also plays when nothing was found), at once when animations are off or are turned off during the run, and 2 s after the stream ends if neither has happened (one `setTimeout`, cleared at the next run). `AnswerCard` gets `answer={revealed ? answer : ""}` and `citations={revealed ? citations : []}`. `states`, the step strip and the `StepDetails` tabs keep updating on arrival as in 7.2.
+    - Progress in the answer card: until `revealed`, `AnswerCard` shows one live line instead of "Working on it. Open a step below to watch.", passed as a new `progress` string prop and built in `page.tsx` from `shown` (so it matches the office): Translator working → "The Translator is reading your question…"; Scout working → "The Scout is searching the library…"; Judge working → "The Scout found <n> cards. The Judge is checking them…"; Storyteller working → "The Judge kept <k> of <n>. The Storyteller is writing…". `<n>` and `<k>` are the existing `scout.length` and `keptCount`.
+    - Compact: in `AnswerCard.tsx`, the "Sources" heading and list render only once there is a revealed answer, and the empty state before a question is the single line "Your answer shows up here, with its sources.". In `page.tsx`, `StepDetails` sits inside a `<details>` closed by default whose `<summary>` is "How it got there"; clicking a step strip button opens it as well as choosing the tab. The `<h2>` inside `StepDetails` is visually hidden so the heading is not shown twice.
+  - Tests:
+    - `frontend/lib/office/scenes/build.test.ts`: a new test adds, along the normal path (`clerk_start`, `translator_start`, `translator_done`, `scout_start`, `scout_done`, `judge_start`, `judge_done`, `storyteller_start`, `storyteller_done`), each scene's `handoff` label time or, without one, its `duration()`, and expects the sum to be at most 14 s. Report the actual sum.
+    - `frontend/app/ask/page.test.tsx`: replace 7.2's "the final answer and its citations are on screen before any scene ends" with: with animations on, the answer is not in the card until `storyteller_start` starts, then it is; with animations off it shows as soon as it arrives; with animations on and no scene played, it shows 2 s after the stream ends (fake timers); the progress line shows the Scout's count while the Judge's scene plays. Add one test that a step strip click opens the "How it got there" `<details>`.
+  - Done when: the tests pass. On localhost (in the testing batch), for "What was Kenneth's first job after university?" with animations on, the answer appears at most 2 s after the stream ends and the `[office]` tail is at most 3 s; these replace 7.2a's targets.
+  - Out of scope: removing characters or scenes, new art, the second-look scenes, the reduced-motion path, backend timing.
 - [ ] 7.5 Recorded example run
   - Do: a "See an example" button plays a real recorded run with no backend call.
     - Record: `curl -sN -X POST "$BACKEND/ask" -H 'Content-Type: application/json' -d '{"question":"Where did Kenneth grow up?","private_chunks":[]}' > frontend/public/examples/grew-up.stream` against the live backend, saved byte for byte as the backend sent it. The hometown question is chosen because it plays the second look.

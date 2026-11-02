@@ -59,7 +59,6 @@ const HOME_FACING_LEFT: Record<Who, boolean> = {
   st: false,
 };
 
-const ANSWER_TO = { x: -92, y: 18 }; // typewriter to the Clerk's clipboard
 const HANDOVER_FROM = { x: 19, y: -61 }; // the papers in the Judge's hand, across the desk
 const HANDOVER_TO = { x: -68, y: -84 }; // the Storyteller's raised hand
 const KEPT_FROM = { x: -57, y: -35 }; // Storyteller's raised hand down onto the desk
@@ -105,7 +104,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     doorway: spot(root, "clerk-doorway"), // inside the QUERY door
     door: spot(root, "clerk-door"), // on the door mat
     clAtBoard: spot(root, "clerk-board"), // beside the whiteboard's right end, his writing hand in view; he waits here too
-    clAtStoryteller: spot(root, "clerk-storyteller"), // on the Storyteller's left, room above for a speech bubble
     trSpot: spot(root, "translator"),
     trAtScout: spot(root, "translator-scout"), // behind the Scout's right shoulder
     scSpot: spot(root, "scout"),
@@ -232,10 +230,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
   const face = (tl: gsap.core.Timeline, who: Who, left: boolean, position?: gsap.Position) =>
     tl.set(q(`#${who}-flip`), { scaleX: left ? -1 : 1 }, position);
   const faceHome = (tl: gsap.core.Timeline, who: Who) => face(tl, who, HOME_FACING_LEFT[who]);
-  const clerkPose = (tl: gsap.core.Timeline, give: boolean, position?: gsap.Position) =>
-    tl
-      .set(q("#cl-give"), { opacity: give ? 1 : 0 }, position)
-      .set(q("#cl-wait, #cl-clip-side"), { opacity: give ? 0 : 1 }, "<");
   // arm up (working pose) or down for the Scout, Judge and Storyteller
   const armUp = (tl: gsap.core.Timeline, who: Who, up: boolean, position?: gsap.Position) =>
     tl
@@ -244,9 +238,9 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
 
   function reset() {
     Object.keys(holds).forEach(stopHold);
-    // no Clerk, door shut
-    pos.cl = P.doorway;
-    gsap.set(q("#clerk"), { ...at(P.doorway), opacity: 0 });
+    // the Clerk waits beside the whiteboard, facing the room; door shut
+    pos.cl = P.clAtBoard;
+    gsap.set(q("#clerk"), { ...at(P.clAtBoard), opacity: 1 });
     gsap.set(q("#cl-wait, #cl-clip-side"), { opacity: 1 });
     gsap.set(q("#cl-give, #cl-write, #a-door-open, #a-answer"), { opacity: 0, x: 0, y: 0 });
     // the crew at their desks, facing their work
@@ -261,6 +255,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     for (const who of Object.keys(GROUP) as Who[]) {
       gsap.set(q(`#${who}-flip`), { svgOrigin: "40 0", scaleX: HOME_FACING_LEFT[who] ? -1 : 1 });
     }
+    gsap.set(q("#cl-flip"), { scaleX: 1 }); // the Clerk faces the room
     gsap.set(q("#sc-arm-up, #jd-arm-up, #st-arm-up"), { opacity: 0, x: 0, y: 0 });
     gsap.set(
       q(
@@ -415,24 +410,15 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
 
   // ---------- scenes: each returns a paused timeline ----------
   const scenes: Record<string, (data?: Record<string, unknown>) => gsap.core.Timeline> = {
-    // In through the QUERY door, behind the whiteboard, writes the question on it for the crew,
-    // then waits on the Storyteller's left.
+    // The Clerk is already at the board: turns to it, writes the question for the crew, turns back.
     clerk_start() {
-      // Reset now, not as the timeline plays: a reset during play would put the Clerk's tracked
-      // position back at the doorway after the walks below have moved it to the board.
+      // Reset now, not as the timeline plays, so the Clerk's tracked position is the board.
       reset();
       const tl = gsap.timeline({ paused: true });
-      tl.set(q("#clerk"), at(P.doorway))
-        .set(q("#cl-flip"), { scaleX: 1 })
-        .to(q("#a-door-open"), { opacity: 1, duration: 0.2 })
-        .to(q("#clerk"), { opacity: 1, duration: 0.3 });
-      walk(tl, "cl", P.door);
-      tl.to(q("#a-door-open"), { opacity: 0, duration: 0.25 });
-      walk(tl, "cl", P.clAtBoard, "<"); // straight along behind the whiteboard to its right end
       face(tl, "cl", true); // facing the board; his arm goes round its edge
       writeOnBoard(tl);
       tl.addLabel("handoff"); // the question is on the board: the Translator can start
-      face(tl, "cl", false, "+=0.2"); // then waits beside the board, facing the room
+      face(tl, "cl", false, "+=0.2"); // then back to facing the room
       return tl;
     },
 
@@ -664,25 +650,11 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       return tl;
     },
 
-    // Take the answer from the Storyteller and leave by the QUERY door.
+    // The answer is taken off the page; the Clerk stays in the room.
     clerk_done() {
+      if (nothingFound) return nothingToDo();
       const tl = gsap.timeline({ paused: true });
-      if (!nothingFound) {
-        walk(tl, "cl", P.clAtStoryteller, undefined, 2.2); // over from the board; walking right, so facing the Storyteller
-        clerkPose(tl, true);
-        tl.fromTo(
-          q("#a-answer"),
-          { x: 0, y: 0, opacity: 1 },
-          { ...ANSWER_TO, duration: 0.25, ease: "power2.inOut" },
-        ).to(q("#a-answer"), { opacity: 0, duration: 0.15 });
-        clerkPose(tl, false);
-      }
-      walk(tl, "cl", P.door, undefined, 2.2);
-      tl.to(q("#a-door-open"), { opacity: 1, duration: 0.12 });
-      walk(tl, "cl", P.doorway, undefined, 2.2);
-      tl.to(q("#clerk"), { opacity: 0, duration: 0.12 }, "-=0.2")
-        .addLabel("handoff") // gone through the door: he is back in the Query room straight away
-        .to(q("#a-door-open"), { opacity: 0, duration: 0.12 });
+      tl.to(q("#a-answer"), { opacity: 0, duration: 0.25 }, "+=0.3");
       return tl;
     },
   };

@@ -76,7 +76,6 @@ const rooms: {
       "judge_handover",
       "second_look_rewrite",
       "second_look_nothing",
-      "clerk_done",
     ],
   },
   {
