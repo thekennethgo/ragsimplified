@@ -32,7 +32,6 @@ import { backendUrl, readEvents } from "../../lib/backend";
 import type { MapOverlay, Point } from "../../lib/map";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { buildAskScenes } from "../../lib/office/scenes/ask";
-import { buildQueryScenes } from "../../lib/office/scenes/query";
 import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { useBackendHealth } from "../../lib/health";
@@ -46,7 +45,6 @@ import styles from "./page.module.css";
 const MAX_PRIVATE_CHUNKS = 60;
 
 const ASK_LABEL = "The Ask office: the Clerk, Translator, Scout, Judge and Storyteller at work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor.";
-const QUERY_LABEL = "The Query room, where the Clerk takes your question.";
 
 /** A card per shelf that has a document, in shelf order, with its starter questions. */
 function examplesFor(docs: { filename: string }[] | null) {
@@ -58,6 +56,14 @@ function examplesFor(docs: { filename: string }[] | null) {
 }
 
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;
+/** The step strip under the room: each character's colour token and its short label on a phone. */
+const STRIP = [
+  { id: "clerk", name: "Clerk", short: "Clerk" },
+  { id: "translator", name: "Translator", short: "Words" },
+  { id: "scout", name: "Scout", short: "Search" },
+  { id: "judge", name: "Judge", short: "Check" },
+  { id: "storyteller", name: "Storyteller", short: "Write" },
+] as const;
 const NAMES = {
   translator: "Translator",
   scout: "Scout",
@@ -98,6 +104,8 @@ function AskOffice() {
   const [tab, setTab] = useState<TabId>("clerk");
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
+  // Under 760px the room picture is hidden until the visitor asks to watch.
+  const [watching, setWatching] = useState(false);
   const [run, setRun] = useState(0);
   // `states` is what the backend has finished; `shown` is what the office has played so far.
   const [states, setStates] = useState<Record<string, Phase>>({});
@@ -402,6 +410,19 @@ function AskOffice() {
   const storytellerDone = phase("storyteller") === "done";
   const finished = storytellerDone && !animating;
 
+  // The Clerk reports no phase of its own: it is worked out from the others (as StepDetails does).
+  const stripPhase = (id: (typeof STRIP)[number]["id"]): Phase => {
+    if (id !== "clerk") return phase(id);
+    const all = Object.values(states);
+    return all.includes("error")
+      ? "error"
+      : storytellerDone
+        ? "done"
+        : all.length > 0
+          ? "working"
+          : "waiting";
+  };
+
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
   const crewSays: Record<(typeof CREW)[number], string> = {
     translator: askTranslatorSays(),
@@ -449,80 +470,96 @@ function AskOffice() {
     ),
   };
   const clerkAt = useFollow(officeRef, "clerk", animationsOn && clerkAway);
-  const clerkHere = !asked || !officeBusy;
 
   return (
-    <>
-      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
-        <h1 id="office-h" className={styles.title}>
-          The office
-        </h1>
-        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
-        <div className={styles.stage}>
-          <OfficeRoom
-            src="/office/ask-room.svg"
-            label={ASK_LABEL}
-            build={buildAskScenes}
-            queue={queue}
-          />
-        </div>
-        <div className={styles.bubbles}>
-          {CREW.map((step) => {
-            const at = crewAt[step];
-            return at && <SpeechBubble key={step} name={NAMES[step]} text={crewSays[step]} at={at} />;
-          })}
-          {clerkAt && (
-            <div
-              className={`bubble ${styles.clerkWaits}`}
-              aria-label="The Clerk is waiting for a reply"
-              role="img"
-              style={{
-                left: `${clerkAt.left}px`,
-                top: `${clerkAt.top}px`,
-                transform: "translate(-50%, calc(-100% - 10px))",
-              }}
-            >
-              <span />
-              <span />
-              <span />
-              <span className="tail" style={{ left: "50%" }} />
-            </div>
-          )}
-        </div>
-      </section>
+    <div className={styles.page}>
+      <h1 className={styles.hidden}>Ask the library</h1>
+      <QuestionBubble
+        question={question}
+        onChange={setQuestion}
+        onSubmit={onSubmit}
+        busy={running}
+        offline={offline}
+        examples={examplesFor(library)}
+      />
+      {error && (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      )}
 
-      <div className={styles.row}>
-        <section aria-labelledby="ask-h" className={`panel ${styles.query}`}>
-          <h2 id="ask-h">Query</h2>
-          <div className={styles.queryRoom}>
+      <div className={styles.grid}>
+        <section ref={officeRef} aria-label="The office" className={styles.scene}>
+          <button
+            type="button"
+            className={styles.watch}
+            aria-expanded={watching}
+            onClick={() => setWatching((on) => !on)}
+          >
+            {watching ? "▾" : "▸"} Watch the office
+          </button>
+          <div className={`${styles.room} ${watching ? styles.roomOpen : ""}`}>
             <OfficeRoom
-              src="/office/query-room.svg"
-              label={QUERY_LABEL}
-              build={buildQueryScenes}
+              src="/office/ask-room.svg"
+              label={ASK_LABEL}
+              build={buildAskScenes}
               queue={queue}
             />
-            <div className={styles.clerkSays}>
-              <span className={styles.arrow} />
-              <p>{clerkHere ? "Clerk" : "Note from the Clerk"}</p>
-              <p aria-live="polite">{clerkSays}</p>
-            </div>
           </div>
-          <QuestionBubble
-            question={question}
-            onChange={setQuestion}
-            onSubmit={onSubmit}
-            busy={running}
-            offline={offline}
-            examples={examplesFor(library)}
-          />
-          {error && (
-            <p role="alert" className={styles.error}>
-              {error}
-            </p>
-          )}
+          <div className={styles.bubbles}>
+            {CREW.map((step) => {
+              const at = crewAt[step];
+              return at && <SpeechBubble key={step} name={NAMES[step]} text={crewSays[step]} at={at} />;
+            })}
+            {clerkAt && (
+              <div
+                className={`bubble ${styles.clerkWaits}`}
+                aria-label="The Clerk is waiting for a reply"
+                role="img"
+                style={{
+                  left: `${clerkAt.left}px`,
+                  top: `${clerkAt.top}px`,
+                  transform: "translate(-50%, calc(-100% - 10px))",
+                }}
+              >
+                <span />
+                <span />
+                <span />
+                <span className="tail" style={{ left: "50%" }} />
+              </div>
+            )}
+          </div>
+          <div className={styles.caption}>
+            <p aria-live="polite">{clerkSays}</p>
+            <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
+          </div>
+          <div className={styles.steps} role="group" aria-label="Steps">
+            {STRIP.map((s) => {
+              const state = stripPhase(s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={styles.step}
+                  style={{ borderTopColor: `var(--${s.id})` }}
+                  aria-pressed={tab === s.id}
+                  aria-label={`${s.name}: ${state}`}
+                  data-state={state}
+                  onClick={() => setTab(s.id)}
+                >
+                  <span aria-hidden="true">
+                    {state === "done" && "✓ "}
+                    <span className={styles.full}>{s.name}</span>
+                    <span className={styles.short}>{s.short}</span>
+                    {state === "working" && <span className={styles.now}> now</span>}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
-        <div ref={answerRef} style={{ flex: "999 1 620px", minWidth: 0 }}>
+        <div ref={answerRef} className={styles.answer}>
           <AnswerCard
             answer={answer}
             citations={citations}
@@ -534,31 +571,36 @@ function AskOffice() {
             source={source}
             onSource={setSource}
           />
-          <StepDetails
-            tab={tab}
-            onTab={setTab}
-            states={states}
-            answer={answer}
-            citations={citations}
-            words={words}
-            scout={scout}
-            look={look}
-            translator2={translator2}
-            scout2={scout2}
-            judge2={judge2}
-            round2={round2}
-            judge={judge}
-            askedQuestion={askedQuestion}
-            follow={animationsOn}
-            overlay={overlay}
-            privateSent={privateSent}
-            sentPrompt={sentPrompt}
-            run={run}
-          />
         </div>
       </div>
 
-      <LibraryPanel onLoad={setLibrary} onOpen={openViewer} viewer={viewer} overlay={overlay} />
-    </>
+      <StepDetails
+        tab={tab}
+        onTab={setTab}
+        states={states}
+        answer={answer}
+        citations={citations}
+        words={words}
+        scout={scout}
+        look={look}
+        translator2={translator2}
+        scout2={scout2}
+        judge2={judge2}
+        round2={round2}
+        judge={judge}
+        askedQuestion={askedQuestion}
+        follow={animationsOn}
+        overlay={overlay}
+        privateSent={privateSent}
+        sentPrompt={sentPrompt}
+        run={run}
+      />
+
+      {/* Closed, but mounted: its onLoad fills the starter questions. */}
+      <details className={styles.library}>
+        <summary>Browse the library</summary>
+        <LibraryPanel onLoad={setLibrary} onOpen={openViewer} viewer={viewer} overlay={overlay} />
+      </details>
+    </div>
   );
 }

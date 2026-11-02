@@ -1187,26 +1187,28 @@ test("the Top 5 leaves filler words out", async () => {
   expect(items.map((li) => li.textContent)).toEqual(["silicon0.95", "Apple0.70"]);
 });
 
-test("example questions come from the shelves in the library, as cards in the shelf colours", async () => {
+test("example questions come from the shelves in the library: three chips, the rest in cards", async () => {
   const fetchMock = stubAsk(EVENTS, [
     { id: 1, title: "Personal", filename: "about-kenneth/personal.md", chunk_count: 1 },
     { id: 2, title: "Vector database", filename: "rag-basics/vector-database.md", chunk_count: 1 },
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("button", { name: "What is Kenneth's academic background?" });
-  expect(screen.getByText("Not sure what to ask? Try one of these")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "What project is Kenneth most proud of?" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "What is retrieval-augmented generation?" })).toBeInTheDocument();
+  // "See an example" is wired in 7.5; until then it is hidden.
+  expect(screen.getByText(/See an example/).closest("button")).toHaveAttribute("hidden");
+  // The questions that are not chips are in cards under "Browse all topics", in the shelf colours.
+  expect(screen.getByText("Browse all topics")).toBeInTheDocument();
   const cards = screen.getAllByTestId("shelf-card");
-  expect(cards).toHaveLength(2);
-  expect(cards[0]).toHaveTextContent("About the creator");
-  expect(cards[0]).toHaveStyle({ borderLeftColor: "#4e79a7" });
-  expect(cards[1]).toHaveTextContent("RAG basics");
-  expect(cards[1]).toHaveStyle({ borderLeftColor: "#e15759" });
-  expect(screen.getByRole("button", { name: "What is a vector database?" })).toBeInTheDocument();
+  expect(cards).toHaveLength(1);
+  expect(cards[0]).toHaveTextContent("RAG basics");
+  expect(cards[0]).toHaveStyle({ borderLeftColor: "#e15759" });
+  expect(screen.getByRole("button", { name: /What is a vector database\?/ })).toBeInTheDocument();
   // No documents on these shelves, so no cards for them.
   expect(screen.queryByRole("button", { name: "Why does the Judge sometimes take a second look?" })).toBeNull();
   const row = screen.getByRole("region", { name: "Suggested questions" });
   expect(row).toHaveAttribute("tabindex", "0");
-  expect(screen.queryByRole("button", { name: /Show all shelves/ })).toBeNull();
 
   fireEvent.click(
     screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
@@ -1220,7 +1222,7 @@ test("example questions come from the shelves in the library, as cards in the sh
   ).toBe(false);
 });
 
-test("shows every shelf card in one scrolling row, with no Show all button", async () => {
+test("every shelf's questions are reachable: three chips, then one card per shelf with questions left", async () => {
   stubAsk(
     EVENTS,
     [
@@ -1239,8 +1241,71 @@ test("shows every shelf card in one scrolling row, with no Show all button", asy
   );
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("region", { name: "Suggested questions" });
-  expect(screen.getAllByTestId("shelf-card")).toHaveLength(6);
+  // The first shelf's two questions and the second shelf's first are chips.
+  expect(screen.getAllByTestId("shelf-card")).toHaveLength(5);
   expect(screen.queryByRole("button", { name: /Show all shelves|Show fewer/ })).toBeNull();
+});
+
+test("the Query room is gone: the Clerk's line is the scene's caption", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.queryByRole("heading", { name: "Query" })).toBeNull();
+  expect(screen.queryByText("Note from the Clerk")).toBeNull();
+  const scene = screen.getByRole("region", { name: "The office" });
+  expect(within(scene).getByText("Hi, I'm the Clerk. What do you want to know?")).toBeInTheDocument();
+  expect(within(scene).getByRole("switch", { name: /Animations/ })).toBeInTheDocument();
+});
+
+test("a step strip button opens its tab in How it got there", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const scene = screen.getByRole("region", { name: "The office" });
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(within(scene).getByRole("button", { name: "Scout: waiting" }));
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("a step strip pick sticks: later steps do not pull the tab away", async () => {
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  push({ step: "translator", status: "start" });
+  push({ step: "translator", status: "done", data: { words: [] } });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute("aria-pressed", "true"),
+  );
+  const scene = screen.getByRole("region", { name: "The office" });
+  fireEvent.click(within(scene).getByRole("button", { name: /^Scout:/ }));
+  push({ step: "scout", status: "start" });
+  push({ step: "scout", status: "done", data: { results: [] } });
+  await within(scene).findByRole("button", { name: "Scout: done" });
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  push({ step: "judge", status: "start" });
+  push({ step: "judge", status: "done", data: { results: [] } });
+  await within(scene).findByRole("button", { name: "Judge: done" });
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  close();
+});
+
+test("the Watch the office button toggles aria-expanded", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const watch = screen.getByRole("button", { name: /Watch the office/ });
+  expect(watch).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "true");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "false");
 });
 
 test("shows no starter question cards while the library is empty", async () => {
@@ -1248,7 +1313,7 @@ test("shows no starter question cards while the library is empty", async () => {
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("button", { name: "Ask" });
   expect(screen.queryByTestId("shelf-card")).toBeNull();
-  expect(screen.queryByText("Not sure what to ask? Try one of these")).toBeNull();
+  expect(screen.queryByText("Browse all topics")).toBeNull();
 });
 
 test("when the library is offline the Ask button is disabled and a note shows", async () => {

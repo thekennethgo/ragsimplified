@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 import { useAbout } from "../../lib/about";
 import type {
@@ -272,13 +272,22 @@ export default function StepDetails({
       : (states[id] ?? "waiting");
   // Follow the newest step whose results are in; once the answer is there, stay where it is.
   const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
+  // The tab this panel last chose; any other change to `tab` came from the page (the step strip) and counts as a pick.
+  const chosen = useRef(tab);
   useEffect(() => {
     touched.current = false;
+    chosen.current = tab;
   }, [run]);
+  useEffect(() => {
+    if (tab !== chosen.current) touched.current = true;
+  }, [tab]);
   const hasAnswer = Boolean(answer);
   useEffect(() => {
     if (touched.current) return;
-    if (follow && latest && !hasAnswer) onTab(latest);
+    if (follow && latest && !hasAnswer) {
+      chosen.current = latest;
+      onTab(latest);
+    }
   }, [follow, latest, hasAnswer, onTab]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
@@ -320,6 +329,7 @@ export default function StepDetails({
               key={s.id}
               type="button"
               aria-pressed={tab === s.id}
+              style={{ "--c": `var(--${s.id})` } as CSSProperties}
               onClick={() => {
                 touched.current = true;
                 onTab(s.id);

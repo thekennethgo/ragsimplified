@@ -376,7 +376,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: move the AnswerPanel assertions in `page.test.tsx` to the new components; add one test that opening a citation shows the passage inside the answer card and keeps the answer text on screen.
   - Done when: the tests pass and every tab still shows this run's real data on localhost.
   - Out of scope: the page layout (7.4).
-- [ ] 7.4 One-screen Ask layout
+- [x] 7.4 One-screen Ask layout
   - Do: rebuild the Ask page's layout to match the mockup, in `frontend/app/ask/page.tsx`, `page.module.css` and `frontend/components/ask/QuestionBubble.tsx` (+ `.module.css`).
     - Order: header → question bar → starter row → a grid of the office scene (left) and `AnswerCard` (right) → `StepDetails` → the library.
     - Question bar: one-line input and the Ask button on one row (the input may grow to 3 lines when the text wraps). The starter row under it: a "See an example" button (wired in 7.5; until then hidden), the first 3 example questions from `examplesFor(library)` as chips, and a "Browse all topics" `<details>` that reveals the rest of the current example cards.

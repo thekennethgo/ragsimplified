@@ -1,30 +1,44 @@
-.office {
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.scene {
   position: relative;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  overflow: hidden;
   background: var(--room);
-  width: 70%;
-  margin-inline: auto;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
-.title {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  padding: 4px 12px;
-}
-
-.stage {
+.room {
   position: relative;
+  border-radius: 8px;
+  overflow: hidden;
   min-height: 120px;
+}
+
+.watch {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: #cdbba3;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 0;
+  cursor: pointer;
 }
 
 .bubbles {
@@ -58,55 +72,66 @@
   border-color: #c99a5e;
 }
 
-.row {
+.caption {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.query {
-  flex: 1 1 380px;
-  max-width: 100%;
-  background: var(--paper);
-  gap: 14px;
-}
-
-.queryRoom {
-  position: relative;
-  overflow: hidden;
-  border-radius: 6px;
-}
-
-.clerkSays {
-  position: absolute;
-  left: 41%;
-  right: 3%;
-  top: 8%;
-  padding: 9px 11px;
-  border: 1px solid #c99a5e;
-  border-radius: 10px;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.clerkSays p:first-of-type {
-  font-weight: 600;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+  color: #cdbba3;
   font-size: 12px;
 }
 
-.arrow {
-  position: absolute;
-  left: -7px;
-  top: 22px;
-  width: 12px;
-  height: 12px;
-  background: #ffffff;
-  border-left: 1px solid #c99a5e;
-  border-bottom: 1px solid #c99a5e;
-  transform: rotate(45deg);
+.caption p {
+  min-width: 0;
+}
+
+/* The toggle is absolutely placed for other pages; here it sits in the row. */
+.caption > button {
+  position: static;
+  flex: none;
+}
+
+.steps {
+  display: flex;
+  gap: 4px;
+}
+
+.step {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-top: 3px solid;
+  border-radius: 6px;
+  padding: 5px 4px;
+  background: #3a2b20;
+  color: #cdbba3;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.step[data-state="done"] {
+  color: #f6efe4;
+}
+
+.step[data-state="working"] {
+  background: #4a372a;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.step[aria-pressed="true"] {
+  outline: 1px solid #cdbba3;
+}
+
+.short {
+  display: none;
+}
+
+.answer {
+  min-width: 0;
 }
 
 .error {
@@ -117,9 +142,29 @@
   font-size: 14px;
 }
 
+.library > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 6px 0;
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
-  .office {
-    width: 100%;
+  .watch {
+    display: block;
+  }
+
+  .room {
+    display: none;
+  }
+
+  .roomOpen {
+    display: block;
   }
 
   .bubbles {
@@ -127,8 +172,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 12px;
-    background: #3a2a20;
+    padding: 2px;
   }
 
   .bubbles:empty {
@@ -138,4 +182,30 @@
   .clerkWaits {
     display: none;
   }
+
+  .full {
+    display: none;
+  }
+
+  .short {
+    display: inline;
+  }
+
+  .now {
+    display: none;
+  }
+
+  .step {
+    padding: 6px 0;
+    font-size: 11px;
+  }
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

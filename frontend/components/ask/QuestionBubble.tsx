@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { type FormEvent, useLayoutEffect, useRef } from "react";
 
 import type { Word } from "../../lib/ask";
 import styles from "./QuestionBubble.module.css";
@@ -35,7 +35,7 @@ export function HighlightedWords({ words }: { words: Word[] }) {
   );
 }
 
-/** The question box: type the question here and send it to the office. */
+/** The question bar: the question and the Ask button on one row, with starter questions under it. */
 export function QuestionBubble({
   question,
   onChange,
@@ -53,55 +53,42 @@ export function QuestionBubble({
   examples?: ExampleCard[];
 }) {
   const cards = examples ?? [];
+  const input = useRef<HTMLTextAreaElement>(null);
+  // One line until the text wraps; the CSS caps it at 3 lines.
+  useLayoutEffect(() => {
+    const el = input.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [question]);
+  const all = cards.flatMap((card) => card.questions);
+  const chips = all.slice(0, 3);
+  // The cards under "Browse all topics" hold the questions that are not chips.
+  const more = cards
+    .map((card) => ({ ...card, questions: card.questions.filter((q) => !chips.includes(q)) }))
+    .filter((card) => card.questions.length > 0);
   return (
     <form className={styles.form} onSubmit={onSubmit}>
-      <label className={styles.label}>
-        Your question
-        <textarea
-          value={question}
-          onChange={(e) => onChange(e.target.value)}
-          maxLength={MAX_QUESTION_CHARS}
-          rows={3}
-          placeholder="e.g. Where did Kenneth grow up?"
-        />
-      </label>
-      {cards.length > 0 && (
-        <div className={styles.examples}>
-          <h2>Not sure what to ask? Try one of these</h2>
-          <div
-            className={styles.cards}
-            role="region"
-            aria-label="Suggested questions"
-            tabIndex={0}
-          >
-            {cards.map((card) => (
-              <div
-                key={card.shelf}
-                className={styles.card}
-                data-testid="shelf-card"
-                style={{ borderLeftColor: card.color }}
-              >
-                <p className={styles.shelfName}>
-                  <span className={styles.dot} style={{ background: card.color }} aria-hidden="true" />
-                  {card.shelf}
-                </p>
-                {card.questions.map((q) => (
-                  <button
-                    type="button"
-                    key={q}
-                    className={styles.question}
-                    onClick={() => onChange(q)}
-                    disabled={busy || offline}
-                  >
-                    <span>{q}</span>
-                    <span aria-hidden="true">→</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className={styles.bar}>
+        <label className={styles.label}>
+          <span className={styles.labelText}>Your question</span>
+          <textarea
+            ref={input}
+            value={question}
+            onChange={(e) => onChange(e.target.value)}
+            maxLength={MAX_QUESTION_CHARS}
+            rows={1}
+            placeholder="e.g. Where did Kenneth grow up?"
+          />
+        </label>
+        <button
+          type="submit"
+          className={styles.send}
+          disabled={busy || offline || !question.trim()}
+        >
+          {busy ? "Asking…" : "Ask"}
+        </button>
+      </div>
       <p className={styles.count} aria-live="polite">
         {question.length} / {MAX_QUESTION_CHARS}
       </p>
@@ -110,13 +97,66 @@ export function QuestionBubble({
           The library is offline right now, so questions can't be answered. Try again in a minute.
         </p>
       )}
-      <button
-        type="submit"
-        className={styles.send}
-        disabled={busy || offline || !question.trim()}
-      >
-        {busy ? "Asking…" : "Ask"}
-      </button>
+      {chips.length > 0 && (
+        <div className={styles.starters}>
+          {/* Wired up in step 7.5; hidden until then. */}
+          <button type="button" className={styles.example} hidden>
+            ▶ See an example
+          </button>
+          {chips.map((q) => (
+            <button
+              type="button"
+              key={q}
+              className={styles.chip}
+              onClick={() => onChange(q)}
+              disabled={busy || offline}
+            >
+              {q}
+            </button>
+          ))}
+          {more.length > 0 && (
+            <details className={styles.browse}>
+              <summary>Browse all topics</summary>
+              <div
+                className={styles.cards}
+                role="region"
+                aria-label="Suggested questions"
+                tabIndex={0}
+              >
+                {more.map((card) => (
+                  <div
+                    key={card.shelf}
+                    className={styles.card}
+                    data-testid="shelf-card"
+                    style={{ borderLeftColor: card.color }}
+                  >
+                    <p className={styles.shelfName}>
+                      <span
+                        className={styles.dot}
+                        style={{ background: card.color }}
+                        aria-hidden="true"
+                      />
+                      {card.shelf}
+                    </p>
+                    {card.questions.map((q) => (
+                      <button
+                        type="button"
+                        key={q}
+                        className={styles.question}
+                        onClick={() => onChange(q)}
+                        disabled={busy || offline}
+                      >
+                        <span>{q}</span>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
     </form>
   );
 }
