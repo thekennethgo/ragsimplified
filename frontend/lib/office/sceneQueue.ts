@@ -6,6 +6,8 @@ export type SceneQueue = {
   clear(): void;
   /** Runs every outstanding hook, stops every scene and loop, and resets the rooms. */
   skipAll(): void;
+  /** Plays the scene in progress, every later one and the waits between them `factor` times faster. */
+  setSpeed(factor: number): void;
 };
 
 /** `chopper_start` belongs to the chopper: its next scene ends its "still working" loop. */
@@ -20,7 +22,7 @@ const who = (name: string) => name.split("_")[0];
 export function createSceneQueue({
   reduced,
   skip = () => false,
-  holdMs = 1000,
+  holdMs = 300,
   gapMs = 0,
 }: {
   reduced: () => boolean;
@@ -36,6 +38,7 @@ export function createSceneQueue({
   let running = false;
   let generation = 0;
   let wake: (() => void) | null = null;
+  let speed = 1;
   const playing = new Set<Timeline>();
 
   function stopHold(key: string) {
@@ -94,7 +97,7 @@ export function createSceneQueue({
       const key = who(event.name);
       if (gapMs > 0 && lastWho !== null && lastWho !== key) {
         await new Promise<void>((resolve) => {
-          const timer = setTimeout(resolve, gapMs);
+          const timer = setTimeout(resolve, gapMs / speed);
           wake = () => {
             clearTimeout(timer);
             resolve();
@@ -112,6 +115,7 @@ export function createSceneQueue({
       await new Promise<void>((resolve) => {
         wake = resolve;
         playing.add(tl);
+        tl.timeScale(speed);
         if (handoff !== undefined) tl.call(resolve, null, handoff);
         const previous = tl.eventCallback("onComplete") as (() => void) | undefined;
         tl.eventCallback("onComplete", () => {
@@ -133,7 +137,7 @@ export function createSceneQueue({
       // A handoff lets the next character start at once while this scene's tail keeps playing.
       if (handoff === undefined || isReduced) {
         await new Promise<void>((resolve) => {
-          const timer = setTimeout(resolve, holdMs);
+          const timer = setTimeout(resolve, holdMs / speed);
           wake = () => {
             clearTimeout(timer);
             resolve();
@@ -172,6 +176,10 @@ export function createSceneQueue({
       }
     },
     clear,
+    setSpeed(factor) {
+      speed = factor;
+      for (const tl of playing) tl.timeScale(factor);
+    },
     skipAll() {
       runOutstanding();
       clear();

@@ -60,6 +60,7 @@ vi.mock("../../lib/office/useSceneQueue", () => {
     },
     clear: () => undefined,
     skipAll: () => undefined,
+    setSpeed: () => undefined,
   };
   return { useSceneQueue: () => queue };
 });

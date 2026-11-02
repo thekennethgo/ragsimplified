@@ -9,6 +9,7 @@ function setup(
   options: { handoff?: string[]; reduced?: boolean; gapMs?: number; skip?: () => boolean } = {},
 ) {
   const log: string[] = [];
+  const scales: string[] = [];
   const timelines: Record<string, Fake> = {};
   const holds: SceneSet["holds"] = {};
   const scene = (name: string) => () => {
@@ -18,6 +19,7 @@ function setup(
       labels: options.handoff?.includes(name) ? { handoff: 1 } : {},
       duration: () => 2,
       play: () => log.push(`play ${name}`),
+      timeScale: (f: number) => scales.push(`${name} ${f}`),
       progress: (p: number) => {
         log.push(`progress ${name} ${p}`);
         // like a scene that would start its loop when it completes
@@ -51,7 +53,7 @@ function setup(
     gapMs: options.gapMs,
   });
   queue.register(set);
-  return { queue, log, timelines, holds, set };
+  return { queue, log, scales, timelines, holds, set };
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -291,6 +293,7 @@ test("a second look plays in order: ruled, rewrite, the crew again, then the han
       duration: () => 1,
       play: () => played.push(name),
       progress: () => onComplete?.(),
+      timeScale: () => {},
       kill: () => {},
       call: () => {},
       eventCallback: ((_: "onComplete", fn?: () => void) => {
@@ -316,4 +319,20 @@ test("a second look plays in order: ruled, rewrite, the crew again, then the han
     await vi.advanceTimersByTimeAsync(1000);
   }
   expect(played).toEqual(order.filter((n) => n !== "second_look_start"));
+});
+
+test("setSpeed(2) plays the scene at double speed and halves the hold", async () => {
+  const { queue, log, scales, timelines } = setup();
+  queue.emit({ name: "chopper_start" });
+  queue.emit({ name: "chopper_done" });
+  await flush();
+  queue.setSpeed(2);
+  expect(scales).toContain("chopper_start 2");
+
+  timelines.chopper_start.finish();
+  await vi.advanceTimersByTimeAsync(499);
+  expect(log).not.toContain("play chopper_done");
+  await vi.advanceTimersByTimeAsync(1);
+  expect(scales).toContain("chopper_done 2");
+  expect(log).toContain("play chopper_done");
 });

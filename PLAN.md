@@ -359,7 +359,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests in `frontend/app/ask/page.test.tsx`: with animations on and a mocked stream that ends at once, the final answer and its citations are on screen before any scene ends; turning animations off mid-run keeps the answer; the Ask button is enabled as soon as the stream ends while the office is still animating.
   - Done when: the tests pass and, on localhost with animations on, the answer appears while the Clerk is still walking.
   - Out of scope: layout changes, pause or replay controls.
-- [ ] 7.2a Faster office
+- [x] 7.2a Faster office
   - Do: make one run's office animation short enough not to bore.
     - Measure first. In `frontend/app/ask/page.tsx`, record `performance.now()` when a run starts, when the stream ends, and when the last scene's hook runs (where `setAnimating(false)` is called); in development only (`process.env.NODE_ENV === "development"`) log `[office] stream <a> s, office <b> s, tail <b - a> s`. Run "Where did Kenneth grow up?" and "What was Kenneth's first job after university?" on localhost with animations on, 3 times each, before any other change, and note the medians.
     - Pace, in `frontend/lib/office/scenes/ask.ts`: `MIN_WALK` 0.4 → 0.25; `SPEED` `{ clerk: 260, crew: 200 }`; the Scout's lantern sweep durations 0.8/1.1/0.9/0.6 → 0.3/0.4/0.3/0.2; the Judge's speech hold `"+=1.8"` → `"+=0.8"`; the Judge's head-tilt durations 0.25/0.4/0.4/0.25 → 0.15/0.25/0.25/0.15. Nothing else in the scenes changes.

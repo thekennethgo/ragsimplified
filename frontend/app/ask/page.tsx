@@ -194,6 +194,9 @@ function AskOffice() {
       answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     queue.clear();
+    queue.setSpeed(1);
+    const runStart = performance.now();
+    let streamEnd = 0;
     queue.emit({ name: "clerk_away" });
     queue.emit({ name: "clerk_start" });
     let nothingFound = false;
@@ -353,12 +356,25 @@ function AskOffice() {
           queue.emit({ name: "clerk_done" });
           queue.emit(
             { name: nothingFound ? "clerk_shrug" : "clerk_back" },
-            { onEnd: () => setAnimating(false) },
+            {
+              onEnd: () => {
+                setAnimating(false);
+                if (process.env.NODE_ENV === "development") {
+                  const a = (streamEnd - runStart) / 1000;
+                  const b = (performance.now() - runStart) / 1000;
+                  console.log(
+                    `[office] stream ${a.toFixed(1)} s, office ${b.toFixed(1)} s, tail ${(b - a).toFixed(1)} s`,
+                  );
+                }
+              },
+            },
           );
         } else {
           queue.emit(sceneEvent, { onEnd: update });
         }
       }
+      streamEnd = performance.now();
+      queue.setSpeed(2);
     } catch {
       fail("Could not reach the backend");
     } finally {

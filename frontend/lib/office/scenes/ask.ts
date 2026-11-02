@@ -4,8 +4,8 @@ import { reducedMotion } from "../motion";
 import { at, spot, type Point } from "../spots";
 import type { SceneSet, Timeline } from "../types";
 
-const MIN_WALK = 0.4;
-const SPEED = { clerk: 170, crew: 110 }; // room units per second; the Clerk is a brisk courier
+const MIN_WALK = 0.25;
+const SPEED = { clerk: 260, crew: 200 }; // room units per second; the Clerk is a brisk courier
 const TRANSLATOR_PACE = 1.6; // the Translator hurries the slip over to the Scout
 
 // The canvas room's projection: room (x, y, z) to SVG (from OfficeAsk.dc.html's geometry()).
@@ -303,10 +303,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         { opacity: 0, scale: 0.4, transformOrigin: "50% 100%" },
         { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" },
       )
-      .to(q("#jd-flip"), { rotation: -5, svgOrigin: "40 116", duration: 0.25, ease: "sine.inOut" }) // head tilt, twice
-      .to(q("#jd-flip"), { rotation: 5, duration: 0.4, ease: "sine.inOut" })
-      .to(q("#jd-flip"), { rotation: -5, duration: 0.4, ease: "sine.inOut" })
-      .to(q("#jd-flip"), { rotation: 0, duration: 0.25, ease: "sine.inOut" })
+      .to(q("#jd-flip"), { rotation: -5, svgOrigin: "40 116", duration: 0.15, ease: "sine.inOut" }) // head tilt, twice
+      .to(q("#jd-flip"), { rotation: 5, duration: 0.25, ease: "sine.inOut" })
+      .to(q("#jd-flip"), { rotation: -5, duration: 0.25, ease: "sine.inOut" })
+      .to(q("#jd-flip"), { rotation: 0, duration: 0.15, ease: "sine.inOut" })
       .to(q("#j-pile"), { opacity: 0, duration: 0.25 }) // nothing kept: it all becomes rejects
       .to(q("#j-rejects"), { opacity: 1, duration: 0.25 }, "<");
     armUp(tl, "jd", false);
@@ -339,7 +339,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
       "+=0.1",
     )
-      .to(q("#jd-says"), { opacity: 0, duration: 0.3 }, "+=1.8")
+      .to(q("#jd-says"), { opacity: 0, duration: 0.3 }, "+=0.8")
       .addLabel("handoff"); // the Clerk knows: they can head back
     walk(tl, "jd", P.jdAtFiles, "+=0.1");
     tl.to(q(held), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // all back into the cabinets
@@ -504,10 +504,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       const lantern = q("#sc-arm-up, #lantern-glow");
       tl.to(q("#lantern-glow"), { opacity: 1, duration: 0.3 })
         .to(q("#lantern-beam"), { opacity: 1, duration: 0.6 }, "<0.1")
-        .to(lantern, { x: -6, y: 3, duration: 0.8, ease: "sine.inOut" }) // searching: the lantern sweeps along the drawers
-        .to(lantern, { x: 4, y: -2, duration: 1.1, ease: "sine.inOut" })
-        .to(lantern, { x: -3, y: 2, duration: 0.9, ease: "sine.inOut" })
-        .to(lantern, { x: 0, y: 0, duration: 0.6, ease: "sine.inOut" });
+        .to(lantern, { x: -6, y: 3, duration: 0.3, ease: "sine.inOut" }) // searching: the lantern sweeps along the drawers
+        .to(lantern, { x: 4, y: -2, duration: 0.4, ease: "sine.inOut" })
+        .to(lantern, { x: -3, y: 2, duration: 0.3, ease: "sine.inOut" })
+        .to(lantern, { x: 0, y: 0, duration: 0.2, ease: "sine.inOut" });
       startHold(tl, "scout", () =>
         gsap.to(q("#lantern-beam"), {
           opacity: 0.55,

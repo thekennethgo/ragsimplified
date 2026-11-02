@@ -4,6 +4,7 @@ export type SceneEvent = { name: string; data?: Record<string, unknown> };
 export type Timeline = {
   duration(): number;
   play(): unknown;
+  timeScale(factor: number): unknown;
   progress(p: number): unknown;
   kill(): void;
   labels: Record<string, number>;

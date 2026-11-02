@@ -14,7 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const queue = () => ({ register: vi.fn(() => vi.fn()), emit: vi.fn(), clear: vi.fn(), skipAll: vi.fn() });
+const queue = () => ({ register: vi.fn(() => vi.fn()), emit: vi.fn(), clear: vi.fn(), skipAll: vi.fn(), setSpeed: vi.fn() });
 
 test("loads the room SVG, resets the scenes and registers them with the queue", async () => {
   vi.stubGlobal(
@@ -45,7 +45,7 @@ test("unregisters the scenes when it unmounts", async () => {
     vi.fn(() => Promise.resolve(new Response("<svg></svg>"))),
   );
   const unregister = vi.fn();
-  const q = { register: vi.fn(() => unregister), emit: vi.fn(), clear: vi.fn(), skipAll: vi.fn() };
+  const q = { register: vi.fn(() => unregister), emit: vi.fn(), clear: vi.fn(), skipAll: vi.fn(), setSpeed: vi.fn() };
   const { unmount } = render(
     <OfficeRoom
       src="/office/test.svg"
