@@ -368,7 +368,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: add a test in `frontend/lib/office/sceneQueue.test.ts` that `setSpeed(2)` halves a timeline's play time and the hold.
   - Done when: the tests pass, and the log on the same two questions, 3 runs each, shows a median `office` of 8 s or less for the first-job question and a median `tail` of 3 s or less for both. Paste the before and after medians into the report. If the targets are missed, stop and report the numbers instead of cutting more.
   - Out of scope: the Clerk (7.4a), new scenes or art, removing any character, the reduced-motion path.
-- [ ] 7.3 Answer card and "How it got there" tabs
+- [x] 7.3 Answer card and "How it got there" tabs
   - Do: split `frontend/components/ask/AnswerPanel.tsx` into two components in the same folder.
     - `AnswerCard.tsx`: the question asked, the answer with its `[n]` markers, the sources list, one meta line (`<n> cards found · <n> kept · <model>`), and an inline source viewer: clicking a source's "Open" or a `[n]` marker renders `<DocViewer target={…} />` (from `components/viewer/DocViewer.tsx`) inside the card under the sources, with a Close button that returns focus to the link that opened it. Nothing scrolls the page.
     - `StepDetails.tsx`: a section headed "How it got there" with one tab per character (Clerk, Translator, Scout, Judge, Storyteller), each tab body exactly as the current AnswerPanel tab body, round switch included. No "Answer" tab. Its open tab is controlled by props (`tab`, `onTab`) so the page can open it from the step strip in 7.4. While running it follows the working step unless the visitor picked a tab (the current `touched` rule); once the run is done it stays where it is.

@@ -23,14 +23,12 @@ import {
 } from "../../lib/characters";
 import { FOUND_BY_COLOR, keyOf, useMapPoints, type MapOverlay, type MapPoint } from "../../lib/map";
 import type { Phase } from "../../lib/sceneState";
-import type { ViewTarget } from "../../lib/viewer";
 import CharacterCard from "../characters/CharacterCard";
 import VectorMap from "../map/VectorMap";
-import { AnswerBubble } from "./AnswerBubble";
-import styles from "./AnswerPanel.module.css";
+import styles from "./StepDetails.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
-type TabId = "clerk" | "translator" | "scout" | "judge" | "storyteller" | "answer";
+export type TabId = "clerk" | "translator" | "scout" | "judge" | "storyteller";
 
 const STEPS = [
   { id: "clerk", name: "Clerk", part: "cl" },
@@ -185,8 +183,10 @@ function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title:
   );
 }
 
-/** The Answer panel: the answer with its sources, and one tab per step showing what it really did. */
-export default function AnswerPanel({
+/** "How it got there": one tab per step showing what it really did. */
+export default function StepDetails({
+  tab,
+  onTab,
   states,
   answer,
   citations,
@@ -199,14 +199,15 @@ export default function AnswerPanel({
   round2 = {},
   judge,
   askedQuestion,
-  targetFor,
-  onOpenInViewer,
   follow,
   overlay,
   privateSent,
   sentPrompt,
   run = 0,
 }: {
+  /** The open tab; the page owns it so it can open one from elsewhere. */
+  tab: TabId;
+  onTab: (tab: TabId) => void;
   states: Record<string, Phase>;
   answer: string;
   citations: Citation[];
@@ -220,8 +221,6 @@ export default function AnswerPanel({
   round2?: Record<string, Phase>;
   judge: JudgeResult[] | null;
   askedQuestion: string;
-  targetFor: (citation: Citation) => ViewTarget | null;
-  onOpenInViewer: (target: ViewTarget) => void;
   /** Jump to each step as its results arrive (off when the animations are off). */
   follow: boolean;
   /** The question and the Scout's candidates, drawn on the Scout tab's map. */
@@ -233,7 +232,6 @@ export default function AnswerPanel({
   /** Changes with every new question, which hands the panel back to the steps. */
   run?: number;
 }) {
-  const [tab, setTab] = useState<TabId>("answer");
   // Once the visitor picks a tab, the panel stops switching on its own until the next run.
   // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
   const touched = useRef(false);
@@ -272,7 +270,7 @@ export default function AnswerPanel({
             ? "working"
             : "waiting"
       : (states[id] ?? "waiting");
-  // Follow the newest step whose results are in, and show the answer when it first appears.
+  // Follow the newest step whose results are in; once the answer is there, stay where it is.
   const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
   useEffect(() => {
     touched.current = false;
@@ -280,12 +278,8 @@ export default function AnswerPanel({
   const hasAnswer = Boolean(answer);
   useEffect(() => {
     if (touched.current) return;
-    if (follow && latest && !hasAnswer) setTab(latest);
-  }, [follow, latest, hasAnswer]);
-  useEffect(() => {
-    if (touched.current) return;
-    if (hasAnswer) setTab("answer");
-  }, [hasAnswer]);
+    if (follow && latest && !hasAnswer) onTab(latest);
+  }, [follow, latest, hasAnswer, onTab]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
     clerk: clerkCopy(about),
@@ -293,7 +287,7 @@ export default function AnswerPanel({
     scout: scoutCopy(about),
     judge: judgeCopy(about),
     storyteller: storytellerCopy(about),
-  }[tab === "answer" ? "clerk" : tab];
+  }[tab];
   const kept = (judge ?? []).filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const bestByWord = new Map<string, { text: string; influence: number }>();
   for (const w of words) {
@@ -317,14 +311,10 @@ export default function AnswerPanel({
   };
 
   return (
-    <div className={`panel ${styles.root}`} role="group" aria-labelledby="ans-h">
+    <section className={`panel ${styles.root}`} aria-labelledby="steps-h">
       <div className={styles.head}>
-        <h2 id="ans-h">Answer</h2>
-        <div
-          role="group"
-          aria-label="The characters and the answer"
-          className={styles.tabs}
-        >
+        <h2 id="steps-h">How it got there</h2>
+        <div role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button
               key={s.id}
@@ -332,79 +322,17 @@ export default function AnswerPanel({
               aria-pressed={tab === s.id}
               onClick={() => {
                 touched.current = true;
-                setTab(s.id);
+                onTab(s.id);
               }}
             >
               <span className={`${styles.dot} ${styles[phase(s.id)]}`} title={phase(s.id)} />
               {s.name}
             </button>
           ))}
-          <button
-            type="button"
-            aria-pressed={tab === "answer"}
-            onClick={() => {
-              touched.current = true;
-              setTab("answer");
-            }}
-          >
-            Answer
-          </button>
         </div>
       </div>
 
       <div className={styles.body}>
-        {tab === "answer" && (
-          <div className={styles.answerTab}>
-            <div className={styles.answerCol}>
-              {answer ? (
-                <>
-                  <p className={styles.asked}>
-                    <span>You asked</span>
-                    {askedQuestion}
-                  </p>
-                  <AnswerBubble
-                    answer={answer}
-                    citations={citations}
-                    targetFor={targetFor}
-                    onOpenInViewer={onOpenInViewer}
-                  />
-                </>
-              ) : phase("translator") !== "waiting" ? (
-                <p className={styles.empty}>Working on it. Open a step above to watch.</p>
-              ) : (
-                <p className={styles.empty}>Your answer shows up here, with its sources.</p>
-              )}
-            </div>
-            <section aria-labelledby="src-h" className={styles.sources}>
-              <h3 id="src-h">Sources</h3>
-              {citations.length > 0 ? (
-                <ol>
-                  {citations.map((c) => {
-                    const t = targetFor(c);
-                    return (
-                      <li key={c.n}>
-                        <div className={styles.cardHead}>
-                          <span className={styles.num}>{c.n}</span>
-                          <span className={styles.name}>{c.title}</span>
-                          <span className={styles.mono}>card {c.position + 1}</span>
-                        </div>
-                        <p className={styles.snippet}>{c.snippet}</p>
-                        {t && (
-                          <button type="button" onClick={() => onOpenInViewer(t)}>
-                            Open in viewer
-                          </button>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <p className={styles.empty}>{answer ? "Nothing was cited." : "No sources yet."}</p>
-              )}
-            </section>
-          </div>
-        )}
-
         {step && (
           <div className={styles.step}>
             <CharacterCard
@@ -689,6 +617,6 @@ export default function AnswerPanel({
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

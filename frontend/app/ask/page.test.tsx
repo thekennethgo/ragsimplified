@@ -367,15 +367,12 @@ function stubWithDocument(events: object[]) {
   );
 }
 
-test("Open in viewer selects the File cabinet's Viewer tab and shows the document", async () => {
+test("opening a citation shows the passage inside the answer card and keeps the answer on screen", async () => {
   const scroll = vi.fn();
   Element.prototype.scrollIntoView = scroll;
   stubWithDocument(EVENTS);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   const cabinet = screen.getByRole("region", { name: "File cabinet" });
-  expect(
-    within(cabinet).getByRole("button", { name: "Viewer" }),
-  ).toBeDisabled();
   ask("When was Apple founded?");
   fireEvent.click(await screen.findByRole("button", { name: "Source 1" }));
   fireEvent.click(
@@ -384,14 +381,17 @@ test("Open in viewer selects the File cabinet's Viewer tab and shows the documen
     }),
   );
 
+  const card = screen.getByRole("group", { name: "Answer card" });
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(await screen.findByText("Full founding text.")).toBeInTheDocument();
-  expect(
-    within(cabinet).getByRole("button", { name: "Viewer" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect(scroll).toHaveBeenCalled();
-  // the Answer panel has no Viewer tab of its own
-  expect(screen.getAllByRole("button", { name: "Viewer" })).toHaveLength(1);
+  expect(await within(card).findByText("Full founding text.")).toBeInTheDocument();
+  expect(card).toHaveTextContent("Apple was founded in 1976");
+  // The library's own viewer is untouched and nothing scrolled the page.
+  expect(within(cabinet).getByRole("button", { name: "Viewer" })).toBeDisabled();
+  expect(scroll).not.toHaveBeenCalledWith(expect.objectContaining({ block: "start" }));
+  // Close removes the passage and hands focus back to the marker that opened it.
+  fireEvent.click(within(card).getByRole("button", { name: "Close" }));
+  expect(within(card).queryByText("Full founding text.")).toBeNull();
+  expect(screen.getByRole("button", { name: "Source 1" })).toHaveFocus();
 });
 
 test("on the Ask page a cabinet title opens the viewer instead of a page", async () => {
@@ -923,16 +923,13 @@ test("while scenes are still playing the Ask button is enabled and the Clerk's w
   ).toBeInTheDocument();
 });
 
-test("with the animations on the Answer tab stays selected once the stream ends", async () => {
+test("with the animations on the answer card shows the answer and no tab is called Answer", async () => {
   mid.hold = true;
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(screen.queryByRole("button", { name: "Answer" })).toBeNull();
   expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
     "Apple was founded in 1976",
   );
@@ -957,8 +954,8 @@ test("each tab opens when its results arrive, and a starting step does not steal
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Translator" })).toBeEnabled(),
   );
-  // working, not done yet: still on Answer
-  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
+  // working, not done yet: still on the Clerk
+  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -986,7 +983,7 @@ test("each tab opens when its results arrive, and a starting step does not steal
   close();
 });
 
-test("with the animations off the Answer tab stays selected throughout", async () => {
+test("with the animations off the Clerk tab stays selected throughout", async () => {
   localStorage.setItem("ragsimplified.animations", "off");
   Element.prototype.scrollIntoView = vi.fn();
   try {
@@ -1000,7 +997,7 @@ test("with the animations off the Answer tab stays selected throughout", async (
     );
     ask("When was Apple founded?");
     await screen.findByRole("button", { name: "Source 1" });
-    expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -1066,8 +1063,8 @@ test("after the answer the question box is empty and the question is echoed", as
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   expect(screen.getByLabelText("Your question")).toHaveValue("");
-  expect(screen.getByText("You asked")).toBeInTheDocument();
-  expect(screen.getByText("You asked").closest("p")).toHaveTextContent(
+  const card = within(screen.getByRole("group", { name: "Answer card" }));
+  expect(card.getByText("You asked").closest("p")).toHaveTextContent(
     "When was Apple founded?",
   );
 });
@@ -1133,7 +1130,6 @@ test("once a tab is clicked the panel stops switching on its own, until a new qu
   first.close();
   await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
   expect(pressed("Translator")).toHaveAttribute("aria-pressed", "true");
-  expect(pressed("Answer")).toHaveAttribute("aria-pressed", "false");
 
   // a new question starts following again
   ask("Again?");
@@ -1283,7 +1279,7 @@ test("a tab clicked before asking does not stop the panel following the run", as
   });
   stubFetch(() => new Response(body));
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   ask("When was Apple founded?");
 
   push({ step: "translator", status: "start" });
@@ -1300,9 +1296,10 @@ test("a tab clicked before asking does not stop the panel following the run", as
 test("the six character tabs are all enabled before asking", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  for (const name of ["Clerk", "Translator", "Scout", "Judge", "Storyteller", "Answer"]) {
+  for (const name of ["Clerk", "Translator", "Scout", "Judge", "Storyteller"]) {
     expect(screen.getByRole("button", { name })).toBeEnabled();
   }
+  expect(screen.queryByRole("button", { name: "Answer" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   expect(
     screen.getByText("Nothing yet. Ask a question to see what I do with it."),
@@ -1341,7 +1338,8 @@ test("the Clerk tab shows the question that was asked", async () => {
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  const card = screen.getByText("You asked").closest("div") as HTMLElement;
+  const steps = within(screen.getByRole("region", { name: "How it got there" }));
+  const card = steps.getByText("You asked").closest("div") as HTMLElement;
   expect(card).toHaveTextContent("When was Apple founded?");
   expect(screen.getByText("Cards from your folder searched: none")).toBeInTheDocument();
 });
@@ -1491,8 +1489,6 @@ test("a second look gives the Clerk, Translator, Scout and Judge a round switch,
   }
   fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
-  expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
 test("the Clerk's round 2 page shows the new query and who decided", async () => {
@@ -1506,7 +1502,9 @@ test("the Clerk's round 2 page shows the new query and who decided", async () =>
   expect(screen.getByText("needs 50%")).toBeInTheDocument();
   expect(screen.queryByText("Decided by the language model")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Initial" }));
-  const asked = screen.getByText("You asked").closest("div") as HTMLElement;
+  const asked = within(screen.getByRole("region", { name: "How it got there" }))
+    .getByText("You asked")
+    .closest("div") as HTMLElement;
   expect(asked).toHaveTextContent("What is Kenneth's hometown like?");
 });
 
@@ -1543,11 +1541,12 @@ test("the Translator's round 2 page shows the new query and no word blocks; roun
 test("the Scout's round 2 page shows the skipped chip and the new list", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
-  expect(screen.queryByText(/Searched for/)).toBeNull();
-  expect(screen.getByText("2 already found, skipped")).toBeInTheDocument();
-  expect(screen.getByText("1 cards found")).toBeInTheDocument();
-  expect(screen.getByText("Batam")).toBeInTheDocument();
-  expect(screen.queryByText(/Apple Inc\./)).toBeNull();
+  const steps = within(screen.getByRole("region", { name: "How it got there" }));
+  expect(steps.queryByText(/Searched for/)).toBeNull();
+  expect(steps.getByText("2 already found, skipped")).toBeInTheDocument();
+  expect(steps.getByText("1 cards found")).toBeInTheDocument();
+  expect(steps.getByText("Batam")).toBeInTheDocument();
+  expect(steps.queryByText(/Apple Inc\./)).toBeNull();
   // Round 1 is still round 1's list.
   fireEvent.click(screen.getByRole("button", { name: "Initial" }));
   expect(screen.getByText("3 cards found")).toBeInTheDocument();

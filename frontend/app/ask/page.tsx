@@ -3,8 +3,9 @@
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useEffect, useRef, useState } from "react";
 
-import AnswerPanel from "../../components/ask/AnswerPanel";
+import AnswerCard from "../../components/ask/AnswerCard";
 import { QuestionBubble } from "../../components/ask/QuestionBubble";
+import StepDetails, { type TabId } from "../../components/ask/StepDetails";
 import LibraryPanel, { type LibraryDocument } from "../../components/LibraryPanel";
 import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
@@ -92,6 +93,9 @@ function AskOffice() {
   const [answer, setAnswer] = useState("");
   const [citations, setCitations] = useState<Citation[]>([]);
   const [viewer, setViewer] = useState<ViewTarget | null>(null);
+  // The passage open inside the answer card; the library's viewer is separate.
+  const [source, setSource] = useState<ViewTarget | null>(null);
+  const [tab, setTab] = useState<TabId>("clerk");
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [run, setRun] = useState(0);
@@ -147,7 +151,6 @@ function AskOffice() {
 
   function openViewer(target: ViewTarget) {
     setViewer(target);
-    document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function fail(message: string) {
@@ -173,6 +176,7 @@ function AskOffice() {
     setError("");
     setAnswer("");
     setCitations([]);
+    setSource(null);
     setStates({});
     setShown({});
     setWords([]);
@@ -519,7 +523,20 @@ function AskOffice() {
         </section>
 
         <div ref={answerRef} style={{ flex: "999 1 620px", minWidth: 0 }}>
-          <AnswerPanel
+          <AnswerCard
+            answer={answer}
+            citations={citations}
+            askedQuestion={askedQuestion}
+            started={phase("translator") !== "waiting"}
+            cardsFound={scout?.length ?? 0}
+            kept={keptCount ?? 0}
+            targetFor={targetFor}
+            source={source}
+            onSource={setSource}
+          />
+          <StepDetails
+            tab={tab}
+            onTab={setTab}
             states={states}
             answer={answer}
             citations={citations}
@@ -532,8 +549,6 @@ function AskOffice() {
             round2={round2}
             judge={judge}
             askedQuestion={askedQuestion}
-            targetFor={targetFor}
-            onOpenInViewer={openViewer}
             follow={animationsOn}
             overlay={overlay}
             privateSent={privateSent}
