@@ -322,7 +322,7 @@ export default function StepDetails({
   return (
     <section className={`panel ${styles.root}`} aria-labelledby="steps-h">
       <div className={styles.head}>
-        <h2 id="steps-h">How it got there</h2>
+        <h2 id="steps-h" className="visually-hidden">How it got there</h2>
         <div role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button

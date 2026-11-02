@@ -6,7 +6,8 @@ import type { SceneSet, Timeline } from "../types";
 
 const MIN_WALK = 0.25;
 const SPEED = { clerk: 260, crew: 200 }; // room units per second; the Clerk is a brisk courier
-const TRANSLATOR_PACE = 1.6; // the Translator hurries the slip over to the Scout
+const TRANSLATOR_PACE = 2.5; // the Translator hurries the slip over to the Scout
+const JUDGE_PACE = 1.6; // the Judge hurries the cards over to the Storyteller
 
 // The canvas room's projection: room (x, y, z) to SVG (from OfficeAsk.dc.html's geometry()).
 const iso = (x: number, y: number, z = 0) => ({
@@ -354,13 +355,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     [
       [3, -6],
       [-2, 1],
-      [4, -4],
-      [-1, 3],
       [3, -2],
-      [0, 4],
     ].forEach(([x, y]) =>
-      // six strokes of the marker
-      tl.to(q("#cl-write"), { x, y, duration: 0.24, ease: "sine.inOut" }),
+      // three strokes of the marker
+      tl.to(q("#cl-write"), { x, y, duration: 0.2, ease: "sine.inOut" }),
     );
     tl.to(q("#cl-write"), { x: 0, y: 0, duration: 0.15 })
       .set(q("#cl-write"), { opacity: 0 })
@@ -371,7 +369,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
   function judgeRules(tl: gsap.core.Timeline) {
     tl.to(q("#jd-arm-up"), { x: 0, duration: 0.2 })
       .set(q("#d-kept"), { opacity: 1 })
-      .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.12 }) // ranks on the board
+      .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.06 }) // ranks on the board
       .to(q("#j-pile"), { opacity: 0, duration: 0.25 })
       .to(q("#kept-stack, #j-rejects"), { opacity: 1, duration: 0.25 }, "<");
     armUp(tl, "jd", false);
@@ -384,15 +382,15 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
   function judgeHandsOver(tl: gsap.core.Timeline) {
     // straight over to the far side of the Storyteller's desk, across from her
     tl.call(behindDesk, undefined, "+=0.1");
-    walk(tl, "jd", P.jdAcrossDesk);
+    walk(tl, "jd", P.jdAcrossDesk, undefined, JUDGE_PACE);
     face(tl, "jd", true); // facing the Storyteller
     // hand to hand: the papers go into the Storyteller's raised hand, then onto the desk
     tl.set(q("#jd-held-kept"), { opacity: 0 }, "+=0.1")
       .set(q("#a-handover"), { ...HANDOVER_FROM, opacity: 1 }, "<") // (a set, not a fromTo: a fromTo would show it from the start)
-      .to(q("#a-handover"), { ...HANDOVER_TO, duration: 0.45, ease: "power2.inOut" }, "<");
+      .to(q("#a-handover"), { ...HANDOVER_TO, duration: 0.3, ease: "power2.inOut" }, "<");
     armUp(tl, "st", true);
     tl.set(q("#a-handover"), { opacity: 0 }, "<");
-    armUp(tl, "st", false, "+=0.5");
+    armUp(tl, "st", false, "+=0.2");
     tl.fromTo(
       q("#st-kept"),
       { ...KEPT_FROM, opacity: 0 },
@@ -426,14 +424,14 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     translator_start() {
       const tl = gsap.timeline({ paused: true });
       face(tl, "tr", false); // looks over at the board
-      face(tl, "tr", true, "+=0.3"); // and back to the keyboard
+      face(tl, "tr", true, "+=0.15"); // and back to the keyboard
       tl.to(q("#crt-text-idle"), { opacity: 0, duration: 0.15 }).set(q("#crt-cursor"), {
         opacity: 1,
       });
-      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.15"));
+      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.06"));
       tl.to([...q(".crt-line"), ...q("#crt-cursor")], { opacity: 0, duration: 0.15 }, "+=0.15").to(
         q(".crt-bar").slice(0, 3),
-        { opacity: 1, duration: 0.05, stagger: 0.15 },
+        { opacity: 1, duration: 0.05, stagger: 0.08 },
       );
       startHold(tl, "translator", () =>
         gsap.fromTo(
@@ -461,11 +459,11 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         .fromTo(
           q("#a-slip"),
           { x: -11, y: -6, opacity: 0 },
-          { x: 0, y: 0, opacity: 1, duration: 0.5, ease: "power1.out" },
+          { x: 0, y: 0, opacity: 1, duration: 0.3, ease: "power1.out" },
           "print+=0.1",
         )
         .set(q("#printer-led"), { opacity: 0.3 })
-        .to(q("#a-slip"), { opacity: 0, duration: 0.15 }, "+=0.2") // picks it up
+        .to(q("#a-slip"), { opacity: 0, duration: 0.15 }, "+=0.1") // picks it up
         .set(q("#tr-held-slip"), { opacity: 1 }, "<");
       walk(tl, "tr", P.trAtScout, "+=0.1", TRANSLATOR_PACE);
       face(tl, "tr", true);
@@ -489,7 +487,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       armUp(tl, "sc", true);
       const lantern = q("#sc-arm-up, #lantern-glow");
       tl.to(q("#lantern-glow"), { opacity: 1, duration: 0.3 })
-        .to(q("#lantern-beam"), { opacity: 1, duration: 0.6 }, "<0.1")
+        .to(q("#lantern-beam"), { opacity: 1, duration: 0.3 }, "<0.1")
         .to(lantern, { x: -6, y: 3, duration: 0.3, ease: "sine.inOut" }) // searching: the lantern sweeps along the drawers
         .to(lantern, { x: 4, y: -2, duration: 0.4, ease: "sine.inOut" })
         .to(lantern, { x: -3, y: 2, duration: 0.3, ease: "sine.inOut" })
@@ -512,10 +510,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       tl.to(q("#lantern-beam"), { opacity: 1, duration: 0.2 });
       q(".a-sheet").forEach((s, i) => {
         const b = { x: +s.getAttribute("x")! + 6, y: +s.getAttribute("y")! + 4 };
-        tl.fromTo(s, { x: 0, y: 0, opacity: 0 }, { opacity: 1, duration: 0.1 }, 0.25 + i * 0.12)
+        tl.fromTo(s, { x: 0, y: 0, opacity: 0 }, { opacity: 1, duration: 0.1 }, 0.15 + i * 0.08)
           .to(
             s,
-            { x: SHEETS_TO.x - b.x, y: SHEETS_TO.y - b.y, duration: 0.45, ease: "power2.in" },
+            { x: SHEETS_TO.x - b.x, y: SHEETS_TO.y - b.y, duration: 0.3, ease: "power2.in" },
             ">",
           )
           .set(s, { opacity: 0 });
@@ -525,12 +523,12 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         duration: 0.3,
       });
       armUp(tl, "sc", false, "<");
-      walk(tl, "sc", P.scAtJudge, "+=0.1");
+      walk(tl, "sc", P.scAtJudge, "+=0.1", JUDGE_PACE);
       tl.set(q("#sc-held-stack"), { opacity: 0 }, "+=0.1") // onto the Judge's desk
         .fromTo(
           q("#j-pile"),
           { x: -120, y: 15, opacity: 0 },
-          { x: 0, y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
+          { x: 0, y: 0, opacity: 1, duration: 0.3, ease: "power2.out" },
           "<",
         )
         .addLabel("handoff"); // the pile is on the Judge's desk
@@ -609,7 +607,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       q(".typed-line")
         .slice(0, 2)
         .forEach((line) => {
-          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.15").to(
+          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.05").to(
             line,
             {
               opacity: 1,
@@ -644,8 +642,8 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
           );
         });
       tl.to(q("#answer-dots"), { opacity: 1, duration: 0.2 }, "+=0.1"); // the citation marks
-      armUp(tl, "st", true, "+=0.2"); // holds up the finished page
-      armUp(tl, "st", false, "+=0.8");
+      armUp(tl, "st", true, "+=0.1"); // holds up the finished page
+      armUp(tl, "st", false, "+=0.2");
       tl.fromTo(q("#a-answer"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, "<");
       return tl;
     },

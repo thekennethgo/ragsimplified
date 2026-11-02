@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -37,7 +38,14 @@ const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
 // When `hold` is set no scene ever ends: the office is still playing when the stream is over.
 // When set, a second_look_rewrite or second_look_nothing scene never reaches its end ("in progress").
-const mid = vi.hoisted(() => ({ rewrite: false, nothing: false, hold: false }));
+// When `gate` is set the storyteller_start scene never starts by itself: `release` starts it.
+const mid = vi.hoisted(() => ({
+  rewrite: false,
+  nothing: false,
+  hold: false,
+  gate: false,
+  release: () => {},
+}));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
 vi.mock("../../lib/office/useFollow", () => ({
@@ -52,7 +60,8 @@ vi.mock("../../lib/office/useSceneQueue", () => {
       hooks?: { onStart?: () => void; onEnd?: () => void },
     ) => {
       emitted.push(event);
-      hooks?.onStart?.();
+      if (mid.gate && event.name === "storyteller_start") mid.release = () => hooks?.onStart?.();
+      else hooks?.onStart?.();
       const playing =
         (mid.rewrite && event.name === "second_look_rewrite") ||
         (mid.nothing && event.name === "second_look_nothing");
@@ -73,6 +82,8 @@ beforeEach(() => {
   mid.rewrite = false;
   mid.nothing = false;
   mid.hold = false;
+  mid.gate = false;
+  mid.release = () => {};
   search.params = new URLSearchParams();
 });
 
@@ -865,16 +876,56 @@ test("with the animations off the streamed answer is visible", async () => {
   }
 });
 
-test("with the animations on the final answer and its citation show before any scene ends", async () => {
-  mid.hold = true;
+test("with animations on the answer waits for the Storyteller's scene to start", async () => {
+  mid.gate = true;
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
-  expect(await screen.findByRole("button", { name: "Source 1" })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
-    "Apple was founded in 1976 [1]. Also.",
-  );
-  expect(names()).toContain("clerk_back");
+  await waitFor(() => expect(names()).toContain("clerk_back"));
+  const card = screen.getByRole("group", { name: "Answer card" });
+  expect(card).not.toHaveTextContent("Apple was founded in 1976");
+  expect(screen.queryByRole("button", { name: "Source 1" })).toBeNull();
+  act(() => mid.release());
+  expect(card).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
+  expect(screen.getByRole("button", { name: "Source 1" })).toBeInTheDocument();
+});
+
+test("with animations on and no scene played the answer shows 2 s after the stream ends", async () => {
+  mid.gate = true;
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    stubAsk();
+    render(<AskPage />, { wrapper: PrivateTextsProvider });
+    ask("When was Apple founded?");
+    // waitFor can't run with a faked setTimeout, so let the stream finish by advancing a little.
+    await act(() => vi.advanceTimersByTimeAsync(100));
+    expect(names()).toContain("clerk_back");
+    const card = screen.getByRole("group", { name: "Answer card" });
+    expect(card).not.toHaveTextContent("Apple was founded in 1976");
+    await act(() => vi.advanceTimersByTimeAsync(1800));
+    expect(card).not.toHaveTextContent("Apple was founded in 1976");
+    await act(() => vi.advanceTimersByTimeAsync(200));
+    expect(card).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("the progress line shows the Scout's count while the Judge's scene plays", async () => {
+  mid.hold = true;
+  mid.gate = true;
+  stubAsk([
+    { step: "translator", status: "start" },
+    { step: "translator", status: "done", data: { words: [] } },
+    { step: "scout", status: "start" },
+    { step: "scout", status: "done", data: { results: (EVENTS[3].data as { results: object[] }).results } },
+    { step: "judge", status: "start" },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  expect(
+    await screen.findByText("The Scout found 3 cards. The Judge is checking them…"),
+  ).toBeInTheDocument();
 });
 
 test("turning the animations off mid-run keeps the answer that has arrived", async () => {
@@ -1264,6 +1315,19 @@ test("a step strip button opens its tab in How it got there", () => {
   fireEvent.click(within(scene).getByRole("button", { name: "Scout: waiting" }));
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("a step strip click opens the How it got there details", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const details = screen.getByText("How it got there", { selector: "summary" }).closest("details")!;
+  expect(details).not.toHaveAttribute("open");
+  fireEvent.click(
+    within(screen.getByRole("region", { name: "The office" })).getByRole("button", {
+      name: "Scout: waiting",
+    }),
+  );
+  expect(details).toHaveAttribute("open");
 });
 
 test("a step strip pick sticks: later steps do not pull the tab away", async () => {

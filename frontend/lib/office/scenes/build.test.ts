@@ -119,3 +119,28 @@ test("the Judge's nothing-found scene walks to the Clerk and the Storyteller has
   set.reset();
   expect(set.scenes.clerk_done().duration()).toBeGreaterThan(leave.duration());
 });
+
+test("the normal Ask path reaches the Storyteller within 14 s", () => {
+  const set = buildAskScenes(load("ask-room.svg"));
+  set.reset();
+  const path = [
+    "clerk_start",
+    "translator_start",
+    "translator_done",
+    "scout_start",
+    "scout_done",
+    "judge_start",
+    "judge_done",
+    "storyteller_start",
+    "storyteller_done",
+  ];
+  const times = path.map((name) => {
+    const tl = set.scenes[name]();
+    const t = "handoff" in tl.labels ? tl.labels.handoff : tl.duration();
+    tl.kill();
+    return t;
+  });
+  const sum = times.reduce((a, b) => a + b, 0);
+  console.log("normal path:", path.map((n, i) => `${n} ${times[i].toFixed(2)}`).join(", "), `sum ${sum.toFixed(2)}`);
+  expect(sum).toBeLessThanOrEqual(14);
+});

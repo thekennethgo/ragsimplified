@@ -85,7 +85,10 @@ function AskOffice() {
   onRef.current = animationsOn;
   const queue = useSceneQueue(() => !onRef.current);
   useEffect(() => {
-    if (!animationsOn) queue.skipAll();
+    if (!animationsOn) {
+      queue.skipAll();
+      setRevealed(true);
+    }
   }, [animationsOn, queue]);
   const officeRef = useRef<HTMLElement>(null);
   const answerRef = useRef<HTMLDivElement>(null);
@@ -97,11 +100,15 @@ function AskOffice() {
   const [askedQuestion, setAskedQuestion] = useState("");
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
+  // The answer shows when the office reaches the Storyteller (or at once without the office).
+  const [revealed, setRevealed] = useState(false);
+  const revealTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [citations, setCitations] = useState<Citation[]>([]);
   const [viewer, setViewer] = useState<ViewTarget | null>(null);
   // The passage open inside the answer card; the library's viewer is separate.
   const [source, setSource] = useState<ViewTarget | null>(null);
   const [tab, setTab] = useState<TabId>("clerk");
+  const [stepsOpen, setStepsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   // Under 760px the room picture is hidden until the visitor asks to watch.
@@ -183,6 +190,8 @@ function AskOffice() {
     setAskedQuestion(question.trim());
     setError("");
     setAnswer("");
+    clearTimeout(revealTimer.current);
+    setRevealed(!onRef.current);
     setCitations([]);
     setSource(null);
     setStates({});
@@ -279,6 +288,7 @@ function AskOffice() {
           queue.emit(sceneEvent, {
             onStart: () => {
               update();
+              if (e.step === "storyteller") setRevealed(true);
               if (second) {
                 // Only now, after the follow-up's fingerprint, does the Scout set off again.
                 if (e.step === "scout") setScoutLook(`Taking a second look: “${followUp}”`);
@@ -386,6 +396,7 @@ function AskOffice() {
         }
       }
       streamEnd = performance.now();
+      revealTimer.current = setTimeout(() => setRevealed(true), 2000);
       queue.setSpeed(2);
     } catch {
       fail("Could not reach the backend");
@@ -424,6 +435,14 @@ function AskOffice() {
   };
 
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
+  const progress =
+    shownPhase("storyteller") === "working"
+      ? `The Judge kept ${keptCount ?? 0} of ${scout?.length ?? 0}. The Storyteller is writing…`
+      : shownPhase("judge") === "working"
+        ? `The Scout found ${scout?.length ?? 0} cards. The Judge is checking them…`
+        : shownPhase("scout") === "working"
+          ? "The Scout is searching the library…"
+          : "The Translator is reading your question…";
   const crewSays: Record<(typeof CREW)[number], string> = {
     translator: askTranslatorSays(),
     scout: scoutLook ?? scoutSays(),
@@ -545,7 +564,10 @@ function AskOffice() {
                   aria-pressed={tab === s.id}
                   aria-label={`${s.name}: ${state}`}
                   data-state={state}
-                  onClick={() => setTab(s.id)}
+                  onClick={() => {
+                    setTab(s.id);
+                    setStepsOpen(true);
+                  }}
                 >
                   <span aria-hidden="true">
                     {state === "done" && "✓ "}
@@ -561,10 +583,11 @@ function AskOffice() {
 
         <div ref={answerRef} className={styles.answer}>
           <AnswerCard
-            answer={answer}
-            citations={citations}
+            answer={revealed ? answer : ""}
+            citations={revealed ? citations : []}
             askedQuestion={askedQuestion}
             started={phase("translator") !== "waiting"}
+            progress={progress}
             cardsFound={scout?.length ?? 0}
             kept={keptCount ?? 0}
             targetFor={targetFor}
@@ -574,6 +597,8 @@ function AskOffice() {
         </div>
       </div>
 
+      <details open={stepsOpen} onToggle={(e) => setStepsOpen(e.currentTarget.open)}>
+        <summary>How it got there</summary>
       <StepDetails
         tab={tab}
         onTab={setTab}
@@ -595,6 +620,7 @@ function AskOffice() {
         sentPrompt={sentPrompt}
         run={run}
       />
+      </details>
 
       {/* Closed, but mounted: its onLoad fills the starter questions. */}
       <details className={styles.library}>

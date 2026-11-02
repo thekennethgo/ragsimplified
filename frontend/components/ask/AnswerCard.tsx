@@ -15,6 +15,7 @@ export default function AnswerCard({
   citations,
   askedQuestion,
   started,
+  progress,
   cardsFound,
   kept,
   targetFor,
@@ -26,6 +27,8 @@ export default function AnswerCard({
   askedQuestion: string;
   /** A run has begun, so "working" can replace the empty-state hint. */
   started: boolean;
+  /** The live line shown instead of the answer until it is revealed. */
+  progress: string;
   /** The Scout's candidates and the Judge's keepers, for the meta line. */
   cardsFound: number;
   kept: number;
@@ -76,11 +79,12 @@ export default function AnswerCard({
               </p>
             </>
           ) : started ? (
-            <p className={styles.empty}>Working on it. Open a step below to watch.</p>
+            <p className={styles.empty}>{progress}</p>
           ) : (
             <p className={styles.empty}>Your answer shows up here, with its sources.</p>
           )}
         </div>
+        {answer && (
         <section aria-labelledby="src-h" className={styles.sources}>
           <h3 id="src-h">Sources</h3>
           {citations.length > 0 ? (
@@ -112,9 +116,10 @@ export default function AnswerCard({
               })}
             </ol>
           ) : (
-            <p className={styles.empty}>{answer ? "Nothing was cited." : "No sources yet."}</p>
+            <p className={styles.empty}>Nothing was cited.</p>
           )}
         </section>
+        )}
       </div>
       {source && (
         <section aria-label="Source viewer" className={styles.viewer}>

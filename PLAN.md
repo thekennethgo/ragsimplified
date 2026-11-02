@@ -394,16 +394,18 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: `frontend/lib/office/scenes/build.test.ts` keeps passing (`clerk_done` is still longer when something was found).
   - Done when: the tests pass and, on localhost, the Clerk stands at the whiteboard before any question, writes the question without walking in, and stays in the room after the answer.
   - Out of scope: pacing (done in 7.2a).
-- [ ] 7.4b Office in step with the answer
+- [x] 7.4b Office in step with the answer
   - Do: the answer appears as the office reaches the Storyteller, not before, and the office is short enough that this costs at most a short pause. No character or scene is removed.
     - Shorter scenes, in `frontend/lib/office/scenes/ask.ts` (only these values change):
       - `writeOnBoard`: the six pen strokes become three, `[3, -6]`, `[-2, 1]`, `[3, -2]`, each `duration: 0.2`.
       - `translator_start`: the look back `"+=0.3"` → `"+=0.15"`; each `.crt-line` offset `"+=0.15"` → `"+=0.06"`; the `.crt-bar` stagger 0.15 → 0.08.
       - `translator_done`: the slip's `duration: 0.5` → 0.3; the pick-up offset `"+=0.2"` → `"+=0.1"`; `TRANSLATOR_PACE` 1.6 → 2.5.
       - `scout_start`: the beam's `duration: 0.6` → 0.3.
-      - `scout_done`: each sheet's start `0.25 + i * 0.12` → `0.15 + i * 0.08` and its flight `duration: 0.45` → 0.3; the pile's `duration: 0.5` → 0.3.
-      - `judgeHandsOver`: the handover `duration: 0.45` → 0.3; the Storyteller's arm `"+=0.5"` → `"+=0.2"`.
-      - `storyteller_done`: the held page `"+=0.8"` → `"+=0.4"`; the arm `"+=0.2"` → `"+=0.1"`.
+      - `scout_done`: each sheet's start `0.25 + i * 0.12` → `0.15 + i * 0.08` and its flight `duration: 0.45` → 0.3; the pile's `duration: 0.5` → 0.3; the walk to `P.scAtJudge` uses `JUDGE_PACE` as its pace.
+      - `judgeRules`: the ranks' `stagger: 0.12` → 0.06.
+      - `judgeHandsOver`: the walk to `P.jdAcrossDesk` gets a new `JUDGE_PACE = 1.6` (declared next to `TRANSLATOR_PACE`) as its pace; the handover `duration: 0.45` → 0.3; the Storyteller's arm `"+=0.5"` → `"+=0.2"`.
+      - `storyteller_start`: each typed line's offset `"+=0.15"` → `"+=0.05"`.
+      - `storyteller_done`: the held page `"+=0.8"` → `"+=0.2"`; the arm `"+=0.2"` → `"+=0.1"`.
     - Reveal, in `frontend/app/ask/page.tsx`: a new `revealed` state, `false` at the start of each run. It becomes `true` in the `onStart` hook of the `storyteller_start` scene (which also plays when nothing was found), at once when animations are off or are turned off during the run, and 2 s after the stream ends if neither has happened (one `setTimeout`, cleared at the next run). `AnswerCard` gets `answer={revealed ? answer : ""}` and `citations={revealed ? citations : []}`. `states`, the step strip and the `StepDetails` tabs keep updating on arrival as in 7.2.
     - Progress in the answer card: until `revealed`, `AnswerCard` shows one live line instead of "Working on it. Open a step below to watch.", passed as a new `progress` string prop and built in `page.tsx` from `shown` (so it matches the office): Translator working → "The Translator is reading your question…"; Scout working → "The Scout is searching the library…"; Judge working → "The Scout found <n> cards. The Judge is checking them…"; Storyteller working → "The Judge kept <k> of <n>. The Storyteller is writing…". `<n>` and `<k>` are the existing `scout.length` and `keptCount`.
     - Compact: in `AnswerCard.tsx`, the "Sources" heading and list render only once there is a revealed answer, and the empty state before a question is the single line "Your answer shows up here, with its sources.". In `page.tsx`, `StepDetails` sits inside a `<details>` closed by default whose `<summary>` is "How it got there"; clicking a step strip button opens it as well as choosing the tab. The `<h2>` inside `StepDetails` is visually hidden so the heading is not shown twice.
