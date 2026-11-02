@@ -47,31 +47,6 @@
   pointer-events: none;
 }
 
-.clerkWaits {
-  width: 44px;
-  height: 26px;
-  background: #ffffff;
-  border-color: #c99a5e;
-  border-radius: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  pointer-events: auto;
-}
-
-.clerkWaits > span:not(:global(.tail)) {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #8c7660;
-}
-
-.clerkWaits :global(.tail) {
-  background: #ffffff;
-  border-color: #c99a5e;
-}
-
 .caption {
   display: flex;
   align-items: center;
@@ -142,8 +117,15 @@
   font-size: 14px;
 }
 
-.library > summary {
-  cursor: pointer;
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.library h2 {
+  font-size: 16px;
   font-weight: 600;
   padding: 6px 0;
 }
@@ -151,6 +133,12 @@
 @media (min-width: 900px) {
   .grid {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .scene {
+    position: sticky;
+    top: 16px;
+    align-self: start;
   }
 }
 
@@ -176,10 +164,6 @@
   }
 
   .bubbles:empty {
-    display: none;
-  }
-
-  .clerkWaits {
     display: none;
   }
 

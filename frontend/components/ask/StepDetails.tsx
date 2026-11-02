@@ -15,7 +15,6 @@ import type {
 } from "../../lib/ask";
 import {
   askTranslatorCopy,
-  clerkCopy,
   judgeCopy,
   NOTHING_YET_ASK,
   scoutCopy,
@@ -28,17 +27,16 @@ import VectorMap from "../map/VectorMap";
 import styles from "./StepDetails.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
-export type TabId = "clerk" | "translator" | "scout" | "judge" | "storyteller";
+export type TabId = "translator" | "scout" | "judge" | "storyteller";
 
 const STEPS = [
-  { id: "clerk", name: "Clerk", part: "cl" },
   { id: "translator", name: "Translator", part: "tr" },
   { id: "scout", name: "Scout", part: "sc" },
   { id: "judge", name: "Judge", part: "jd" },
   { id: "storyteller", name: "Storyteller", part: "st" },
 ] as const;
 
-/** The steps that report their own phase; the Clerk's is worked out from them. */
+/** The steps, in the order the backend reports them. */
 const FOLLOWED = ["translator", "scout", "judge", "storyteller"] as const;
 
 const FILLER = new Set(["a","an","the","is","are","was","were","be","been","of","in","on","at","to","for","and","or","but","with","by","from","as","it","its","this","that","these","those","what","which","who","whom","whose","when","where","why","how","do","does","did","can","could","should","would","will","i","you","he","she","we","they","me","my","your","our","their","about","into","than","then","there","so","if","not","no","any","some"]);
@@ -47,7 +45,7 @@ const where = (r: { title: string; heading: string | null; page: number | null }
   [r.title, r.heading, r.page !== null ? `page ${r.page}` : null].filter(Boolean).join(" · ");
 
 /** The tabs that get a second page when a second look happens. */
-const ROUND_TABS = ["clerk", "translator", "scout", "judge"] as const;
+const ROUND_TABS = ["translator", "scout", "judge"] as const;
 type RoundTab = (typeof ROUND_TABS)[number];
 
 /** Who decided whether the sources were enough, in one line. */
@@ -198,7 +196,6 @@ export default function StepDetails({
   judge2 = null,
   round2 = {},
   judge,
-  askedQuestion,
   follow,
   overlay,
   privateSent,
@@ -220,7 +217,6 @@ export default function StepDetails({
   judge2?: JudgeRound2 | null;
   round2?: Record<string, Phase>;
   judge: JudgeResult[] | null;
-  askedQuestion: string;
   /** Jump to each step as its results arrive (off when the animations are off). */
   follow: boolean;
   /** The question and the Scout's candidates, drawn on the Scout tab's map. */
@@ -241,13 +237,12 @@ export default function StepDetails({
   const about = useAbout();
   const threshold = about?.second_look.threshold ?? 0.5;
   const started: Record<RoundTab, boolean> = {
-    clerk: Boolean(look?.query),
     translator: round2.translator !== undefined,
     scout: round2.scout !== undefined,
     judge: round2.judge !== undefined,
   };
   const startedKey = ROUND_TABS.map((id) => (started[id] ? "1" : "0")).join("");
-  const wasStarted = useRef("0000");
+  const wasStarted = useRef("000");
   useEffect(() => {
     const changed: Record<string, 1 | 2> = {};
     ROUND_TABS.forEach((id, i) => {
@@ -259,17 +254,7 @@ export default function StepDetails({
   const hasSecond = (id: string): id is RoundTab =>
     (ROUND_TABS as readonly string[]).includes(id) && started[id as RoundTab];
   const view: 1 | 2 = hasSecond(tab) ? (rounds[tab] ?? 2) : 1;
-  const phases = Object.values(states);
-  const phase = (id: string): Phase =>
-    id === "clerk"
-      ? phases.includes("error")
-        ? "error"
-        : states.storyteller === "done"
-          ? "done"
-          : phases.length > 0
-            ? "working"
-            : "waiting"
-      : (states[id] ?? "waiting");
+  const phase = (id: string): Phase => states[id] ?? "waiting";
   // Follow the newest step whose results are in; once the answer is there, stay where it is.
   const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
   // The tab this panel last chose; any other change to `tab` came from the page (the step strip) and counts as a pick.
@@ -291,7 +276,6 @@ export default function StepDetails({
   }, [follow, latest, hasAnswer, onTab]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
-    clerk: clerkCopy(about),
     translator: askTranslatorCopy(about),
     scout: scoutCopy(about),
     judge: judgeCopy(about),
@@ -311,7 +295,7 @@ export default function StepDetails({
     .slice(0, 5);
   // Round 1 is finished once its results are in, even while the second look runs.
   const done1 =
-    tab === "judge" ? judge !== null : phase(tab) === "done" || (hasSecond(tab) && tab !== "clerk");
+    tab === "judge" ? judge !== null : phase(tab) === "done" || hasSecond(tab);
   const overlay1: MapOverlay = { question: overlay?.question, candidates: overlay?.candidates };
   const overlay2: MapOverlay = {
     question: overlay?.question,
@@ -322,7 +306,7 @@ export default function StepDetails({
   return (
     <section className={`panel ${styles.root}`} aria-labelledby="steps-h">
       <div className={styles.head}>
-        <h2 id="steps-h" className="visually-hidden">How it got there</h2>
+        <h2 id="steps-h">How it got there</h2>
         <div role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button
@@ -382,12 +366,12 @@ export default function StepDetails({
                     />
                   )}
 
-                  {view === 2 && tab === "clerk" && look?.query && (
+                  {view === 2 && round2[tab] !== "done" && (
+                    <p className={styles.empty}>Working on it…</p>
+                  )}
+
+                  {view === 2 && tab === "judge" && look?.query && (
                     <>
-                      <div className={styles.askedCard}>
-                        <span>On the board</span>
-                        <p>{look.query}</p>
-                      </div>
                       <div className={styles.block}>
                         <h3>Who decided</h3>
                         {look.enough !== null ? (
@@ -425,13 +409,9 @@ export default function StepDetails({
                     </>
                   )}
 
-                  {view === 2 && tab !== "clerk" && round2[tab] !== "done" && (
-                    <p className={styles.empty}>Working on it…</p>
-                  )}
-
                   {view === 2 && tab === "translator" && round2.translator === "done" && (
                     <div className={styles.block}>
-                      <p>Fingerprinted the Clerk's new query: “{translator2?.query}”</p>
+                      <p>Fingerprinted the new query: “{translator2?.query}”</p>
                       <p className={styles.empty}>
                         Word weights are only worked out for your own question (see Initial).
                       </p>
@@ -491,28 +471,22 @@ export default function StepDetails({
 
                   {view === 1 && (
                     <>
-                      {tab === "clerk" && askedQuestion ? (
-                        <>
-                          <div className={styles.askedCard}>
-                            <span>You asked</span>
-                            <p>{askedQuestion}</p>
-                          </div>
-                          <div className={styles.chips}>
-                            <span className={styles.chipSoft}>
-                              Cards from your folder searched: {privateSent > 0 ? privateSent : "none"}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        !done1 && (
-                          <p className={styles.empty}>
-                            {phase(tab) === "error"
-                              ? "This step did not finish."
-                              : phase(tab) === "working"
-                                ? "Working on it…"
-                                : NOTHING_YET_ASK}
-                          </p>
-                        )
+                      {tab === "scout" && (
+                        <div className={styles.chips}>
+                          <span className={styles.chipSoft}>
+                            Cards from your folder searched: {privateSent > 0 ? privateSent : "none"}
+                          </span>
+                        </div>
+                      )}
+
+                      {!done1 && (
+                        <p className={styles.empty}>
+                          {phase(tab) === "error"
+                            ? "This step did not finish."
+                            : phase(tab) === "working"
+                              ? "Working on it…"
+                              : NOTHING_YET_ASK}
+                        </p>
                       )}
 
                       {done1 && tab === "translator" && (

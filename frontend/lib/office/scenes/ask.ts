@@ -5,8 +5,7 @@ import { at, spot, type Point } from "../spots";
 import type { SceneSet, Timeline } from "../types";
 
 const MIN_WALK = 0.25;
-const SPEED = { clerk: 260, crew: 200 }; // room units per second; the Clerk is a brisk courier
-const TRANSLATOR_PACE = 2.5; // the Translator hurries the slip over to the Scout
+const SPEED = { crew: 200 }; // room units per second
 const JUDGE_PACE = 1.6; // the Judge hurries the cards over to the Storyteller
 
 // The canvas room's projection: room (x, y, z) to SVG (from OfficeAsk.dc.html's geometry()).
@@ -45,7 +44,6 @@ const box = (x: number, y: number, z: number, w: number, d: number, h: number) =
 });
 
 const GROUP = {
-  cl: "clerk",
   tr: "translator",
   sc: "scout",
   jd: "judge",
@@ -53,7 +51,6 @@ const GROUP = {
 } as const;
 type Who = keyof typeof GROUP;
 const HOME_FACING_LEFT: Record<Who, boolean> = {
-  cl: false,
   tr: true,
   sc: true,
   jd: false,
@@ -87,7 +84,7 @@ function boxGroup(
   return g;
 }
 
-/** The Ask office: the Clerk at the whiteboard and the Translator, Scout, Judge and Storyteller (ADR 004). */
+/** The Ask office: the Translator, Scout, Judge and Storyteller, with the question and answer on the whiteboard (ADR 004). */
 export function buildAskScenes(root: SVGSVGElement): SceneSet {
   const q = gsap.utils.selector(root);
   const holds: SceneSet["holds"] = {};
@@ -102,18 +99,14 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
 
   // Feet positions (SVG coordinates), read from the spot markers in the SVG.
   const P = {
-    doorway: spot(root, "clerk-doorway"), // inside the QUERY door
-    door: spot(root, "clerk-door"), // on the door mat
-    clAtBoard: spot(root, "clerk-board"), // beside the whiteboard's right end, his writing hand in view; he waits here too
     trSpot: spot(root, "translator"),
-    trAtScout: spot(root, "translator-scout"), // behind the Scout's right shoulder
     scSpot: spot(root, "scout"),
-    scAtJudge: spot(root, "scout-judge"), // beside the Judge, left of the desk
     jdSpot: spot(root, "judge"),
     jdAcrossDesk: spot(root, "judge-desk"), // across the Storyteller's desk from her
     jdPastDesk: spot(root, "judge-past-desk"), // clear of the Storyteller's desk, on the way back
-    jdAtClerk: spot(root, "judge-clerk"), // on the Clerk's right by the whiteboard, to tell them nothing was found
-    jdAtFiles: spot(root, "judge-files"), // in front of the file cabinets
+    scAtJudge: spot(root, "scout-judge"), // beside the Judge, left of the desk
+    jdAtBoard: spot(root, "judge-board"), // by the whiteboard, to ask for a better search
+    stAtBoard: spot(root, "storyteller-board"), // by the whiteboard, to write the answer on it
     stSpot: spot(root, "storyteller"),
   };
   const HOME: Partial<Record<Who, Point>> = {
@@ -123,8 +116,8 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     st: P.stSpot,
   };
 
-  // "Nothing found": set when the Judge keeps no results; the Storyteller then has nothing to type
-  // and the Clerk comes back shrugging. In the app this comes from the Judge's done event.
+  // "Nothing found": set when the Judge keeps no results; the Storyteller then has nothing to type.
+  // In the app this comes from the Judge's done event.
   let nothingFound = false;
 
   // ---------- props drawn from the room's own projection ----------
@@ -190,6 +183,24 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         opacity: 0,
       }),
     );
+    // the marks on the whiteboard: the question (ink), the answer (green) and "nothing on file" (red)
+    const board = (id: string, stroke: string, ds: string[]) => {
+      const g = el(root.querySelector("#qboard")!, "g", { id }); // last in the board, so it paints over the face
+      ds.forEach((d) =>
+        el(g, "path", {
+          d,
+          stroke,
+          "stroke-width": 2.5,
+          "stroke-linecap": "round",
+          fill: "none",
+          opacity: 0,
+        }),
+      );
+      return g;
+    };
+    board("board-q", "#2B2622", ["M470 404L540 439", "M470 412L520 437"]);
+    board("board-a", "#4b6b3a", ["M470 440L550 480", "M470 448L535 480.5", "M470 456L520 481"]);
+    board("board-none", "#9b3b2e", ["M500 452L520 462M520 452L500 462"]);
     // the Storyteller's typed lines, one per beat (like the canvas's paperLines)
     [16, 13, 17, 11, 15].forEach((w, k) =>
       el(root.querySelector("#typed-lines")!, "path", {
@@ -224,7 +235,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .set(q(`#${who}-flip`), { scaleX: to.x < from.x ? -1 : 1 }, position)
       .to(q(`#${GROUP[who]}`), {
         ...at(to),
-        duration: Math.max(MIN_WALK / pace, d / (SPEED[who === "cl" ? "clerk" : "crew"] * pace)),
+        duration: Math.max(MIN_WALK / pace, d / (SPEED.crew * pace)),
         ease: "power1.inOut",
       });
   }
@@ -239,11 +250,8 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
 
   function reset() {
     Object.keys(holds).forEach(stopHold);
-    // the Clerk waits beside the whiteboard, facing the room; door shut
-    pos.cl = P.clAtBoard;
-    gsap.set(q("#clerk"), { ...at(P.clAtBoard), opacity: 1 });
-    gsap.set(q("#cl-wait, #cl-clip-side"), { opacity: 1 });
-    gsap.set(q("#cl-give, #cl-write, #a-door-open, #a-answer"), { opacity: 0, x: 0, y: 0 });
+    gsap.set(q("#a-answer"), { opacity: 0, x: 0, y: 0 });
+    gsap.set(q("#board-q > *, #board-a > *, #board-none"), { opacity: 0 });
     // the crew at their desks, facing their work
     inCrew();
     nothingFound = false;
@@ -256,7 +264,6 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     for (const who of Object.keys(GROUP) as Who[]) {
       gsap.set(q(`#${who}-flip`), { svgOrigin: "40 0", scaleX: HOME_FACING_LEFT[who] ? -1 : 1 });
     }
-    gsap.set(q("#cl-flip"), { scaleX: 1 }); // the Clerk faces the room
     gsap.set(q("#sc-arm-up, #jd-arm-up, #st-arm-up"), { opacity: 0, x: 0, y: 0 });
     gsap.set(
       q(
@@ -265,9 +272,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       { opacity: 1 },
     );
     gsap.set(q("#tr-check, #sc-check, #jd-check, #st-check"), { opacity: 0 });
-    gsap.set(q("#tr-held-slip, #sc-held-slip, #sc-held-stack, #jd-held-kept, #jd-held-rejects"), {
-      opacity: 0,
-    });
+    gsap.set(q("#sc-held-slip, #sc-held-stack, #jd-held-kept"), { opacity: 0 });
     // Translator's desk
     gsap.set(q("#crt-text-idle, #tr-work"), { opacity: 1 });
     gsap.set(q("#tr-in-card, #crt-cursor, .crt-line, .crt-bar, #a-slip"), {
@@ -289,7 +294,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     gsap.set(q("#typewriter"), { x: 0 });
   }
 
-  // Judge, nothing kept: puzzled at the pile, tells the Clerk, then files the whole pile back.
+  // Judge, nothing kept: puzzled at the pile, says so at the board, then files the whole pile back.
   function judgeNothing() {
     nothingFound = true;
     const tl = gsap.timeline({ paused: true });
@@ -306,79 +311,57 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       .to(q("#j-pile"), { opacity: 0, duration: 0.25 }) // nothing kept: it all becomes rejects
       .to(q("#j-rejects"), { opacity: 1, duration: 0.25 }, "<");
     armUp(tl, "jd", false);
-    tl.set(q("#desk-mag-lens, #desk-mag-handle"), { opacity: 1 }, "<")
-      .to(q("#jd-puzzled"), { opacity: 0, duration: 0.2 }, "<")
-      .set(q("#j-rejects"), { opacity: 0 }, "+=0.2")
-      .set(q("#jd-held-rejects"), { opacity: 1 }, "<");
-    tellsClerkNothing(tl, "#jd-held-rejects");
+    tl.set(q("#desk-mag-lens, #desk-mag-handle"), { opacity: 1 }, "<").to(
+      q("#jd-puzzled"),
+      { opacity: 0, duration: 0.2 },
+      "<",
+    );
+    judgeFindsNothing(tl, "#j-rejects");
     return tl;
   }
 
   // Judge, after ruling, when the check says nothing on file touches the question: the cards he
-  // holds never reach the Storyteller; he tells the Clerk and files them all back.
+  // holds never reach the Storyteller; the board says so and he files them all back.
   function secondLookNothing() {
     nothingFound = true;
     const tl = gsap.timeline({ paused: true });
-    tellsClerkNothing(tl, "#jd-held-kept, #jd-held-rejects");
+    judgeFindsNothing(tl, "#jd-held-kept");
     tl.to(q("#d-kept"), { opacity: 0, duration: 0.25 }, "<"); // the ranks come off the board
     return tl;
   }
 
-  // The Judge walks to the Clerk, says no file was found, then files `held` back and goes home.
-  function tellsClerkNothing(tl: gsap.core.Timeline, held: string) {
-    walk(tl, "jd", P.jdAtClerk, "+=0.1");
-    face(tl, "jd", true); // turn to the Clerk
-    face(tl, "cl", false, "<"); // and the Clerk turns to the Judge
+  // The Judge says no file was found and the board shows a cross; then `held` goes back into the cabinets.
+  function judgeFindsNothing(tl: gsap.core.Timeline, held: string) {
     tl.fromTo(
       q("#jd-says"),
       { opacity: 0, y: 6 },
       { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" },
       "+=0.1",
     )
+      .to(q("#board-none"), { opacity: 1, duration: 0.3 }, "<")
       .to(q("#jd-says"), { opacity: 0, duration: 0.3 }, "+=0.8")
-      .addLabel("handoff"); // the Clerk knows: they can head back
-    walk(tl, "jd", P.jdAtFiles, "+=0.1");
-    tl.to(q(held), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // all back into the cabinets
+      .addLabel("handoff"); // the board says it: the Storyteller's scenes are empty
+    tl.to(q(held), { x: -8, opacity: 0, duration: 0.3 }, "+=0.1") // all back into the cabinets
       .set(q(held), { x: 0 });
-    walk(tl, "jd", P.jdSpot, "+=0.2");
-    faceHome(tl, "jd");
   }
   const nothingToDo = () => gsap.timeline({ paused: true }).to({}, { duration: 0.01 });
 
-  // The Clerk's marker strokes at the whiteboard's edge, his arm in view (the board faces away).
-  function writeOnBoard(tl: gsap.core.Timeline) {
-    tl.set(q("#cl-wait, #cl-clip-side"), { opacity: 0 }, "+=0.1").set(
-      q("#cl-write"),
-      { opacity: 1, x: 0, y: 0 },
-      "<",
-    );
-    [
-      [3, -6],
-      [-2, 1],
-      [3, -2],
-    ].forEach(([x, y]) =>
-      // three strokes of the marker
-      tl.to(q("#cl-write"), { x, y, duration: 0.2, ease: "sine.inOut" }),
-    );
-    tl.to(q("#cl-write"), { x: 0, y: 0, duration: 0.15 })
-      .set(q("#cl-write"), { opacity: 0 })
-      .set(q("#cl-wait, #cl-clip-side"), { opacity: 1 }, "<");
-  }
-
   // Judge, ruling: ranks on the board, the pile becomes the kept stack and rejects, the Judge holds them.
   function judgeRules(tl: gsap.core.Timeline) {
-    tl.to(q("#jd-arm-up"), { x: 0, duration: 0.2 })
-      .set(q("#d-kept"), { opacity: 1 })
-      .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.06 }) // ranks on the board
+    tl.to(q("#jd-arm-up"), { x: 0, duration: 0.2 });
+    [-3, 3, -3].forEach((x) => tl.to(q("#jd-arm-up"), { x, duration: 0.3, ease: "sine.inOut" })); // the magnifier sweeps the pile
+    tl.set(q("#d-kept"), { opacity: 1 })
+      .fromTo(q("#d-kept > *"), { opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.15 }) // ranks on the board
       .to(q("#j-pile"), { opacity: 0, duration: 0.25 })
       .to(q("#kept-stack, #j-rejects"), { opacity: 1, duration: 0.25 }, "<");
     armUp(tl, "jd", false);
     tl.set(q("#desk-mag-lens, #desk-mag-handle"), { opacity: 1 }, "<")
-      .set(q("#kept-stack, #j-rejects"), { opacity: 0 }, "+=0.2")
-      .set(q("#jd-held-kept, #jd-held-rejects"), { opacity: 1 }, "<");
+      .set(q("#kept-stack"), { opacity: 0 }, "+=0.2")
+      .set(q("#jd-held-kept"), { opacity: 1 }, "<")
+      .to(q("#j-rejects"), { opacity: 0, duration: 0.3 }, "<"); // the rejects go back without being carried
   }
 
-  // Judge, handing over: to the Storyteller's desk, the handover, the rejects back, home.
+  // Judge, handing over: to the Storyteller's desk, the handover, home.
   function judgeHandsOver(tl: gsap.core.Timeline) {
     // straight over to the far side of the Storyteller's desk, across from her
     tl.call(behindDesk, undefined, "+=0.1");
@@ -399,24 +382,19 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     ).addLabel("handoff"); // the documents are on the Storyteller's desk
     walk(tl, "jd", P.jdPastDesk, "+=0.2");
     tl.call(inCrew);
-    walk(tl, "jd", P.jdAtFiles);
-    tl.to(q("#jd-held-rejects"), { x: -8, opacity: 0, duration: 0.35 }, "+=0.1") // back into the cabinet
-      .set(q("#jd-held-rejects"), { x: 0 });
-    walk(tl, "jd", P.jdSpot, "+=0.2");
+    walk(tl, "jd", P.jdSpot);
     faceHome(tl, "jd");
   }
 
   // ---------- scenes: each returns a paused timeline ----------
   const scenes: Record<string, (data?: Record<string, unknown>) => gsap.core.Timeline> = {
-    // The Clerk is already at the board: turns to it, writes the question for the crew, turns back.
-    clerk_start() {
-      // Reset now, not as the timeline plays, so the Clerk's tracked position is the board.
+    // The question appears on the whiteboard.
+    question_start() {
+      // Reset now, not as the timeline plays, so the room is ready before the first scene.
       reset();
       const tl = gsap.timeline({ paused: true });
-      face(tl, "cl", true); // facing the board; his arm goes round its edge
-      writeOnBoard(tl);
+      tl.to(q("#board-q > *"), { opacity: 1, duration: 0.2, stagger: 0.15 });
       tl.addLabel("handoff"); // the question is on the board: the Translator can start
-      face(tl, "cl", false, "+=0.2"); // then back to facing the room
       return tl;
     },
 
@@ -428,7 +406,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       tl.to(q("#crt-text-idle"), { opacity: 0, duration: 0.15 }).set(q("#crt-cursor"), {
         opacity: 1,
       });
-      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.06"));
+      q(".crt-line").forEach((line) => tl.to(line, { opacity: 1, duration: 0.05 }, "+=0.04"));
       tl.to([...q(".crt-line"), ...q("#crt-cursor")], { opacity: 0, duration: 0.15 }, "+=0.15").to(
         q(".crt-bar").slice(0, 3),
         { opacity: 1, duration: 0.05, stagger: 0.08 },
@@ -443,7 +421,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       return tl;
     },
 
-    // Translator: the printer gives a small slip, which goes over to the Scout.
+    // Translator: the printer gives a small slip, which the Scout takes.
     translator_done() {
       const tl = gsap.timeline({ paused: true });
       tl.to(q(".crt-bar")[3], { opacity: 1, duration: 0.1 })
@@ -463,16 +441,11 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
           "print+=0.1",
         )
         .set(q("#printer-led"), { opacity: 0.3 })
-        .to(q("#a-slip"), { opacity: 0, duration: 0.15 }, "+=0.1") // picks it up
-        .set(q("#tr-held-slip"), { opacity: 1 }, "<");
-      walk(tl, "tr", P.trAtScout, "+=0.1", TRANSLATOR_PACE);
-      face(tl, "tr", true);
-      tl.set(q("#tr-held-slip"), { opacity: 0 }, "+=0.15")
-        .set(q("#sc-held-slip"), { opacity: 1 }, "<")
-        .addLabel("handoff"); // the Scout has the slip
-      walk(tl, "tr", P.trSpot, "+=0.2", TRANSLATOR_PACE);
-      faceHome(tl, "tr");
-      tl.to(q(".crt-bar"), { opacity: 0, duration: 0.2 }).to(
+        .to(q("#a-slip"), { opacity: 0, duration: 0.15 }, "+=0.1") // the Scout takes it
+        .to(q("#sc-held-slip"), { opacity: 1, duration: 0.15 }, "<")
+        .addLabel("handoff") // the Scout has the slip
+        .to(q(".crt-bar"), { opacity: 0, duration: 0.2 })
+        .to(
         q("#crt-text-idle"),
         { opacity: 1, duration: 0.2 },
         "<",
@@ -488,10 +461,10 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       const lantern = q("#sc-arm-up, #lantern-glow");
       tl.to(q("#lantern-glow"), { opacity: 1, duration: 0.3 })
         .to(q("#lantern-beam"), { opacity: 1, duration: 0.3 }, "<0.1")
-        .to(lantern, { x: -6, y: 3, duration: 0.3, ease: "sine.inOut" }) // searching: the lantern sweeps along the drawers
-        .to(lantern, { x: 4, y: -2, duration: 0.4, ease: "sine.inOut" })
-        .to(lantern, { x: -3, y: 2, duration: 0.3, ease: "sine.inOut" })
-        .to(lantern, { x: 0, y: 0, duration: 0.2, ease: "sine.inOut" });
+        .to(lantern, { x: -6, y: 3, duration: 0.2, ease: "sine.inOut" }) // searching: the lantern sweeps along the drawers
+        .to(lantern, { x: 4, y: -2, duration: 0.25, ease: "sine.inOut" })
+        .to(lantern, { x: -3, y: 2, duration: 0.2, ease: "sine.inOut" })
+        .to(lantern, { x: 0, y: 0, duration: 0.15, ease: "sine.inOut" });
       startHold(tl, "scout", () =>
         gsap.to(q("#lantern-beam"), {
           opacity: 0.55,
@@ -504,7 +477,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       return tl;
     },
 
-    // Scout: pulls a big stack of documents and carries it to the Judge's desk.
+    // Scout: pulls a big stack of documents; it lands on the Judge's desk.
     scout_done() {
       const tl = gsap.timeline({ paused: true });
       tl.to(q("#lantern-beam"), { opacity: 1, duration: 0.2 });
@@ -554,7 +527,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
     },
 
     // Judge: ranks the best, hands them to the Storyteller, then files the rest back.
-    // With nothing kept: puzzled, tells the Clerk no file was found, files everything back.
+    // With nothing kept: puzzled, the board shows a cross, everything is filed back.
     judge_done(data = {}) {
       if (data.nothing) return judgeNothing();
       const tl = gsap.timeline({ paused: true });
@@ -577,24 +550,22 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       return tl;
     },
 
-    // Judge, when the check finds nothing on file: tells the Clerk instead of the Storyteller.
+    // Judge, when the check finds nothing on file: the board shows a cross instead of the Storyteller's page.
     second_look_nothing: () => secondLookNothing(),
 
-    // Judge asks the Clerk to rewrite the question: the Clerk writes again at the board, the Judge
-    // walks home still holding the cards and puts them back on the desk pile for the second round.
+    // Judge asks for a better search: at the board, the question is rewritten, then the Judge walks
+    // home still holding the cards and puts them back on the desk pile for the second round.
     second_look_rewrite() {
       const tl = gsap.timeline({ paused: true });
-      walk(tl, "jd", P.jdAtClerk);
-      face(tl, "jd", true); // turn to the Clerk
-      face(tl, "cl", false, "<"); // and the Clerk turns to the Judge
-      tl.to({}, { duration: 0.8 }); // the Judge makes the request
-      face(tl, "cl", true); // the Clerk turns to the board
-      writeOnBoard(tl);
+      walk(tl, "jd", P.jdAtBoard);
+      face(tl, "jd", true); // turn to the board
+      tl.to({}, { duration: 0.4 }) // the Judge makes the request
+        .to(q("#board-q > *"), { opacity: 0, duration: 0.2 }) // the question is rewritten
+        .to(q("#board-q > *"), { opacity: 1, duration: 0.2, stagger: 0.15 });
       tl.addLabel("handoff"); // the board is rewritten: the Translator can start again
-      face(tl, "cl", false, "+=0.2");
-      walk(tl, "jd", P.jdSpot, "<");
+      walk(tl, "jd", P.jdSpot, "+=0.2");
       faceHome(tl, "jd");
-      tl.set(q("#jd-held-kept, #jd-held-rejects"), { opacity: 0 }, "+=0.1") // the cards back on the pile
+      tl.set(q("#jd-held-kept"), { opacity: 0 }, "+=0.1") // the cards back on the pile
         .set(q("#d-kept"), { opacity: 0 }, "<")
         .to(q("#j-pile"), { opacity: 1, duration: 0.25 }, "<");
       return tl;
@@ -607,7 +578,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       q(".typed-line")
         .slice(0, 2)
         .forEach((line) => {
-          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.05").to(
+          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.15").to(
             line,
             {
               opacity: 1,
@@ -625,7 +596,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       return tl;
     },
 
-    // Storyteller: finishes the page; the answer waits on the typewriter for the Clerk.
+    // Storyteller: finishes the page; the answer goes up on the whiteboard.
     storyteller_done() {
       if (nothingFound) return nothingToDo();
       const tl = gsap.timeline({ paused: true });
@@ -633,7 +604,7 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
       q(".typed-line")
         .slice(2)
         .forEach((line) => {
-          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.1").to(
+          tl.to(q("#typewriter"), { x: 0.8, duration: 0.05, repeat: 5, yoyo: true }, "+=0.2").to(
             line,
             {
               opacity: 1,
@@ -643,16 +614,11 @@ export function buildAskScenes(root: SVGSVGElement): SceneSet {
         });
       tl.to(q("#answer-dots"), { opacity: 1, duration: 0.2 }, "+=0.1"); // the citation marks
       armUp(tl, "st", true, "+=0.1"); // holds up the finished page
-      armUp(tl, "st", false, "+=0.2");
-      tl.fromTo(q("#a-answer"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, "<");
-      return tl;
-    },
-
-    // The answer is taken off the page; the Clerk stays in the room.
-    clerk_done() {
-      if (nothingFound) return nothingToDo();
-      const tl = gsap.timeline({ paused: true });
-      tl.to(q("#a-answer"), { opacity: 0, duration: 0.25 }, "+=0.3");
+      tl.set(q("#a-answer"), { opacity: 0 }, "<").addLabel("handoff"); // the page is in hand: the answer can show
+      walk(tl, "st", P.stAtBoard, "+=0.1", JUDGE_PACE);
+      face(tl, "st", true); // facing the board
+      tl.to(q("#board-a > *"), { opacity: 1, duration: 0.2, stagger: 0.15 });
+      armUp(tl, "st", false, "+=0.1");
       return tl;
     },
   };

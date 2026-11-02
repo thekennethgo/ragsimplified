@@ -704,21 +704,19 @@ test("a failed step shows the running step as an error", async () => {
     ),
   ).toBeInTheDocument();
   expect(names()).toEqual([
-    "clerk_away",
-    "clerk_start",
+    "question_start",
     "translator_start",
     "error",
   ]);
 });
 
-test("a good question plays the Clerk, the crew in order, then the Clerk with the answer", async () => {
+test("a good question puts the question on the board, then plays the four crew in order", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   expect(emitted).toEqual([
-    { name: "clerk_away" },
-    { name: "clerk_start" },
+    { name: "question_start" },
     { name: "translator_start" },
     { name: "translator_done" },
     { name: "scout_start" },
@@ -727,12 +725,10 @@ test("a good question plays the Clerk, the crew in order, then the Clerk with th
     { name: "judge_done", data: { nothing: false } },
     { name: "storyteller_start" },
     { name: "storyteller_done" },
-    { name: "clerk_done" },
-    { name: "clerk_back" },
   ]);
 });
 
-test("when the Judge keeps nothing the Judge tells the Clerk and the Clerk shrugs", async () => {
+test("when the Judge keeps nothing the board says so and the last scene still ends the run", async () => {
   stubAsk([
     { step: "scout", status: "start" },
     { step: "scout", status: "done", data: { results: [] } },
@@ -773,15 +769,14 @@ test("when the Judge keeps nothing the Judge tells the Clerk and the Clerk shrug
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("Capital of Peru?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   expect(emitted).toContainEqual({
     name: "judge_done",
     data: { nothing: true },
   });
-  expect(names().slice(-2)).toEqual(["clerk_done", "clerk_shrug"]);
-  expect(names()).not.toContain("clerk_back");
+  expect(names().slice(-1)).toEqual(["storyteller_done"]);
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
 });
 
@@ -807,9 +802,6 @@ test("only the working crew member has a speech bubble", async () => {
     within(bubble).getByText("Turning your question into numbers…"),
   ).toBeInTheDocument();
   expect(within(bubble).queryByText("Working")).toBeNull();
-  expect(
-    screen.getByRole("img", { name: "The Clerk is waiting for a reply" }),
-  ).toBeInTheDocument();
 
   push({ step: "translator", status: "done", data: { words: [] } });
   push({ step: "scout", status: "start" });
@@ -881,7 +873,7 @@ test("with animations on the answer waits for the Storyteller's scene to start",
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
-  await waitFor(() => expect(names()).toContain("clerk_back"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   const card = screen.getByRole("group", { name: "Answer card" });
   expect(card).not.toHaveTextContent("Apple was founded in 1976");
   expect(screen.queryByRole("button", { name: "Source 1" })).toBeNull();
@@ -899,7 +891,7 @@ test("with animations on and no scene played the answer shows 2 s after the stre
     ask("When was Apple founded?");
     // waitFor can't run with a faked setTimeout, so let the stream finish by advancing a little.
     await act(() => vi.advanceTimersByTimeAsync(100));
-    expect(names()).toContain("clerk_back");
+    expect(names()).toContain("storyteller_done");
     const card = screen.getByRole("group", { name: "Answer card" });
     expect(card).not.toHaveTextContent("Apple was founded in 1976");
     await act(() => vi.advanceTimersByTimeAsync(1800));
@@ -923,9 +915,10 @@ test("the progress line shows the Scout's count while the Judge's scene plays", 
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
+  // in the caption under the room and in the answer card
   expect(
-    await screen.findByText("The Scout found 3 cards. The Judge is checking them…"),
-  ).toBeInTheDocument();
+    await screen.findAllByText("The Scout found 3 cards. The Judge is checking them…"),
+  ).toHaveLength(2);
 });
 
 test("turning the animations off mid-run keeps the answer that has arrived", async () => {
@@ -954,7 +947,7 @@ test("the Ask button is enabled once the stream ends while scenes are still play
   expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled();
 });
 
-test("while scenes are still playing the Ask button is enabled and the Clerk's waiting bubble stays", async () => {
+test("while scenes are still playing the Ask button is enabled ", async () => {
   mid.hold = true;
   stubAsk([
     { step: "translator", status: "start" },
@@ -969,9 +962,6 @@ test("while scenes are still playing the Ask button is enabled and the Clerk's w
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled(),
   );
-  expect(
-    screen.getByRole("img", { name: "The Clerk is waiting for a reply" }),
-  ).toBeInTheDocument();
 });
 
 test("with the animations on the answer card shows the answer and no tab is called Answer", async () => {
@@ -1005,8 +995,8 @@ test("each tab opens when its results arrive, and a starting step does not steal
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Translator" })).toBeEnabled(),
   );
-  // working, not done yet: still on the Clerk
-  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute(
+  // working, not done yet: still on the Translator
+  expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -1034,7 +1024,7 @@ test("each tab opens when its results arrive, and a starting step does not steal
   close();
 });
 
-test("with the animations off the Clerk tab stays selected throughout", async () => {
+test("with the animations off the Translator tab stays selected throughout", async () => {
   localStorage.setItem("ragsimplified.animations", "off");
   Element.prototype.scrollIntoView = vi.fn();
   try {
@@ -1048,7 +1038,7 @@ test("with the animations off the Clerk tab stays selected throughout", async ()
     );
     ask("When was Apple founded?");
     await screen.findByRole("button", { name: "Source 1" });
-    expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -1203,7 +1193,7 @@ test("a tab clicked the moment a step lands is not undone by the panel", async (
     const translator = screen.queryByRole("button", { name: "Translator" });
     if (!clicked && translator && within(translator).queryByTitle("done")) {
       clicked = true;
-      fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+      fireEvent.click(screen.getByRole("button", { name: "Judge" }));
     }
   });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true });
@@ -1212,7 +1202,7 @@ test("a tab clicked the moment a step lands is not undone by the panel", async (
   observer.disconnect();
   await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
   await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Judge" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("the Top 5 leaves filler words out", async () => {
@@ -1297,13 +1287,12 @@ test("every shelf's questions are reachable: three chips, then one card per shel
   expect(screen.queryByRole("button", { name: /Show all shelves|Show fewer/ })).toBeNull();
 });
 
-test("the Query room is gone: the Clerk's line is the scene's caption", () => {
+test("the Query room is gone: the caption invites a question", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   expect(screen.queryByRole("heading", { name: "Query" })).toBeNull();
-  expect(screen.queryByText("Note from the Clerk")).toBeNull();
   const scene = screen.getByRole("region", { name: "The office" });
-  expect(within(scene).getByText("Hi, I'm the Clerk. What do you want to know?")).toBeInTheDocument();
+  expect(within(scene).getByText("Ask a question and watch the office find the answer.")).toBeInTheDocument();
   expect(within(scene).getByRole("switch", { name: /Animations/ })).toBeInTheDocument();
 });
 
@@ -1314,20 +1303,16 @@ test("a step strip button opens its tab in How it got there", () => {
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "false");
   fireEvent.click(within(scene).getByRole("button", { name: "Scout: waiting" }));
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "false");
+  expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute("aria-pressed", "false");
 });
 
-test("a step strip click opens the How it got there details", () => {
+test("How it got there and Browse the library are visible without a click", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  const details = screen.getByText("How it got there", { selector: "summary" }).closest("details")!;
-  expect(details).not.toHaveAttribute("open");
-  fireEvent.click(
-    within(screen.getByRole("region", { name: "The office" })).getByRole("button", {
-      name: "Scout: waiting",
-    }),
-  );
-  expect(details).toHaveAttribute("open");
+  expect(screen.getByRole("heading", { name: "How it got there" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Browse the library" })).toBeVisible();
+  expect(screen.queryByText("How it got there", { selector: "summary" })).toBeNull();
+  expect(screen.queryByText("Browse the library", { selector: "summary" })).toBeNull();
 });
 
 test("a step strip pick sticks: later steps do not pull the tab away", async () => {
@@ -1345,10 +1330,8 @@ test("a step strip pick sticks: later steps do not pull the tab away", async () 
   ask("When was Apple founded?");
   push({ step: "translator", status: "start" });
   push({ step: "translator", status: "done", data: { words: [] } });
-  await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute("aria-pressed", "true"),
-  );
   const scene = screen.getByRole("region", { name: "The office" });
+  await within(scene).findByRole("button", { name: "Translator: done" });
   fireEvent.click(within(scene).getByRole("button", { name: /^Scout:/ }));
   push({ step: "scout", status: "start" });
   push({ step: "scout", status: "done", data: { results: [] } });
@@ -1422,10 +1405,10 @@ test("a tab clicked before asking does not stop the panel following the run", as
   close();
 });
 
-test("the six character tabs are all enabled before asking", () => {
+test("the four character tabs are all enabled before asking", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  for (const name of ["Clerk", "Translator", "Scout", "Judge", "Storyteller"]) {
+  for (const name of ["Translator", "Scout", "Judge", "Storyteller"]) {
     expect(screen.getByRole("button", { name })).toBeEnabled();
   }
   expect(screen.queryByRole("button", { name: "Answer" })).toBeNull();
@@ -1461,15 +1444,12 @@ test("the Storyteller tab shows the system prompt and the exact message sent", a
   expect(screen.getByText(/Google Gemini · gemini-3\.5-flash-lite/)).toBeInTheDocument();
 });
 
-test("the Clerk tab shows the question that was asked", async () => {
+test("the Scout tab shows how many of the visitor's own cards were searched", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  const steps = within(screen.getByRole("region", { name: "How it got there" }));
-  const card = steps.getByText("You asked").closest("div") as HTMLElement;
-  expect(card).toHaveTextContent("When was Apple founded?");
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   expect(screen.getByText("Cards from your folder searched: none")).toBeInTheDocument();
 });
 
@@ -1604,14 +1584,14 @@ async function runSecondLook() {
 
 const pressed = (name: string) => screen.getByRole("button", { name }).getAttribute("aria-pressed");
 
-test("a second look gives the Clerk, Translator, Scout and Judge a round switch, opened on round 2", async () => {
+test("a second look gives the Translator, Scout and Judge a round switch, opened on round 2", async () => {
   await runSecondLook();
   expect(names()).toEqual(
     expect.arrayContaining(["judge_ruled", "second_look_rewrite", "translator_start", "judge_done"]),
   );
-  // The round 2 verdict is not "nothing found": the Clerk comes back with the answer.
-  expect(names()).toContain("clerk_back");
-  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+  // The round 2 verdict is not "nothing found": the Storyteller still writes.
+  expect(names()).toContain("storyteller_done");
+  for (const tab of ["Translator", "Scout", "Judge"]) {
     fireEvent.click(screen.getByRole("button", { name: tab }));
     expect(pressed("Second look")).toBe("true");
     expect(pressed("Initial")).toBe("false");
@@ -1620,24 +1600,17 @@ test("a second look gives the Clerk, Translator, Scout and Judge a round switch,
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
-test("the Clerk's round 2 page shows the new query and who decided", async () => {
+test("the Judge's round 2 page shows who decided", async () => {
   await runSecondLook();
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  const board = screen.getByText("On the board").closest("div") as HTMLElement;
-  expect(board).toHaveTextContent("Batam city overview");
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Mercury Decide: 20% sure the sources were enough")).toBeInTheDocument();
   expect(screen.getByTestId("decide-meter-fill")).toHaveStyle({ width: "20%" });
   expect(screen.getByTestId("decide-meter-tick")).toHaveStyle({ left: "50%" });
   expect(screen.getByText("needs 50%")).toBeInTheDocument();
   expect(screen.queryByText("Decided by the language model")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
-  const asked = within(screen.getByRole("region", { name: "How it got there" }))
-    .getByText("You asked")
-    .closest("div") as HTMLElement;
-  expect(asked).toHaveTextContent("What is Kenneth's hometown like?");
 });
 
-test("the Clerk says the language model decided when no probability was given", async () => {
+test("the Judge says the language model decided when no probability was given", async () => {
   stubAsk(
     SECOND_LOOK_EVENTS.map((e) =>
       (e as { step: string; status?: string }).step === "second_look" &&
@@ -1649,7 +1622,7 @@ test("the Clerk says the language model decided when no probability was given", 
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("What is Kenneth's hometown like?");
   await screen.findByRole("button", { name: "Source 1" });
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Decided by the language model")).toBeInTheDocument();
   expect(screen.getByText("The language model decided.")).toBeInTheDocument();
   expect(screen.queryByTestId("decide-meter-fill")).toBeNull();
@@ -1658,7 +1631,7 @@ test("the Clerk says the language model decided when no probability was given", 
 test("the Translator's round 2 page shows the new query and no word blocks; round 1 keeps its words", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Translator" }));
-  expect(screen.getByText("Fingerprinted the Clerk's new query: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("Fingerprinted the new query: “Batam city overview”")).toBeInTheDocument();
   expect(
     screen.getByText("Word weights are only worked out for your own question (see Initial)."),
   ).toBeInTheDocument();
@@ -1706,7 +1679,7 @@ test("a run without a second look has no round switch and the Judge says it was 
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+  for (const tab of ["Translator", "Scout", "Judge"]) {
     fireEvent.click(screen.getByRole("button", { name: tab }));
     expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
   }
@@ -1730,7 +1703,7 @@ test("a check that says enough shows the Judge's banner with the decision", asyn
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
-test("a check that finds nothing on file has the Judge tell the Clerk instead of the Storyteller", async () => {
+test("a check that finds nothing on file has the board say so instead of the Storyteller", async () => {
   const refusal = "I can't answer that from the available documents.";
   stubAsk([
     ...EVENTS.slice(0, 5),
@@ -1747,12 +1720,11 @@ test("a check that finds nothing on file has the Judge tell the Clerk instead of
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("Who is the best basketball player?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
   expect(names()).not.toContain("judge_handover");
-  expect(names()).not.toContain("clerk_back");
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(
@@ -1764,7 +1736,7 @@ test("a check that finds nothing on file has the Judge tell the Clerk instead of
   expect(screen.queryByText("Enough to answer. These cards go to the Storyteller.")).toBeNull();
 });
 
-test("a final check that finds nothing after the second look has the Judge tell the Clerk", async () => {
+test("a final check that finds nothing after the second look has the board say so", async () => {
   const refusal = "I can't answer that from the available documents.";
   const judge2 = SECOND_LOOK_EVENTS.findIndex((e) => {
     const event = e as { step: string; status?: string; data?: { round?: number } };
@@ -1786,13 +1758,12 @@ test("a final check that finds nothing after the second look has the Judge tell 
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("What is Kenneth's hometown's most famous dish?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   const after = names().slice(names().indexOf("second_look_rewrite"));
   expect(after).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
   expect(after).not.toContain("judge_handover");
-  expect(names()).not.toContain("clerk_back");
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   fireEvent.click(screen.getByRole("button", { name: "Second look" }));
@@ -1829,7 +1800,7 @@ test("the question box has no privacy line under it", () => {
   expect(screen.queryByText(/Sent to Voyage AI/)).toBeNull();
 });
 
-test("while the Clerk rewrites the question the Judge and the Clerk say so", async () => {
+test("while the Judge asks for a better search the Judge and the caption say so", async () => {
   mid.rewrite = true;
   const encoder = new TextEncoder();
   let push: (event: object) => void = () => undefined;
@@ -1847,12 +1818,12 @@ test("while the Clerk rewrites the question the Judge and the Clerk say so", asy
   push({ step: "second_look", status: "start" });
   push({ step: "second_look", status: "done", data: { query: "Batam city overview", enough: 0.2 } });
   expect(await screen.findByText("We need more on: “Batam city overview”")).toBeInTheDocument();
-  expect(screen.getByText("Rewriting the question: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("The Judge asked for a better search: “Batam city overview”")).toBeInTheDocument();
   expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_rewrite"]));
   close();
 });
 
-test("while the Judge tells the Clerk nothing is on file the Judge says so", async () => {
+test("while the board says nothing is on file the Judge says so", async () => {
   mid.nothing = true;
   const encoder = new TextEncoder();
   let push: (event: object) => void = () => undefined;

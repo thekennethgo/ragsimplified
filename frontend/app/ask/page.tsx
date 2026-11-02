@@ -44,7 +44,7 @@ import styles from "./page.module.css";
 // The backend accepts at most this many private chunks per question.
 const MAX_PRIVATE_CHUNKS = 60;
 
-const ASK_LABEL = "The Ask office: the Clerk, Translator, Scout, Judge and Storyteller at work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor.";
+const ASK_LABEL = "The Ask office: the Translator, Scout, Judge and Storyteller at work, with Meow, the office cat, asleep on the shelves, and a RAG.co rug on the floor.";
 
 /** A card per shelf that has a document, in shelf order, with its starter questions. */
 function examplesFor(docs: { filename: string }[] | null) {
@@ -58,7 +58,6 @@ function examplesFor(docs: { filename: string }[] | null) {
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;
 /** The step strip under the room: each character's colour token and its short label on a phone. */
 const STRIP = [
-  { id: "clerk", name: "Clerk", short: "Clerk" },
   { id: "translator", name: "Translator", short: "Words" },
   { id: "scout", name: "Scout", short: "Search" },
   { id: "judge", name: "Judge", short: "Check" },
@@ -107,8 +106,7 @@ function AskOffice() {
   const [viewer, setViewer] = useState<ViewTarget | null>(null);
   // The passage open inside the answer card; the library's viewer is separate.
   const [source, setSource] = useState<ViewTarget | null>(null);
-  const [tab, setTab] = useState<TabId>("clerk");
-  const [stepsOpen, setStepsOpen] = useState(false);
+  const [tab, setTab] = useState<TabId>("translator");
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   // Under 760px the room picture is hidden until the visitor asks to watch.
@@ -129,13 +127,13 @@ function AskOffice() {
   // The Judge's bubble while it checks whether the cards are enough; the Scout's on its second trip.
   const [checking, setChecking] = useState(false);
   const [scoutLook, setScoutLook] = useState<string | null>(null);
-  // Set while the Judge asks the Clerk to rewrite the question: the Judge's and Clerk's bubbles.
+  // Set while the Judge asks for a better search: the Judge's bubble and the caption.
   const [rewriting, setRewriting] = useState<string | null>(null);
-  // Set while the Judge tells the Clerk that nothing on file touches the question.
+  // Set while the Judge says that nothing on file touches the question.
   const [noFile, setNoFile] = useState(false);
+  const [privateSent, setPrivateSent] = useState(0);
   const [asked, setAsked] = useState(false);
   const [overlay, setOverlay] = useState<MapOverlay>({});
-  const [privateSent, setPrivateSent] = useState(0);
   const [sentPrompt, setSentPrompt] = useState<string | null>(null);
   const about = useAbout();
   const [library, setLibrary] = useState<LibraryDocument[] | null>(null);
@@ -218,9 +216,7 @@ function AskOffice() {
     queue.setSpeed(1);
     const runStart = performance.now();
     let streamEnd = 0;
-    queue.emit({ name: "clerk_away" });
-    queue.emit({ name: "clerk_start" });
-    let nothingFound = false;
+    queue.emit({ name: "question_start" });
     // Each step starts once per round, so a second start is round 2; `followUp` is its query.
     const starts: Record<string, number> = {};
     let followUp = "";
@@ -252,7 +248,6 @@ function AskOffice() {
         } else if (e.step === "second_look") {
           const query = typeof e.data?.query === "string" && e.data.query ? e.data.query : null;
           if (query) followUp = query;
-          if (e.data?.nothing === true) nothingFound = true;
           if (e.status === "done" && e.data?.round === 2) {
             // The final check after the second round: the Judge's second page shows it.
             const part = typeof e.data?.part === "number" ? e.data.part : null;
@@ -296,7 +291,7 @@ function AskOffice() {
             },
           });
         } else if (e.step === "translator" && e.data?.round === 2) {
-          // The Clerk's rewrite: the follow-up's star on the map; the question's words stay.
+          // The rewritten question: the follow-up's star on the map; the question's words stay.
           const point = e.data?.point as Point | undefined;
           const followUpQuery = typeof e.data?.query === "string" ? e.data.query : followUp;
           setTranslator2({ query: followUpQuery });
@@ -364,7 +359,6 @@ function AskOffice() {
           queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "judge") {
           const results = (e.data?.results ?? []) as JudgeResult[];
-          nothingFound = !results.some((r) => r.kept);
           setJudge(results);
           queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "storyteller" && e.data) {
@@ -374,23 +368,20 @@ function AskOffice() {
           setAnswer(final);
           setQuestion("");
           setCitations(sources);
-          queue.emit(sceneEvent, { onEnd: update });
-          queue.emit({ name: "clerk_done" });
-          queue.emit(
-            { name: nothingFound ? "clerk_shrug" : "clerk_back" },
-            {
-              onEnd: () => {
-                setAnimating(false);
-                if (process.env.NODE_ENV === "development") {
-                  const a = (streamEnd - runStart) / 1000;
-                  const b = (performance.now() - runStart) / 1000;
-                  console.log(
-                    `[office] stream ${a.toFixed(1)} s, office ${b.toFixed(1)} s, tail ${(b - a).toFixed(1)} s`,
-                  );
-                }
-              },
+          // The run's last scene: when it ends the office is done.
+          queue.emit(sceneEvent, {
+            onEnd: () => {
+              update();
+              setAnimating(false);
+              if (process.env.NODE_ENV === "development") {
+                const a = (streamEnd - runStart) / 1000;
+                const b = (performance.now() - runStart) / 1000;
+                console.log(
+                  `[office] stream ${a.toFixed(1)} s, office ${b.toFixed(1)} s, tail ${(b - a).toFixed(1)} s`,
+                );
+              }
             },
-          );
+          });
         } else {
           queue.emit(sceneEvent, { onEnd: update });
         }
@@ -411,28 +402,10 @@ function AskOffice() {
     (judge !== null && !judge.some((r) => r.kept)) ||
     look?.nothing === true ||
     judge2?.check?.nothing === true;
-  // With nothing on file the Storyteller has nothing to write, so it never looks busy.
-  const working = CREW.filter(
-    (step) => phase(step) === "working" && !(nothingFound && step === "storyteller"),
-  );
   const running = busy;
   const officeBusy = busy || animating;
-  const clerkAway = officeBusy && Object.keys(shown).length > 0 && shownPhase("storyteller") !== "done";
   const storytellerDone = phase("storyteller") === "done";
   const finished = storytellerDone && !animating;
-
-  // The Clerk reports no phase of its own: it is worked out from the others (as StepDetails does).
-  const stripPhase = (id: (typeof STRIP)[number]["id"]): Phase => {
-    if (id !== "clerk") return phase(id);
-    const all = Object.values(states);
-    return all.includes("error")
-      ? "error"
-      : storytellerDone
-        ? "done"
-        : all.length > 0
-          ? "working"
-          : "waiting";
-  };
 
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
   const progress =
@@ -455,25 +428,17 @@ function AskOffice() {
         : judgeSays(scout ? scout.length : null, about?.judge.keep),
     storyteller: storytellerSays(keptCount),
   };
-  const clerkSays = error
+  const caption = error
     ? "Sorry, something went wrong. Try again?"
     : rewriting
-      ? `Rewriting the question: “${rewriting}”`
+      ? `The Judge asked for a better search: “${rewriting}”`
       : finished && nothingFound
-      ? "Sorry, nothing on file about that. Try something else?"
-      : finished
-        ? "Here's your answer. The tabs show who did what."
-        : storytellerDone
-          ? nothingFound
-            ? "Coming back, empty-handed."
-            : "Bringing your answer back."
-          : clerkAway && working.length === 0
-            ? "Passing it to the next desk."
-            : clerkAway
-              ? `The ${NAMES[working[0]]} is on it. Back soon.`
-              : asked && running
-                ? "Got it. Pinning it up in the office."
-                : "Hi, I'm the Clerk. What do you want to know?";
+        ? "Nothing on file about that. Try something else?"
+        : finished
+          ? "Here's your answer. The tabs on the right show each step."
+          : officeBusy
+            ? progress
+            : "Ask a question and watch the office find the answer.";
   const crewAt = {
     translator: useFollow(officeRef, "translator", animationsOn && shownPhase("translator") === "working"),
     scout: useFollow(officeRef, "scout", animationsOn && shownPhase("scout") === "working"),
@@ -488,7 +453,6 @@ function AskOffice() {
       animationsOn && shownPhase("storyteller") === "working" && !nothingFound,
     ),
   };
-  const clerkAt = useFollow(officeRef, "clerk", animationsOn && clerkAway);
 
   return (
     <div className={styles.page}>
@@ -530,31 +494,14 @@ function AskOffice() {
               const at = crewAt[step];
               return at && <SpeechBubble key={step} name={NAMES[step]} text={crewSays[step]} at={at} />;
             })}
-            {clerkAt && (
-              <div
-                className={`bubble ${styles.clerkWaits}`}
-                aria-label="The Clerk is waiting for a reply"
-                role="img"
-                style={{
-                  left: `${clerkAt.left}px`,
-                  top: `${clerkAt.top}px`,
-                  transform: "translate(-50%, calc(-100% - 10px))",
-                }}
-              >
-                <span />
-                <span />
-                <span />
-                <span className="tail" style={{ left: "50%" }} />
-              </div>
-            )}
           </div>
           <div className={styles.caption}>
-            <p aria-live="polite">{clerkSays}</p>
+            <p aria-live="polite">{caption}</p>
             <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
           </div>
           <div className={styles.steps} role="group" aria-label="Steps">
             {STRIP.map((s) => {
-              const state = stripPhase(s.id);
+              const state = phase(s.id);
               return (
                 <button
                   key={s.id}
@@ -566,7 +513,6 @@ function AskOffice() {
                   data-state={state}
                   onClick={() => {
                     setTab(s.id);
-                    setStepsOpen(true);
                   }}
                 >
                   <span aria-hidden="true">
@@ -581,7 +527,8 @@ function AskOffice() {
           </div>
         </section>
 
-        <div ref={answerRef} className={styles.answer}>
+        <div className={styles.side}>
+          <div ref={answerRef} className={styles.answer}>
           <AnswerCard
             answer={revealed ? answer : ""}
             citations={revealed ? citations : []}
@@ -594,12 +541,8 @@ function AskOffice() {
             source={source}
             onSource={setSource}
           />
-        </div>
-      </div>
-
-      <details open={stepsOpen} onToggle={(e) => setStepsOpen(e.currentTarget.open)}>
-        <summary>How it got there</summary>
-      <StepDetails
+          </div>
+          <StepDetails
         tab={tab}
         onTab={setTab}
         states={states}
@@ -613,20 +556,19 @@ function AskOffice() {
         judge2={judge2}
         round2={round2}
         judge={judge}
-        askedQuestion={askedQuestion}
         follow={animationsOn}
         overlay={overlay}
         privateSent={privateSent}
         sentPrompt={sentPrompt}
         run={run}
-      />
-      </details>
+          />
+        </div>
+      </div>
 
-      {/* Closed, but mounted: its onLoad fills the starter questions. */}
-      <details className={styles.library}>
-        <summary>Browse the library</summary>
+      <section className={styles.library} aria-labelledby="library-h">
+        <h2 id="library-h">Browse the library</h2>
         <LibraryPanel onLoad={setLibrary} onOpen={openViewer} viewer={viewer} overlay={overlay} />
-      </details>
+      </section>
     </div>
   );
 }

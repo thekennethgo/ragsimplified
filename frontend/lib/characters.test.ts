@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
 import type { About } from "./about";
-import { askTranslatorCopy, clerkCopy, judgeCopy, scoutCopy, storytellerCopy } from "./characters";
+import { askTranslatorCopy, judgeCopy, scoutCopy, storytellerCopy } from "./characters";
 
 const withTokens = (max_tokens: number | null) =>
   ({
@@ -36,14 +36,11 @@ test("the Judge's how text says whether the second look is on and what decides i
   expect(scoutCopy(on).how).not.toContain("The second look is on");
 });
 
-test("the Clerk, Translator and Scout say what they do on a second look", () => {
-  expect(clerkCopy(null).how).toContain(
-    "On a second look the Clerk rewrites the question into a short search for the missing details.",
-  );
+test("the Translator and Scout say what they do on a second look", () => {
   expect(askTranslatorCopy(null).how).toContain(
-    "On a second look it fingerprints the Clerk's new query too.",
+    "On a second look it fingerprints the new query too.",
   );
   expect(scoutCopy(null).how).toContain(
-    "On a second look it searches again for the Clerk's new query and skips cards it already found.",
+    "On a second look it searches again for the new query and skips cards it already found.",
   );
 });

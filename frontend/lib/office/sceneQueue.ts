@@ -40,6 +40,10 @@ export function createSceneQueue({
   let wake: (() => void) | null = null;
   let speed = 1;
   const playing = new Set<Timeline>();
+  let t0 = 0; // when the first scene of this run was emitted, for the dev log
+  const log = (text: string) => {
+    if (process.env.NODE_ENV === "development") console.log(`[queue] ${text}`);
+  };
 
   function stopHold(key: string) {
     for (const set of sets) {
@@ -96,6 +100,7 @@ export function createSceneQueue({
       }
       const key = who(event.name);
       if (gapMs > 0 && lastWho !== null && lastWho !== key) {
+        log(`gap ${(gapMs / speed).toFixed(0)} ms before ${event.name}`);
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, gapMs / speed);
           wake = () => {
@@ -111,6 +116,9 @@ export function createSceneQueue({
       hooks.onStart?.();
       const tl = make(event.data);
       const handoff = tl.labels.handoff;
+      log(
+        `${event.name} start ${((performance.now() - t0) / 1000).toFixed(1)} s speed ${speed} dur ${tl.duration().toFixed(2)} handoff ${handoff === undefined ? "-" : handoff.toFixed(2)}`,
+      );
       const isReduced = reduced();
       await new Promise<void>((resolve) => {
         wake = resolve;
@@ -136,6 +144,7 @@ export function createSceneQueue({
       lastWho = key;
       // A handoff lets the next character start at once while this scene's tail keeps playing.
       if (handoff === undefined || isReduced) {
+        log(`hold ${(holdMs / speed).toFixed(0)} ms after ${event.name}`);
         await new Promise<void>((resolve) => {
           const timer = setTimeout(resolve, holdMs / speed);
           wake = () => {
@@ -167,6 +176,7 @@ export function createSceneQueue({
         clear();
         return;
       }
+      if (!running && pending.length === 0) t0 = performance.now();
       pending.push({ event, hooks, started: false });
       if (!running) {
         // a scene that throws must not stall the queue for good
