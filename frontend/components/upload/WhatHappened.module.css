@@ -1,63 +1,49 @@
-.panel {
-  flex: 1 1 0;
+.root {
   min-width: 0;
-}
-
-@media (max-width: 560px) {
-  .panel {
-    flex-basis: 100%;
-  }
-}
-
-.details {
-  display: block;
-}
-
-.inner {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 16px;
 }
 
-.summary {
-  list-style: none;
-  cursor: pointer;
-}
-
-.summary::-webkit-details-marker {
-  display: none;
+.head {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
 }
 
 .tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  align-self: flex-start;
-  padding: 3px;
-  gap: 2px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--tab-soft);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 4px;
+  padding-left: 12px;
+  overflow-x: auto;
 }
 
 .tabs button {
   min-height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  font-weight: 600;
-  font-size: 14px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--c, var(--border-strong));
+  border-radius: 6px 6px 0 0;
+  background: var(--tab-soft);
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
 
+.tabs button:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
 .tabs button[aria-pressed="true"] {
-  background: var(--accent-dark);
-  color: #ffffff;
+  background: var(--panel);
+  border-bottom-color: var(--panel);
+  font-weight: 600;
 }
 
 .dot {
@@ -83,11 +69,24 @@
 }
 
 .body {
-  max-height: 420px;
-  overflow-y: auto;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 20px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 8px;
+  box-shadow: 0 1px 3px rgba(47, 51, 55, 0.08);
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
 }
 
 .card {
@@ -221,4 +220,11 @@
 .print span {
   flex: 1;
   border-radius: 1px;
+}
+
+/* The form keeps its mail design; it is centred and as wide as the panel allows. */
+.envelope {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
 }

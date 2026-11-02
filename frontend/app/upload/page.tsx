@@ -183,49 +183,58 @@ export default function UploadPage() {
 
   return (
     <>
-      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
-        <h1 id="office-h" className={styles.title}>
-          The office
-        </h1>
-        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
-        <div className={styles.stage}>
-          <OfficeRoom
-            src="/office/upload-room.svg"
-            label={ROOM_LABEL}
-            build={buildUploadScenes}
-            queue={queue}
-          />
-          {documents !== null && (
-            <span
-              className={styles.count}
-              style={{
-                left: `${UPLOAD_DOC_COUNT.left}%`,
-                top: `${UPLOAD_DOC_COUNT.top}%`,
-              }}
-              aria-hidden="true"
-            >
-              {documents}
-            </span>
-          )}
-        </div>
-        <div className={styles.bubbles}>
-          {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
-          {translatorAt && (
-            <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />
-          )}
-          {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
-        </div>
-      </section>
-
+      <h1 className="visually-hidden">Upload a document</h1>
       {error && (
         <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
 
-      <div className={styles.row}>
-        <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />
-        <WhatHappened run={run} states={states} chunks={chunkDetails} vectors={vectors} />
+      <div className={styles.grid}>
+        <section ref={officeRef} aria-label="The office" className={styles.scene}>
+          <div className={styles.room}>
+            <div className={styles.stage}>
+              <OfficeRoom
+                src="/office/upload-room.svg"
+                label={ROOM_LABEL}
+                build={buildUploadScenes}
+                queue={queue}
+              />
+              {documents !== null && (
+                <span
+                  className={styles.count}
+                  style={{
+                    left: `${UPLOAD_DOC_COUNT.left}%`,
+                    top: `${UPLOAD_DOC_COUNT.top}%`,
+                  }}
+                  aria-hidden="true"
+                >
+                  {documents}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className={styles.bubbles}>
+            {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
+            {translatorAt && (
+              <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />
+            )}
+            {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
+          </div>
+          <div className={styles.caption}>
+            <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
+          </div>
+        </section>
+
+        <div className={styles.side}>
+          <WhatHappened
+            run={run}
+            states={states}
+            chunks={chunkDetails}
+            vectors={vectors}
+            envelope={<EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />}
+          />
+        </div>
       </div>
 
       <LibraryPanel onCount={setStarterBooks} onOpen={openViewer} viewer={viewer} />

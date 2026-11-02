@@ -76,6 +76,12 @@ export function QuestionBubble({
             ref={input}
             value={question}
             onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              // Enter asks, like the button; Shift+Enter is a new line, and Enter while composing (IME) picks a character.
+              if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+              e.preventDefault();
+              if (!busy && !offline && question.trim()) e.currentTarget.form?.requestSubmit();
+            }}
             maxLength={MAX_QUESTION_CHARS}
             rows={1}
             placeholder="e.g. Where did Kenneth grow up?"

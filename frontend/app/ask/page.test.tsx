@@ -44,6 +44,8 @@ const mid = vi.hoisted(() => ({
   nothing: false,
   hold: false,
   gate: false,
+  gateLook: false,
+  releaseLook: () => {},
   release: () => {},
 }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
@@ -60,7 +62,9 @@ vi.mock("../../lib/office/useSceneQueue", () => {
       hooks?: { onStart?: () => void; onEnd?: () => void },
     ) => {
       emitted.push(event);
-      if (mid.gate && event.name === "storyteller_start") mid.release = () => hooks?.onStart?.();
+      if (mid.gateLook && /^(second_look_rewrite|second_look_nothing|judge_handover)$/.test(event.name))
+        mid.releaseLook = () => hooks?.onStart?.();
+      else if (mid.gate && event.name === "storyteller_start") mid.release = () => hooks?.onStart?.();
       else hooks?.onStart?.();
       const playing =
         (mid.rewrite && event.name === "second_look_rewrite") ||
@@ -69,7 +73,6 @@ vi.mock("../../lib/office/useSceneQueue", () => {
     },
     clear: () => undefined,
     skipAll: () => undefined,
-    setSpeed: () => undefined,
   };
   return { useSceneQueue: () => queue };
 });
@@ -83,6 +86,8 @@ beforeEach(() => {
   mid.nothing = false;
   mid.hold = false;
   mid.gate = false;
+  mid.gateLook = false;
+  mid.releaseLook = () => {};
   mid.release = () => {};
   search.params = new URLSearchParams();
 });
@@ -378,7 +383,7 @@ function stubWithDocument(events: object[]) {
   );
 }
 
-test("opening a citation shows the passage inside the answer card and keeps the answer on screen", async () => {
+test("opening a citation shows the passage in the library viewer and scrolls to it", async () => {
   const scroll = vi.fn();
   Element.prototype.scrollIntoView = scroll;
   stubWithDocument(EVENTS);
@@ -391,18 +396,21 @@ test("opening a citation shows the passage inside the answer card and keeps the 
       name: "Open in viewer",
     }),
   );
-
-  const card = screen.getByRole("group", { name: "Answer card" });
   expect(screen.queryByRole("dialog")).toBeNull();
-  expect(await within(card).findByText("Full founding text.")).toBeInTheDocument();
-  expect(card).toHaveTextContent("Apple was founded in 1976");
-  // The library's own viewer is untouched and nothing scrolled the page.
-  expect(within(cabinet).getByRole("button", { name: "Viewer" })).toBeDisabled();
-  expect(scroll).not.toHaveBeenCalledWith(expect.objectContaining({ block: "start" }));
-  // Close removes the passage and hands focus back to the marker that opened it.
-  fireEvent.click(within(card).getByRole("button", { name: "Close" }));
-  expect(within(card).queryByText("Full founding text.")).toBeNull();
-  expect(screen.getByRole("button", { name: "Source 1" })).toHaveFocus();
+  expect(await screen.findByText("Full founding text.")).toBeInTheDocument();
+  expect(within(cabinet).getByRole("button", { name: "Viewer" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("group", { name: "Answer card" })).not.toHaveTextContent("Full founding text.");
+  expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ block: "start" }));
+});
+
+test("a source's Open button puts the passage in the library viewer", async () => {
+  Element.prototype.scrollIntoView = vi.fn();
+  stubWithDocument(EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  fireEvent.click(await screen.findByRole("button", { name: "Open source 1" }));
+  expect(await screen.findByText("Full founding text.")).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: "Answer card" })).not.toHaveTextContent("Full founding text.");
 });
 
 test("on the Ask page a cabinet title opens the viewer instead of a page", async () => {
@@ -874,6 +882,7 @@ test("with animations on the answer waits for the Storyteller's scene to start",
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await waitFor(() => expect(names()).toContain("storyteller_done"));
+  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
   const card = screen.getByRole("group", { name: "Answer card" });
   expect(card).not.toHaveTextContent("Apple was founded in 1976");
   expect(screen.queryByRole("button", { name: "Source 1" })).toBeNull();
@@ -882,7 +891,7 @@ test("with animations on the answer waits for the Storyteller's scene to start",
   expect(screen.getByRole("button", { name: "Source 1" })).toBeInTheDocument();
 });
 
-test("with animations on and no scene played the answer shows 2 s after the stream ends", async () => {
+test("with animations on the answer appears only when the Storyteller's scene starts, with no timer", async () => {
   mid.gate = true;
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   try {
@@ -892,11 +901,11 @@ test("with animations on and no scene played the answer shows 2 s after the stre
     // waitFor can't run with a faked setTimeout, so let the stream finish by advancing a little.
     await act(() => vi.advanceTimersByTimeAsync(100));
     expect(names()).toContain("storyteller_done");
+    fireEvent.click(screen.getByRole("button", { name: "Answer" }));
     const card = screen.getByRole("group", { name: "Answer card" });
+    await act(() => vi.advanceTimersByTimeAsync(10000));
     expect(card).not.toHaveTextContent("Apple was founded in 1976");
-    await act(() => vi.advanceTimersByTimeAsync(1800));
-    expect(card).not.toHaveTextContent("Apple was founded in 1976");
-    await act(() => vi.advanceTimersByTimeAsync(200));
+    act(() => mid.release());
     expect(card).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
   } finally {
     vi.useRealTimers();
@@ -964,13 +973,13 @@ test("while scenes are still playing the Ask button is enabled ", async () => {
   );
 });
 
-test("with the animations on the answer card shows the answer and no tab is called Answer", async () => {
+test("with the animations on the answer is in the Answer tab, selected when it is revealed", async () => {
   mid.hold = true;
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  expect(screen.queryByRole("button", { name: "Answer" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
     "Apple was founded in 1976",
   );
@@ -995,8 +1004,8 @@ test("each tab opens when its results arrive, and a starting step does not steal
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Translator" })).toBeEnabled(),
   );
-  // working, not done yet: still on the Translator
-  expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
+  // working, not done yet: still on the Answer tab
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -1038,9 +1047,13 @@ test("with the animations off the Translator tab stays selected throughout", asy
     );
     ask("When was Apple founded?");
     await screen.findByRole("button", { name: "Source 1" });
-    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
       "aria-pressed",
       "true",
+    );
+    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
     );
     expect(screen.getByRole("button", { name: "Judge" })).toHaveAttribute(
       "aria-pressed",
@@ -1049,6 +1062,45 @@ test("with the animations off the Translator tab stays selected throughout", asy
   } finally {
     localStorage.removeItem("ragsimplified.animations");
   }
+});
+
+test("the answer is in the Answer tab, and a new run starts on it", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  const panel = screen.getByRole("region", { name: "Answer and how it got there" });
+  expect(within(panel).getByRole("group", { name: "Answer card" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(screen.queryByRole("group", { name: "Answer card" })).toBeNull();
+  ask("When was Apple founded again?");
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a tab pick during the run is kept when the answer is revealed", async () => {
+  mid.gate = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  act(() => mid.release());
+  await screen.findByRole("button", { name: "Source 1" }).catch(() => undefined);
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("the panel does not run ahead of the office: no Storyteller tab or Done dot before its scene plays", async () => {
+  mid.hold = true;
+  mid.gate = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
+  const storyteller = screen.getByRole("button", { name: "Storyteller" });
+  expect(storyteller).toHaveAttribute("aria-pressed", "false");
+  expect(storyteller.querySelector('[title="done"]')).toBeNull();
+  expect(screen.getByRole("button", { name: "Translator" }).querySelector('[title="done"]')).toBeNull();
 });
 
 test("the Animations switch toggles and remembers its setting", () => {
@@ -1292,16 +1344,18 @@ test("the Query room is gone: the caption invites a question", () => {
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   expect(screen.queryByRole("heading", { name: "Query" })).toBeNull();
   const scene = screen.getByRole("region", { name: "The office" });
-  expect(within(scene).getByText("Ask a question and watch the office find the answer.")).toBeInTheDocument();
+  const caption = within(scene).getByText("Ask a question and watch the office find the answer.");
+  expect(caption).toHaveClass("visually-hidden");
+  expect(caption).toHaveAttribute("aria-live", "polite");
   expect(within(scene).getByRole("switch", { name: /Animations/ })).toBeInTheDocument();
 });
 
-test("a step strip button opens its tab in How it got there", () => {
+test("the office has no step strip; the panel's tabs switch steps", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  const scene = screen.getByRole("region", { name: "The office" });
+  expect(screen.queryByRole("group", { name: "Steps" })).toBeNull();
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "false");
-  fireEvent.click(within(scene).getByRole("button", { name: "Scout: waiting" }));
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute("aria-pressed", "false");
 });
@@ -1309,13 +1363,12 @@ test("a step strip button opens its tab in How it got there", () => {
 test("How it got there and Browse the library are visible without a click", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  expect(screen.getByRole("heading", { name: "How it got there" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Answer and how it got there" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Browse the library" })).toBeVisible();
-  expect(screen.queryByText("How it got there", { selector: "summary" })).toBeNull();
   expect(screen.queryByText("Browse the library", { selector: "summary" })).toBeNull();
 });
 
-test("a step strip pick sticks: later steps do not pull the tab away", async () => {
+test("a tab pick sticks: later steps do not pull the tab away", async () => {
   const encoder = new TextEncoder();
   let push: (event: object) => void = () => undefined;
   let close: () => void = () => undefined;
@@ -1330,16 +1383,19 @@ test("a step strip pick sticks: later steps do not pull the tab away", async () 
   ask("When was Apple founded?");
   push({ step: "translator", status: "start" });
   push({ step: "translator", status: "done", data: { words: [] } });
-  const scene = screen.getByRole("region", { name: "The office" });
-  await within(scene).findByRole("button", { name: "Translator: done" });
-  fireEvent.click(within(scene).getByRole("button", { name: /^Scout:/ }));
+  const done = (name: string) =>
+    waitFor(() =>
+      expect(screen.getByRole("button", { name }).querySelector('[title="done"]')).not.toBeNull(),
+    );
+  await done("Translator");
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   push({ step: "scout", status: "start" });
   push({ step: "scout", status: "done", data: { results: [] } });
-  await within(scene).findByRole("button", { name: "Scout: done" });
+  await done("Scout");
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
   push({ step: "judge", status: "start" });
   push({ step: "judge", status: "done", data: { results: [] } });
-  await within(scene).findByRole("button", { name: "Judge: done" });
+  await done("Judge");
   expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
   close();
 });
@@ -1408,10 +1464,11 @@ test("a tab clicked before asking does not stop the panel following the run", as
 test("the four character tabs are all enabled before asking", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  for (const name of ["Translator", "Scout", "Judge", "Storyteller"]) {
+  const tabs = within(screen.getByRole("group", { name: "The characters" })).getAllByRole("button");
+  expect(tabs.map((t) => t.textContent)).toEqual(["Translator", "Scout", "Judge", "Storyteller", "Answer"]);
+  for (const name of ["Answer", "Translator", "Scout", "Judge", "Storyteller"]) {
     expect(screen.getByRole("button", { name })).toBeEnabled();
   }
-  expect(screen.queryByRole("button", { name: "Answer" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   expect(
     screen.getByText("Nothing yet. Ask a question to see what I do with it."),
@@ -1631,7 +1688,7 @@ test("the Judge says the language model decided when no probability was given", 
 test("the Translator's round 2 page shows the new query and no word blocks; round 1 keeps its words", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Translator" }));
-  expect(screen.getByText("Fingerprinted the new query: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("New search: “Batam city overview”")).toBeInTheDocument();
   expect(
     screen.getByText("Word weights are only worked out for your own question (see Initial)."),
   ).toBeInTheDocument();
@@ -1643,7 +1700,7 @@ test("the Translator's round 2 page shows the new query and no word blocks; roun
 test("the Scout's round 2 page shows the skipped chip and the new list", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
-  const steps = within(screen.getByRole("region", { name: "How it got there" }));
+  const steps = within(screen.getByRole("region", { name: "Answer and how it got there" }));
   expect(steps.queryByText(/Searched for/)).toBeNull();
   expect(steps.getByText("2 already found, skipped")).toBeInTheDocument();
   expect(steps.getByText("1 cards found")).toBeInTheDocument();
@@ -1882,4 +1939,102 @@ test("the second look fills the map overlay with its star and candidates, and a 
   events = EVENTS;
   ask("Another question?");
   await waitFor(() => expect(screen.queryByTestId("follow-up-marker")).toBeNull());
+});
+
+const DOCS = [
+  { id: 1, title: "Apple Inc.", filename: "rag-basics/apple.md", chunk_count: 22 },
+  { id: 2, title: "Vector database", filename: "how-ai-works/vector-database.md", chunk_count: 9 },
+];
+const plaqueCount = () =>
+  Array.from(document.querySelectorAll('span[aria-hidden="true"]')).filter((el) =>
+    /^\d+$/.test(el.textContent ?? ""),
+  );
+
+function SeedText() {
+  const { add } = usePrivateTexts();
+  return (
+    <button
+      onClick={() =>
+        add({
+          title: "My note",
+          text: "hello world",
+          chunks: [{ position: 0, heading: null, text: "hello world" }],
+          vectors: [[0.1]],
+        })
+      }
+    >
+      seed text
+    </button>
+  );
+}
+
+test("the plaque shows the library's documents plus the visitor's own texts", async () => {
+  stubAsk(EVENTS, DOCS);
+  render(
+    <PrivateTextsProvider>
+      <SeedText />
+      <AskPage />
+    </PrivateTextsProvider>,
+  );
+  await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["2"]));
+  fireEvent.click(screen.getByRole("button", { name: "seed text" }));
+  await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["3"]));
+});
+
+test("a failed /library shows no count, and a later retry shows it", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  try {
+    let up = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.endsWith("/library")
+            ? up
+              ? new Response(JSON.stringify(DOCS))
+              : new Response("bad gateway", { status: 502 })
+            : url.endsWith("/about")
+              ? new Response(JSON.stringify(ABOUT))
+              : url.endsWith("/map")
+                ? new Response("[]")
+                : new Response("{}"),
+        ),
+      ),
+    );
+    render(<AskPage />, { wrapper: PrivateTextsProvider });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(plaqueCount()).toHaveLength(0);
+    up = true;
+    await vi.advanceTimersByTimeAsync(5000);
+    await waitFor(() => expect(plaqueCount().map((el) => el.textContent)).toEqual(["2"]));
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("the second look's pages show only once the office plays the Judge's check", async () => {
+  mid.gateLook = true;
+  stubAsk(SECOND_LOOK_EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(names()).toContain("second_look_rewrite");
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect(screen.queryByRole("button", { name: "Second look" })).toBeNull();
+  expect(screen.queryByText(/New search/)).toBeNull();
+  act(() => mid.releaseLook());
+  expect(await screen.findByRole("button", { name: "Second look" })).toBeInTheDocument();
+});
+
+test("Enter in the question box asks; Shift+Enter and Enter while composing do not", async () => {
+  const fetchMock = stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const box = screen.getByLabelText("Your question");
+  fireEvent.change(box, { target: { value: "When was Apple founded?" } });
+  fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
+  fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+  expect(askCall(fetchMock)).toBeUndefined();
+  fireEvent.keyDown(box, { key: "Enter" });
+  await waitFor(() => expect(askCall(fetchMock)).toBeDefined());
+  expect(JSON.parse(askCall(fetchMock)[1].body as string).question).toBe("When was Apple founded?");
 });

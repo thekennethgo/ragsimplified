@@ -201,9 +201,11 @@ test("a full upload plays the scenes in order, with the Archivist around adding 
 test("the Meet the team panel shows the real cards and fingerprints", async () => {
   stubBackend();
   render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  fireEvent.click(screen.getByRole("button", { name: "Chopper" }));
   expect(
     screen.getByText("Nothing yet. Send a text to see what I do with it."),
   ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Your document" }));
   paste("My note", "hello");
 
   // the panel follows the newest step with results; go back to the Chopper's
@@ -419,4 +421,39 @@ test("the speech bubble says what the Translator is doing with the real card cou
       "Fingerprinting 2 cards…",
     ),
   ).toBeInTheDocument();
+});
+
+test("the page has a hidden title, the office and panel, then the library; the form is the first tab", () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  const h1 = screen.getByRole("heading", { level: 1, name: "Upload a document" });
+  expect(h1).toHaveClass("visually-hidden");
+  expect(screen.queryByRole("heading", { name: "The office" })).toBeNull();
+  const office = screen.getByRole("region", { name: "The office" });
+  const tabs = screen.getByRole("group", { name: "The characters that filed your text" });
+  const envelope = screen.getByRole("heading", { name: "Upload your own document" });
+  const library = screen.getByRole("region", { name: "File cabinet" });
+  const before = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(before(office, tabs)).toBe(true);
+  expect(before(tabs, library)).toBe(true);
+  expect(tabs.contains(envelope)).toBe(false);
+  expect(within(tabs).getAllByRole("button").map((b) => b.textContent)).toEqual([
+    "Your document",
+    "Chopper",
+    "Translator",
+    "Archivist",
+  ]);
+  // The page opens on the form.
+  expect(screen.getByRole("button", { name: "Your document" })).toHaveAttribute("aria-pressed", "true");
+  expect(envelope).toBeVisible();
+});
+
+test("sending moves the panel from the form to the steps", async () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  paste("My note", "hello");
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Your document" })).toHaveAttribute("aria-pressed", "false"),
+  );
+  expect(screen.getByRole("button", { name: /^(Chopper|Translator|Archivist)$/ , pressed: true })).toBeInTheDocument();
 });

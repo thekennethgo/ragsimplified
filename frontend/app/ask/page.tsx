@@ -35,6 +35,7 @@ import { buildAskScenes } from "../../lib/office/scenes/ask";
 import { useFollow } from "../../lib/office/useFollow";
 import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { useBackendHealth } from "../../lib/health";
+import { ASK_DOC_COUNT } from "../../lib/office-spots";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
 import { SHELVES, shelfOf } from "../../lib/shelves";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
@@ -56,13 +57,6 @@ function examplesFor(docs: { filename: string }[] | null) {
 }
 
 const CREW = ["translator", "scout", "judge", "storyteller"] as const;
-/** The step strip under the room: each character's colour token and its short label on a phone. */
-const STRIP = [
-  { id: "translator", name: "Translator", short: "Words" },
-  { id: "scout", name: "Scout", short: "Search" },
-  { id: "judge", name: "Judge", short: "Check" },
-  { id: "storyteller", name: "Storyteller", short: "Write" },
-] as const;
 const NAMES = {
   translator: "Translator",
   scout: "Scout",
@@ -87,6 +81,7 @@ function AskOffice() {
     if (!animationsOn) {
       queue.skipAll();
       setRevealed(true);
+      setLookPlayed(true);
     }
   }, [animationsOn, queue]);
   const officeRef = useRef<HTMLElement>(null);
@@ -101,12 +96,9 @@ function AskOffice() {
   const [answer, setAnswer] = useState("");
   // The answer shows when the office reaches the Storyteller (or at once without the office).
   const [revealed, setRevealed] = useState(false);
-  const revealTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [citations, setCitations] = useState<Citation[]>([]);
   const [viewer, setViewer] = useState<ViewTarget | null>(null);
-  // The passage open inside the answer card; the library's viewer is separate.
-  const [source, setSource] = useState<ViewTarget | null>(null);
-  const [tab, setTab] = useState<TabId>("translator");
+  const [tab, setTab] = useState<TabId>("answer");
   const [busy, setBusy] = useState(false);
   const [animating, setAnimating] = useState(false);
   // Under 760px the room picture is hidden until the visitor asks to watch.
@@ -120,6 +112,8 @@ function AskOffice() {
   const [judge, setJudge] = useState<JudgeResult[] | null>(null);
   // The second look: the check's outcome, and each character's round 2 data and progress.
   const [look, setLook] = useState<Look | null>(null);
+  // The second look's pages show once the office has played the Judge's check, not when the backend reports it.
+  const [lookPlayed, setLookPlayed] = useState(false);
   const [translator2, setTranslator2] = useState<TranslatorRound2 | null>(null);
   const [scout2, setScout2] = useState<ScoutRound2 | null>(null);
   const [judge2, setJudge2] = useState<JudgeRound2 | null>(null);
@@ -164,6 +158,7 @@ function AskOffice() {
 
   function openViewer(target: ViewTarget) {
     setViewer(target);
+    document.getElementById("library")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function fail(message: string) {
@@ -182,22 +177,22 @@ function AskOffice() {
       setAnimating(false);
     }
     setRun((n) => n + 1);
+    setTab("answer");
     setBusy(true);
     setAnimating(true);
     setAsked(true);
     setAskedQuestion(question.trim());
     setError("");
     setAnswer("");
-    clearTimeout(revealTimer.current);
     setRevealed(!onRef.current);
     setCitations([]);
-    setSource(null);
     setStates({});
     setShown({});
     setWords([]);
     setScout(null);
     setJudge(null);
     setLook(null);
+    setLookPlayed(!onRef.current);
     setTranslator2(null);
     setScout2(null);
     setJudge2(null);
@@ -213,7 +208,6 @@ function AskOffice() {
       answerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     queue.clear();
-    queue.setSpeed(1);
     const runStart = performance.now();
     let streamEnd = 0;
     queue.emit({ name: "question_start" });
@@ -264,6 +258,7 @@ function AskOffice() {
           }
           queue.emit(sceneEvent, {
             onStart: () => {
+              if (e.status === "done") setLookPlayed(true);
               if (query && e.status === "done") setRewriting(query);
               if (e.data?.nothing === true) setNoFile(true);
             },
@@ -387,8 +382,6 @@ function AskOffice() {
         }
       }
       streamEnd = performance.now();
-      revealTimer.current = setTimeout(() => setRevealed(true), 2000);
-      queue.setSpeed(2);
     } catch {
       fail("Could not reach the backend");
     } finally {
@@ -482,12 +475,23 @@ function AskOffice() {
             {watching ? "▾" : "▸"} Watch the office
           </button>
           <div className={`${styles.room} ${watching ? styles.roomOpen : ""}`}>
-            <OfficeRoom
-              src="/office/ask-room.svg"
-              label={ASK_LABEL}
-              build={buildAskScenes}
-              queue={queue}
-            />
+            <div className={styles.stage}>
+              <OfficeRoom
+                src="/office/ask-room.svg"
+                label={ASK_LABEL}
+                build={buildAskScenes}
+                queue={queue}
+              />
+              {library !== null && (
+                <span
+                  className={styles.count}
+                  style={{ left: `${ASK_DOC_COUNT.left}%`, top: `${ASK_DOC_COUNT.top}%` }}
+                  aria-hidden="true"
+                >
+                  {library.length + texts.length}
+                </span>
+              )}
+            </div>
           </div>
           <div className={styles.bubbles}>
             {CREW.map((step) => {
@@ -496,71 +500,48 @@ function AskOffice() {
             })}
           </div>
           <div className={styles.caption}>
-            <p aria-live="polite">{caption}</p>
+            <p aria-live="polite" className="visually-hidden">
+              {caption}
+            </p>
             <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
-          </div>
-          <div className={styles.steps} role="group" aria-label="Steps">
-            {STRIP.map((s) => {
-              const state = phase(s.id);
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  className={styles.step}
-                  style={{ borderTopColor: `var(--${s.id})` }}
-                  aria-pressed={tab === s.id}
-                  aria-label={`${s.name}: ${state}`}
-                  data-state={state}
-                  onClick={() => {
-                    setTab(s.id);
-                  }}
-                >
-                  <span aria-hidden="true">
-                    {state === "done" && "✓ "}
-                    <span className={styles.full}>{s.name}</span>
-                    <span className={styles.short}>{s.short}</span>
-                    {state === "working" && <span className={styles.now}> now</span>}
-                  </span>
-                </button>
-              );
-            })}
           </div>
         </section>
 
-        <div className={styles.side}>
-          <div ref={answerRef} className={styles.answer}>
-          <AnswerCard
-            answer={revealed ? answer : ""}
-            citations={revealed ? citations : []}
-            askedQuestion={askedQuestion}
-            started={phase("translator") !== "waiting"}
-            progress={progress}
-            cardsFound={scout?.length ?? 0}
-            kept={keptCount ?? 0}
-            targetFor={targetFor}
-            source={source}
-            onSource={setSource}
-          />
-          </div>
+        <div ref={answerRef} className={styles.side}>
           <StepDetails
-        tab={tab}
-        onTab={setTab}
-        states={states}
-        answer={answer}
-        citations={citations}
-        words={words}
-        scout={scout}
-        look={look}
-        translator2={translator2}
-        scout2={scout2}
-        judge2={judge2}
-        round2={round2}
-        judge={judge}
-        follow={animationsOn}
-        overlay={overlay}
-        privateSent={privateSent}
-        sentPrompt={sentPrompt}
-        run={run}
+            tab={tab}
+            onTab={setTab}
+            states={states}
+            played={animationsOn ? shown : states}
+            answer={
+              <AnswerCard
+                answer={revealed ? answer : ""}
+                citations={revealed ? citations : []}
+                askedQuestion={askedQuestion}
+                started={phase("translator") !== "waiting"}
+                progress={progress}
+                cardsFound={scout?.length ?? 0}
+                kept={keptCount ?? 0}
+                targetFor={targetFor}
+                onOpen={openViewer}
+              />
+            }
+            revealed={revealed}
+            answerText={answer}
+            citations={citations}
+            words={words}
+            scout={scout}
+            look={lookPlayed ? look : null}
+            translator2={lookPlayed ? translator2 : null}
+            scout2={lookPlayed ? scout2 : null}
+            judge2={lookPlayed ? judge2 : null}
+            round2={lookPlayed ? round2 : {}}
+            judge={judge}
+            follow={animationsOn}
+            overlay={overlay}
+            privateSent={privateSent}
+            sentPrompt={sentPrompt}
+            run={run}
           />
         </div>
       </div>

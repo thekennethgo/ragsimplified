@@ -27,6 +27,37 @@
   border-radius: 8px;
   overflow: hidden;
   min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The room's own shape (its viewBox is 750 by 545), so the document count keeps its place on the art. */
+.stage {
+  position: relative;
+  container-type: inline-size;
+  width: 100%;
+  aspect-ratio: 750 / 545;
+}
+
+/* The art fills the stage exactly; without this the svg'd use its width and height attributes' shape, not its viewBox's. */
+.stage > div,
+.stage > div > div,
+.stage div svg {
+  height: 100%;
+}
+
+/* The documents-on-file number, beside the plaque above the shelves. */
+.count {
+  position: absolute;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  font-size: 1.5cqw;
+  line-height: 1;
+  color: #f2c27e;
+  transform: skewY(-26.57deg);
+  transform-origin: left bottom;
+  pointer-events: none;
 }
 
 .watch {
@@ -67,48 +98,6 @@
   flex: none;
 }
 
-.steps {
-  display: flex;
-  gap: 4px;
-}
-
-.step {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  border-top: 3px solid;
-  border-radius: 6px;
-  padding: 5px 4px;
-  background: #3a2b20;
-  color: #cdbba3;
-  font: inherit;
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
-}
-
-.step[data-state="done"] {
-  color: #f6efe4;
-}
-
-.step[data-state="working"] {
-  background: #4a372a;
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.step[aria-pressed="true"] {
-  outline: 1px solid #cdbba3;
-}
-
-.short {
-  display: none;
-}
-
-.answer {
-  min-width: 0;
-}
-
 .error {
   padding: 10px 14px;
   border-radius: 6px;
@@ -132,13 +121,33 @@
 
 @media (min-width: 900px) {
   .grid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    align-items: stretch;
+    height: clamp(460px, calc(100svh - 250px), 760px);
   }
 
   .scene {
-    position: sticky;
-    top: 16px;
-    align-self: start;
+    min-height: 0;
+  }
+
+  .room {
+    flex: 1;
+    min-height: 0;
+    container-type: size;
+  }
+
+  /* The biggest 750:545 box that fits the space left for the room. */
+  .stage {
+    width: min(100cqw, 100cqh * 750 / 545);
+  }
+
+  .side {
+    position: relative;
+  }
+
+  .side > * {
+    position: absolute;
+    inset: 0;
   }
 }
 
@@ -165,23 +174,6 @@
 
   .bubbles:empty {
     display: none;
-  }
-
-  .full {
-    display: none;
-  }
-
-  .short {
-    display: inline;
-  }
-
-  .now {
-    display: none;
-  }
-
-  .step {
-    padding: 6px 0;
-    font-size: 11px;
   }
 }
 

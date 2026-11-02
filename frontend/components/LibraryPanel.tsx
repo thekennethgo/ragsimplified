@@ -15,6 +15,9 @@ import styles from "./LibraryPanel.module.css";
 export type LibraryDocument = { id: number; title: string; filename: string; chunk_count: number };
 type View = "docs" | "map" | "viewer";
 
+const LIBRARY_ATTEMPTS = 3;
+const LIBRARY_RETRY_MS = 5000;
+
 const cards = (n: number) => `${n} ${n === 1 ? "card" : "cards"}`;
 
 /**
@@ -43,14 +46,32 @@ export default function LibraryPanel({
   const { points: mapPoints, error: mapError } = useMapPoints(view === "map");
 
   useEffect(() => {
-    fetch(`${backendUrl()}/library`)
-      .then((response) => (response.ok ? response.json() : []))
-      .then((docs: LibraryDocument[]) => {
-        setLibrary(docs);
-        onCount?.(docs.length);
-        onLoad?.(docs);
-      })
-      .catch(() => setLibrary([]));
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A failed request (for example a backend that is still waking up) is retried, never shown as an empty library.
+    const load = (attempt: number) => {
+      fetch(`${backendUrl()}/library`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`library ${response.status}`);
+          return response.json();
+        })
+        .then((docs: LibraryDocument[]) => {
+          if (cancelled) return;
+          setLibrary(docs);
+          onCount?.(docs.length);
+          onLoad?.(docs);
+        })
+        .catch(() => {
+          if (!cancelled && attempt < LIBRARY_ATTEMPTS) {
+            timer = setTimeout(() => load(attempt + 1), LIBRARY_RETRY_MS);
+          }
+        });
+    };
+    load(1);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {

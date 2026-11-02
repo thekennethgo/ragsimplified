@@ -6,6 +6,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { buildAskScenes } from "./ask";
 import { buildQueryScenes } from "./query";
 import { buildUploadScenes } from "./upload";
+import { at, spot } from "../spots";
 import type { SceneSet } from "../types";
 
 // jsdom has no SVG geometry; GSAP only needs these to exist for transforms with an svgOrigin.
@@ -130,27 +131,14 @@ test("storyteller_done ends with the answer on the board", () => {
   tl.kill();
 });
 
-test("the normal Ask path reaches the Storyteller within 15.5 s", () => {
-  const set = buildAskScenes(load("ask-room.svg"));
+test("the Storyteller walks back to her desk after writing on the board", () => {
+  const root = load("ask-room.svg");
+  const set = buildAskScenes(root);
   set.reset();
-  const path = [
-    "question_start",
-    "translator_start",
-    "translator_done",
-    "scout_start",
-    "scout_done",
-    "judge_start",
-    "judge_done",
-    "storyteller_start",
-    "storyteller_done",
-  ];
-  const times = path.map((name) => {
-    const tl = set.scenes[name]();
-    const t = "handoff" in tl.labels ? tl.labels.handoff : tl.duration();
-    tl.kill();
-    return t;
-  });
-  const sum = times.reduce((a, b) => a + b, 0);
-  console.log("normal path:", path.map((n, i) => `${n} ${times[i].toFixed(2)}`).join(", "), `sum ${sum.toFixed(2)}`);
-  expect(sum).toBeLessThanOrEqual(15.5);
+  const tl = set.scenes.storyteller_done();
+  tl.progress(1);
+  const home = spot(root, "storyteller");
+  expect(Number(gsap.getProperty(root.querySelector("#storyteller")!, "x"))).toBeCloseTo(at(home).x, 3);
+  expect(Number(gsap.getProperty(root.querySelector("#storyteller")!, "y"))).toBeCloseTo(at(home).y, 3);
+  tl.kill();
 });

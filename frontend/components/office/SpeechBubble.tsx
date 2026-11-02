@@ -19,7 +19,8 @@ export default function SpeechBubble({
         left: `${at.left}px`,
         top: `${at.top}px`,
         transform: "translate(-50%, calc(-100% - 10px))",
-        width: "16%",
+        width: "max-content",
+        maxWidth: "150px",
       }}
     >
       <p className={styles.text}>{text}</p>

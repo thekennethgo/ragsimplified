@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { useAbout } from "../../lib/about";
 import type {
@@ -27,7 +27,7 @@ import VectorMap from "../map/VectorMap";
 import styles from "./StepDetails.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
-export type TabId = "translator" | "scout" | "judge" | "storyteller";
+export type TabId = "answer" | "translator" | "scout" | "judge" | "storyteller";
 
 const STEPS = [
   { id: "translator", name: "Translator", part: "tr" },
@@ -186,7 +186,10 @@ export default function StepDetails({
   tab,
   onTab,
   states,
+  played,
   answer,
+  revealed,
+  answerText,
   citations,
   words,
   scout,
@@ -206,7 +209,13 @@ export default function StepDetails({
   tab: TabId;
   onTab: (tab: TabId) => void;
   states: Record<string, Phase>;
-  answer: string;
+  /** What the office has played so far; the tab dots, chips and following use it, so the panel never runs ahead of the room. */
+  played: Record<string, Phase>;
+  /** The Answer tab's body: the page's answer card. */
+  answer: ReactNode;
+  /** True once the answer is shown to the visitor. */
+  revealed: boolean;
+  answerText: string;
   citations: Citation[];
   words: Word[];
   scout: ScoutResult[] | null;
@@ -256,7 +265,8 @@ export default function StepDetails({
   const view: 1 | 2 = hasSecond(tab) ? (rounds[tab] ?? 2) : 1;
   const phase = (id: string): Phase => states[id] ?? "waiting";
   // Follow the newest step whose results are in; once the answer is there, stay where it is.
-  const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
+  const playedPhase = (id: string): Phase => played[id] ?? "waiting";
+  const latest = [...FOLLOWED].reverse().find((id) => playedPhase(id) === "done");
   // The tab this panel last chose; any other change to `tab` came from the page (the step strip) and counts as a pick.
   const chosen = useRef(tab);
   useEffect(() => {
@@ -266,21 +276,23 @@ export default function StepDetails({
   useEffect(() => {
     if (tab !== chosen.current) touched.current = true;
   }, [tab]);
-  const hasAnswer = Boolean(answer);
   useEffect(() => {
-    if (touched.current) return;
-    if (follow && latest && !hasAnswer) {
+    if (touched.current || !follow) return;
+    if (revealed) {
+      chosen.current = "answer";
+      onTab("answer");
+    } else if (latest) {
       chosen.current = latest;
       onTab(latest);
     }
-  }, [follow, latest, hasAnswer, onTab]);
+  }, [follow, latest, revealed, onTab]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
     translator: askTranslatorCopy(about),
     scout: scoutCopy(about),
     judge: judgeCopy(about),
     storyteller: storytellerCopy(about),
-  }[tab];
+  }[tab === "answer" ? "translator" : tab];
   const kept = (judge ?? []).filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const bestByWord = new Map<string, { text: string; influence: number }>();
   for (const w of words) {
@@ -304,9 +316,11 @@ export default function StepDetails({
   };
 
   return (
-    <section className={`panel ${styles.root}`} aria-labelledby="steps-h">
+    <section className={styles.root} aria-labelledby="steps-h">
       <div className={styles.head}>
-        <h2 id="steps-h">How it got there</h2>
+        <h2 id="steps-h" className="visually-hidden">
+          Answer and how it got there
+        </h2>
         <div role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button
@@ -319,14 +333,25 @@ export default function StepDetails({
                 onTab(s.id);
               }}
             >
-              <span className={`${styles.dot} ${styles[phase(s.id)]}`} title={phase(s.id)} />
+              <span className={`${styles.dot} ${styles[playedPhase(s.id)]}`} title={playedPhase(s.id)} />
               {s.name}
             </button>
           ))}
+          <button
+            type="button"
+            aria-pressed={tab === "answer"}
+            onClick={() => {
+              touched.current = true;
+              onTab("answer");
+            }}
+          >
+            Answer
+          </button>
         </div>
       </div>
 
       <div className={styles.body}>
+        {tab === "answer" && answer}
         {step && (
           <div className={styles.step}>
             <CharacterCard
@@ -334,7 +359,7 @@ export default function StepDetails({
               room="/office/ask-room.svg"
               part={step.part}
               role={copy.role}
-              phase={phase(tab)}
+              phase={playedPhase(tab)}
               plain={copy.plain}
               tech={copy.tech}
               how={copy.how}
@@ -411,7 +436,7 @@ export default function StepDetails({
 
                   {view === 2 && tab === "translator" && round2.translator === "done" && (
                     <div className={styles.block}>
-                      <p>Fingerprinted the new query: “{translator2?.query}”</p>
+                      <p className={styles.headline}>New search: “{translator2?.query}”</p>
                       <p className={styles.empty}>
                         Word weights are only worked out for your own question (see Initial).
                       </p>
@@ -578,7 +603,7 @@ export default function StepDetails({
                         </>
                       )}
 
-                      {phase(tab) === "done" && tab === "storyteller" && answer && (
+                      {phase(tab) === "done" && tab === "storyteller" && answerText && (
                         <ol className={styles.rows}>
                           {citations.length === 0 ? (
                             <li className={styles.empty}>Nothing was cited.</li>
