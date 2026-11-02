@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #e4d8c6; --panel: #f6efe4; --paper: #fbf6ec; --border: #d2c1a8;
+    --ink: #33261d; --muted: #6a5848; --accent: #7a5236; --accent-dark: #4a3426; --room: #2b1f17;
+    --clerk: #7a5236; --translator: #2f6f73; --scout: #a8721a; --judge: #9b3b2e; --story: #4b6b3a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif; }
+  .mock-note { background: var(--accent-dark); color: #f6efe4; font-size: 12px; text-align: center; padding: 4px 16px; }
+  .page { max-width: 1320px; margin: 0 auto; padding: 14px clamp(16px, 3vw, 36px) 40px; display: flex; flex-direction: column; gap: 14px; }
+
+  header { display: flex; align-items: center; gap: 20px; }
+  .brand { font-weight: 700; font-size: 17px; margin-right: auto; }
+  nav { display: flex; gap: 18px; font-size: 14px; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a.on { color: var(--ink); font-weight: 600; border-bottom: 2px solid var(--ink); }
+  .status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #4b8a4b; }
+
+  /* Question bar */
+  .ask { display: flex; gap: 8px; }
+  .ask input { flex: 1; min-width: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--paper); font: inherit; }
+  .ask button { padding: 0 22px; border: 0; border-radius: 10px; background: var(--accent-dark); color: #fbf6ec; font: inherit; font-weight: 600; }
+  .starters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+  .example { border: 1px solid var(--accent-dark); color: var(--accent-dark); background: transparent; border-radius: 999px; padding: 4px 12px; font: inherit; font-weight: 600; }
+  .chip { background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; color: var(--ink); }
+  .browse { color: var(--muted); text-decoration: underline; }
+
+  /* Scene + answer */
+  .main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; }
+  .scene { background: var(--room); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .scene .room { position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1060 / 520; }
+  .scene img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; display: block; }
+  .bubble { position: absolute; left: 47%; top: 18%; background: var(--paper); border-radius: 8px; padding: 4px 9px; font-size: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+  .scene-foot { display: flex; justify-content: space-between; color: #cdbba3; font-size: 12px; padding: 0 4px; }
+  .scene-foot b { color: #f6efe4; font-weight: 500; }
+
+  .steps { display: flex; gap: 4px; }
+  .steps span { flex: 1; text-align: center; font-size: 12px; padding: 5px 4px; border-radius: 6px; background: #3a2b20; color: #cdbba3; border-top: 3px solid var(--c); }
+  .steps span.done { color: #f6efe4; }
+  .steps span.done::before { content: "✓ "; }
+  .steps span.now { background: #4a372a; color: #fff; font-weight: 600; }
+
+  .answer { background: var(--paper); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .answer h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0; }
+  .q { font-weight: 600; font-size: 17px; margin: 0; }
+  .answer p.a { margin: 0; font-size: 16px; line-height: 1.6; }
+  sup.cite { font: 600 11px "IBM Plex Mono", monospace; background: var(--story); color: #fff; border-radius: 4px; padding: 1px 4px; margin-left: 2px; }
+  .sources { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .src { display: flex; gap: 8px; align-items: baseline; }
+  .src .n { font: 600 11px "IBM Plex Mono", monospace; color: var(--story); }
+  .src .t { flex: 1; }
+  .src a { color: var(--accent); }
+  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 14px; }
+
+  /* Details */
+  .details { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; }
+  .details > .head { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .details h2 { font-size: 15px; margin: 0; white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .tabs button.on { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--c); }
+  .body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 16px; }
+  .body h3 { font-size: 14px; margin: 0 0 6px; }
+  .body p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  .map { background: var(--paper); border: 1px solid var(--border); border-radius: 10px; width: 100%; height: auto; display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 500; }
+  td.num { font-family: "IBM Plex Mono", monospace; }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #efe2c4; color: #6a4a10; }
+  .tag.words { background: #dbe8e8; color: #24585b; }
+  details.hood { font-size: 13px; margin-top: 10px; }
+  details.hood summary { color: var(--accent); cursor: pointer; }
+
+  .office-toggle { display: none; }
+
+  @media (max-width: 760px) {
+    header nav { display: none; }
+    .main { grid-template-columns: 1fr; }
+    .scene { order: 2; }
+    .scene .room { display: none; }
+    .scene .scene-foot { display: none; }
+    .scene { padding: 6px; }
+    .steps span { font-size: 0; padding: 6px 0; }
+    .steps span::after { content: attr(data-short); font-size: 11px; }
+    .steps span.done::before { content: ""; }
+    .office-toggle { display: block; color: #cdbba3; font-size: 12px; text-align: center; padding: 2px 0 0; }
+    .answer { order: 3; }
+    .body { grid-template-columns: 1fr; }
+    .starters .chip:nth-of-type(n+3) { display: none; }
+    .ask button { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="mock-note">Rough mockup, static HTML. The real page keeps the live office animation and today's data.</div>
+<div class="page">
+  <header>
+    <span class="brand">RAG Visualised</span>
+    <nav><a href="#">Home</a><a href="#">Upload</a><a class="on" href="#">Ask</a><a href="#">Library</a></nav>
+    <span class="status">Server awake</span>
+  </header>
+
+  <div class="ask">
+    <input value="What was Kenneth's first job after university?" aria-label="Your question">
+    <button>Ask</button>
+  </div>
+  <div class="starters">
+    <button class="example">▶ See an example</button>
+    <span class="chip">Where did Kenneth grow up?</span>
+    <span class="chip">What is RAG.co's coffee machine policy?</span>
+    <span class="chip">What has Kenneth built?</span>
+    <a class="browse" href="#">Browse all topics</a>
+  </div>
+
+  <div class="main">
+    <section class="scene" aria-label="The office">
+      <div class="room">
+        <img src="../../frontend/public/office/ask-room.svg" alt="">
+        <span class="bubble">Storyteller: Writing it up with 2 sources…</span>
+      </div>
+      <div class="steps">
+        <span class="done" data-short="Clerk" style="--c: var(--clerk)">Clerk</span>
+        <span class="done" data-short="Words" style="--c: var(--translator)">Translator</span>
+        <span class="done" data-short="Search" style="--c: var(--scout)">Scout</span>
+        <span class="done" data-short="Check" style="--c: var(--judge)">Judge</span>
+        <span class="now" data-short="Write" style="--c: var(--story)">Storyteller</span>
+      </div>
+      <div class="scene-foot"><span>Animation: <b>playing</b> · Skip · Motion off</span><span>Server finished in <b>4.2 s</b></span></div>
+      <div class="office-toggle">▸ Watch the office</div>
+    </section>
+
+    <section class="answer" aria-label="Answer">
+      <h2>Answer</h2>
+      <p class="q">What was Kenneth's first job after university?</p>
+      <p class="a">After graduating, Kenneth joined a logistics start-up in Bangkok as a junior data analyst, building the dashboards the operations team used every morning<sup class="cite">1</sup>. A year later he moved into the engineering team to work on the routing service<sup class="cite">2</sup>.</p>
+      <div class="sources">
+        <div class="src"><span class="n">[1]</span><span class="t">Career timeline · “First role”</span><a href="#">Open</a></div>
+        <div class="src"><span class="n">[2]</span><span class="t">CV · “Experience”</span><a href="#">Open</a></div>
+      </div>
+      <div class="meta"><span>5 cards found · 2 kept · 0 rewrites</span><span>Gemini 3.5 Flash Lite</span></div>
+    </section>
+  </div>
+
+  <section class="details" aria-label="How it got there">
+    <div class="head">
+      <h2>How it got there</h2>
+      <div class="tabs">
+        <button style="--c: var(--translator)">Translator · words</button>
+        <button class="on" style="--c: var(--scout)">Scout · vector map</button>
+        <button style="--c: var(--judge)">Judge · kept / set aside</button>
+        <button style="--c: var(--story)">Storyteller · prompt sent</button>
+      </div>
+    </div>
+    <div class="body">
+      <div>
+        <h3>Where your question landed</h3>
+        <p>Every card in the library is a dot. Your question (★) lands near cards that mean similar things; the Scout brings back the nearest ones.</p>
+        <svg class="map" viewBox="0 0 400 230" role="img" aria-label="Vector map mockup">
+          <g fill="#c9b79c">
+            <circle cx="40" cy="60" r="3"/><circle cx="62" cy="80" r="3"/><circle cx="55" cy="40" r="3"/><circle cx="80" cy="55" r="3"/><circle cx="95" cy="90" r="3"/>
+            <circle cx="300" cy="40" r="3"/><circle cx="330" cy="60" r="3"/><circle cx="350" cy="35" r="3"/><circle cx="320" cy="85" r="3"/><circle cx="360" cy="80" r="3"/>
+            <circle cx="120" cy="190" r="3"/><circle cx="140" cy="170" r="3"/><circle cx="100" cy="175" r="3"/><circle cx="160" cy="200" r="3"/>
+            <circle cx="300" cy="180" r="3"/><circle cx="330" cy="200" r="3"/><circle cx="270" cy="195" r="3"/>
+            <circle cx="210" cy="60" r="3"/><circle cx="250" cy="140" r="3"/><circle cx="180" cy="140" r="3"/>
+          </g>
+          <circle cx="215" cy="112" r="46" fill="#a8721a" opacity=".12"/>
+          <g stroke="#a8721a" stroke-width="1" opacity=".6">
+            <line x1="215" y1="112" x2="196" y2="98"/><line x1="215" y1="112" x2="238" y2="104"/><line x1="215" y1="112" x2="228" y2="132"/><line x1="215" y1="112" x2="190" y2="125"/><line x1="215" y1="112" x2="248" y2="88"/>
+          </g>
+          <g fill="#4b6b3a"><circle cx="196" cy="98" r="5"/><circle cx="238" cy="104" r="5"/></g>
+          <g fill="#a8721a"><circle cx="228" cy="132" r="4.5"/><circle cx="190" cy="125" r="4.5"/></g>
+          <circle cx="248" cy="88" r="4.5" fill="#2f6f73"/>
+          <text x="215" y="118" text-anchor="middle" font-size="16" fill="#33261d">★</text>
+          <g font-size="10" fill="#6a5848" font-family="IBM Plex Sans">
+            <text x="20" y="22">Career &amp; CV</text><text x="300" y="20">RAG.co office</text><text x="90" y="222">Projects</text><text x="270" y="222">FAQ</text>
+          </g>
+          <g font-size="10" font-family="IBM Plex Sans">
+            <circle cx="14" cy="120" r="4" fill="#4b6b3a"/><text x="22" y="123" fill="#33261d">kept</text>
+            <circle cx="14" cy="136" r="4" fill="#a8721a"/><text x="22" y="139" fill="#33261d">meaning find</text>
+            <circle cx="14" cy="152" r="4" fill="#2f6f73"/><text x="22" y="155" fill="#33261d">words find</text>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <h3>The 5 cards the Scout brought back</h3>
+        <table>
+          <thead><tr><th>#</th><th>Card</th><th>Found by</th><th>Similarity</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Career timeline · First role</td><td><span class="tag">meaning</span></td><td class="num">0.812</td></tr>
+            <tr><td>2</td><td>CV · Experience</td><td><span class="tag">meaning</span></td><td class="num">0.774</td></tr>
+            <tr><td>3</td><td>About · University</td><td><span class="tag">meaning</span></td><td class="num">0.701</td></tr>
+            <tr><td>4</td><td>Projects · Routing service</td><td><span class="tag">meaning</span></td><td class="num">0.688</td></tr>
+            <tr><td>5</td><td>FAQ · “first job”</td><td><span class="tag words">words</span></td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+        <details class="hood" open><summary>Under the hood</summary>
+          <p style="margin-top:6px">Voyage voyage-3.5 · 1024 dimensions · pgvector cosine search, top 20 by meaning + full-text search by words, merged and cut to 5. Map: PCA to 2-D over the starter library.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>
