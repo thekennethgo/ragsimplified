@@ -24,6 +24,8 @@ export type ScoutResult = {
   page: number | null;
   heading: string | null;
   score: number;
+  vector_rank: number | null;
+  keyword_rank: number | null;
   found_by: "vector" | "keyword" | "both";
 };
 

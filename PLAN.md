@@ -726,7 +726,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass (update tests that check "card N").
   - Out of scope: the library panel's own "N cards" counts, the Upload page.
 
-- [ ] 7.9o The Scout shows where each card ranked
+- [x] 7.9o The Scout shows where each card ranked
   - Do:
     - `frontend/lib/ask.ts`: `ScoutResult` gets `vector_rank: number | null; keyword_rank: number | null;` (the backend already sends them).
     - `frontend/components/ask/StepDetails.tsx`, `ScoutPage`: each row's mono column shows `[r.vector_rank && `meaning #${r.vector_rank}`, r.keyword_rank && `words #${r.keyword_rank}`].filter(Boolean).join(" · ")` instead of `r.score.toFixed(3)`, with `title={`merged score ${r.score.toFixed(3)}`}` on that span. Above the list, `<p className={styles.empty}>Each card's place in the meaning search and in the word search; cards high in both come first.</p>`.

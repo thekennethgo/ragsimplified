@@ -131,6 +131,9 @@ function ScoutPage({
         {skipped > 0 && <span className={styles.chipSkipped}>{skipped} already found, skipped</span>}
       </div>
       <VectorMap points={points} error={error} overlay={overlay} variant="compact" focus={focus} />
+      <p className={styles.empty}>
+        Each card's place in the meaning search and in the word search; cards high in both come first.
+      </p>
       <ol
         className={styles.scoutRows}
         style={{ gridTemplateRows: `repeat(${Math.ceil(results.length / 2)}, auto)` }}
@@ -154,7 +157,11 @@ function ScoutPage({
               {r.rank}
             </span>
             <span className={styles.name}>{where(r, partOf(r))}</span>
-            <span className={styles.mono}>{r.score.toFixed(3)}</span>
+            <span className={styles.mono} title={`merged score ${r.score.toFixed(3)}`}>
+              {[r.vector_rank && `meaning #${r.vector_rank}`, r.keyword_rank && `words #${r.keyword_rank}`]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </li>
         ))}
       </ol>
