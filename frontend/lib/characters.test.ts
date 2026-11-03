@@ -7,6 +7,7 @@ const withTokens = (max_tokens: number | null) =>
   ({
     llm: { provider: "x", model: "claude-x", max_tokens },
     judge: { keep: 5, max_per_document: 2 },
+    second_look: { enabled: false },
   }) as About;
 
 const longest = (about: About) =>
@@ -25,11 +26,11 @@ test("the Judge's how text states the per-document cap", () => {
 });
 
 test("the Judge's how text says whether the second look is on and what decides it", () => {
-  const look = { enabled: true, decider: "inception/mercury-decide", slots: 2 };
+  const look = { enabled: true, decider: "inception/mercury-decide", slots: 2, max_cards: 7 };
   const on = { ...withTokens(null), scout: { candidates: 20 }, second_look: look } as About;
   expect(judgeCopy(on).how).toContain("The second look is on");
   expect(judgeCopy(on).how).toContain("inception/mercury-decide");
-  expect(judgeCopy(on).how).toContain("best 2 cards of that second search, and they join the first search's best 3");
+  expect(judgeCopy(on).how).toContain("best 2 new cards of that second search, and they join the first search's 5, so the Storyteller gets up to 7");
   const off = { ...on, second_look: { ...look, enabled: false } } as About;
   expect(judgeCopy(off).how).toContain("The second look is off.");
   expect(judgeCopy(null).how).not.toContain("second look");

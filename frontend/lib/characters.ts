@@ -102,7 +102,7 @@ export function secondLookLine(about: About | null): string {
   const check = look.decider
     ? `${look.decider} estimates the chance that the best cards answer the question`
     : "the language model decides whether the best cards answer the question";
-  return ` The second look is on: after I rule, ${check}. If they do not, a short language-model call writes one follow-up search, and the Scout searches a second time (at most once). I keep the best ${look.slots} cards of that second search, and they join the first search's best ${v(about?.judge.keep !== undefined ? about.judge.keep - look.slots : undefined)}.`;
+  return ` The second look is on: after I rule, ${check}. If they do not, a short language-model call writes one follow-up search, and the Scout searches a second time (at most once). I keep the best ${look.slots} new cards of that second search, and they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.`;
 }
 
 export function scoutCopy(about: About | null): CharacterCopy {
@@ -163,7 +163,7 @@ export function storytellerCopy(about: About | null): CharacterCopy {
         "Longest answer",
         llm?.max_tokens === null ? "the model's default" : `${v(llm?.max_tokens)} tokens`,
       ],
-      ["Cards used", `up to ${v(about?.judge.keep)}`],
+      ["Cards used", `up to ${v(about?.second_look.enabled ? about.second_look.max_cards : about?.judge.keep)}`],
     ],
   };
 }

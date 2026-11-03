@@ -645,7 +645,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the rest of Home (FAQ wording, the second look on Home).
 
-- [ ] 7.9h Card counts after a second look
+- [x] 7.9h Card counts after a second look
   - Do:
     - `frontend/lib/characters.ts`, `secondLookLine`: replace the last sentence with `` ` I keep the best ${look.slots} new cards of that second search, and they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.` ``
     - `storytellerCopy`, setting "Cards used": `` `up to ${v(about?.second_look.enabled ? about.second_look.max_cards : about?.judge.keep)}` ``.

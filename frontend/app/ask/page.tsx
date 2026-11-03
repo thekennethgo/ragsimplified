@@ -404,9 +404,12 @@ function AskOffice() {
   const finished = storytellerDone && !animating;
 
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
+  // After a second look the Storyteller gets the final cards, not just the first round's.
+  const handedCount = judge2 && !judge2.check?.nothing ? judge2.finalCards.length : keptCount;
+  const foundCount = (scout?.length ?? 0) + (scout2?.results.length ?? 0);
   const progress =
     shownPhase("storyteller") === "working"
-      ? `The Judge kept ${keptCount ?? 0} of ${scout?.length ?? 0}. The Storyteller is writing…`
+      ? `The Judge kept ${handedCount ?? 0} of ${foundCount}. The Storyteller is writing…`
       : shownPhase("judge") === "working"
         ? `The Scout found ${scout?.length ?? 0} cards. The Judge is checking them…`
         : shownPhase("scout") === "working"
@@ -422,7 +425,7 @@ function AskOffice() {
         : checking
         ? "Checking whether that's enough…"
         : judgeSays(scout ? scout.length : null, about?.judge.keep),
-    storyteller: storytellerSays(keptCount),
+    storyteller: storytellerSays(handedCount),
   };
   const caption = error
     ? "Sorry, something went wrong. Try again?"
@@ -524,8 +527,8 @@ function AskOffice() {
                 model={answerModel}
                 started={phase("translator") !== "waiting"}
                 progress={progress}
-                cardsFound={scout?.length ?? 0}
-                kept={keptCount ?? 0}
+                cardsFound={foundCount}
+                kept={handedCount ?? 0}
                 targetFor={targetFor}
                 onOpen={openViewer}
               />
