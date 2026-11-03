@@ -74,19 +74,19 @@ const WHY = [
 const BUILT = [
   {
     q: "How does it search?",
-    a: "By meaning and by words at once; a reranker then keeps the best 5.",
+    a: "By meaning and by words at once; a reranker then keeps the best 5. If they aren't enough, it searches once more and adds up to 2.",
     link: "See the Scout",
     href: "/ask",
   },
   {
     q: "Can it make things up?",
     a: "It may only use the cards it found, and must cite each one.",
-    link: "See the Judge",
+    link: "See the Storyteller",
     href: "/ask",
   },
   {
     q: "What if nothing fits?",
-    a: "It says “nothing on file” instead of guessing.",
+    a: "It says “I can't answer that from the available documents.” instead of guessing.",
     link: "Try it",
     href: "/ask",
   },

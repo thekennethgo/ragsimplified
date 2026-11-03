@@ -733,7 +733,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the map, the chips.
 
-- [ ] 7.9p Home FAQ matches the Ask page
+- [x] 7.9p Home FAQ matches the Ask page
   - Do: in `frontend/app/page.tsx`, `BUILT`:
     - "How does it search?": "By meaning and by words at once; a reranker then keeps the best 5. If they aren't enough, it searches once more and adds up to 2."
     - "Can it make things up?": link text "See the Storyteller".
