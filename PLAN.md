@@ -694,7 +694,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass (update tests that check the old lines).
   - Out of scope: asking the language model for a reason.
 
-- [ ] 7.9m The Judge tab tells the whole second look
+- [x] 7.9m The Judge tab tells the whole second look
   - Do: in `frontend/lib/characters.ts`:
     - `secondLookLine`, when on (`pct` as in 7.9l, from `look.threshold` / `look.nothing_threshold`):
       - With a decider: `` ` The second look is on. Mercury Decide, a small decision model, gives the chance that the best cards fully answer the question: at ${pct(threshold)} or more they go straight to the Storyteller, and below ${pct(nothing)} that they mention anything in the question at all, no answer is written. Otherwise a short language-model call writes one follow-up search. Cards from your own folder are never sent to Mercury Decide; then the language model decides alone.` ``

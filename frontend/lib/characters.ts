@@ -99,10 +99,15 @@ export function secondLookLine(about: About | null): string {
   const look = about?.second_look;
   if (!look) return "";
   if (!look.enabled) return " The second look is off.";
-  const check = look.decider
-    ? `${look.decider} estimates the chance that the best cards answer the question`
-    : "the language model decides whether the best cards answer the question";
-  return ` The second look is on: after I rule, ${check}. If they do not, a short language-model call writes one follow-up search, and the Scout searches a second time (at most once). I keep the best ${look.slots} new cards of that second search, and they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.`;
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
+  const decide = look.decider
+    ? ` The second look is on. Mercury Decide, a small decision model, gives the chance that the best cards fully answer the question: at ${pct(look.threshold)} or more they go straight to the Storyteller, and below ${pct(look.nothing_threshold)} that they mention anything in the question at all, no answer is written. Otherwise a short language-model call writes one follow-up search. Cards from your own folder are never sent to Mercury Decide; then the language model decides alone.`
+    : " The second look is on. A short language-model call decides whether the best cards are enough and, if not, writes one follow-up search.";
+  const rank = ` The Scout searches once more, and I rank the new cards against the follow-up, not your question, because the linked text rarely repeats your words. I keep the best ${look.slots} new cards; they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.`;
+  const recheck = look.decider
+    ? ` Mercury Decide then checks the final cards once more: below ${pct(look.nothing_threshold)} that they answer any part of the question, no answer is written.`
+    : "";
+  return decide + rank + recheck;
 }
 
 export function scoutCopy(about: About | null): CharacterCopy {
@@ -126,15 +131,17 @@ export const scoutSays = () => "Searching by meaning and by words…";
 export function judgeCopy(about: About | null): CharacterCopy {
   const r = about?.reranker;
   const keep = v(about?.judge.keep);
+  const look = about?.second_look;
   return {
     role: "keeps only the best",
     plain: `Search is quick but rough. I read each card next to your question, score how well it really answers it, and keep only the best ${keep}.`,
     how: `The question and the ${v(about?.scout.candidates)} candidates go to ${v(r?.provider)}'s ${v(r?.model)} reranker. It reads the question and each card together (a cross-encoder), which is more accurate than comparing fingerprints but too slow to run over the whole library. The ${keep} highest-scoring cards are kept, in their new order. No more than ${v(about?.judge.max_per_document)} cards come from the same document, so one document cannot fill every place. If the reranker fails, the Scout's order is used instead.${secondLookLine(about)}`,
-    tech: [`${v(r?.provider)} · ${v(r?.model)}`, "Cross-encoder reranking"],
+    tech: [`${v(r?.provider)} · ${v(r?.model)}`, "Cross-encoder reranking", ...(look?.decider ? ["Mercury Decide"] : [])],
     settings: [
       ["Model", v(r?.model)],
       ["Cards kept", keep],
       ["If it fails", "use the Scout's order"],
+      ...(look ? [["Second look", look.enabled ? `on, needs ${Math.round(look.threshold * 100)}%` : "off"] as [string, string]] : []),
     ],
   };
 }
