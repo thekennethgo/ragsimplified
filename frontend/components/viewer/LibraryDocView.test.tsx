@@ -187,7 +187,9 @@ test("a PDF renders every page, marking only the cited page's matching text", as
     "data-html",
     "<mark>Staff get 25 days of paid leave</mark>|Unrelated text",
   );
-  expect(screen.getByRole("link", { name: "Open the original at page 2" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Inspect document" })).toHaveAttribute(
+    "href", "/corpus/lore/staff.pdf#page=2",
+  );
 });
 
 test("a PDF with no cited chunk still renders every page", async () => {

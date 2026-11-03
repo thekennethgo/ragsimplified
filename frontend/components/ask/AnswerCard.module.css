@@ -48,6 +48,20 @@
   border: 1px solid var(--border);
 }
 
+.sources li > button {
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--accent-dark);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sources li > button:hover {
+  background: var(--tab-soft);
+}
+
 .cardHead {
   display: flex;
   align-items: center;

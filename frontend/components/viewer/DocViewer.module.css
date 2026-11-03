@@ -1,4 +1,6 @@
 .reader {
+  min-width: 0;
+  overflow-wrap: anywhere;
   max-width: 72ch;
   margin: 0 auto;
   font-size: 16px;
@@ -130,6 +132,8 @@
 }
 
 .body table {
+  display: block;
+  overflow-x: auto;
   width: 100%;
   margin: 0 0 0.9em;
   border-collapse: collapse;
@@ -168,4 +172,20 @@
   font-size: 13px;
   color: var(--muted);
   margin: 0 0 4px;
+}
+
+@media (max-width: 759px) {
+  .card {
+    padding: 12px;
+  }
+
+  .card h1 {
+    font-size: 1.3em;
+  }
+
+  .button {
+    min-height: 44px;
+    justify-content: center;
+    flex: 1 1 auto;
+  }
 }

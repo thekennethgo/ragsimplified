@@ -119,5 +119,6 @@ export const FEATURED = [
   "What project is Kenneth most proud of?",
   "Show Kenneth's CV",
   "How does RAG work?",
+  "How does RAG compare with fine-tuning?",
   "Why do language models hallucinate?",
 ];

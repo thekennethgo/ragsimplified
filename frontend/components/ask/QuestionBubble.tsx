@@ -87,7 +87,7 @@ export function QuestionBubble({
             }}
             maxLength={MAX_QUESTION_CHARS}
             rows={1}
-            placeholder="e.g. What is Kenneth's academic background?"
+            placeholder="Ask the library…"
           />
         </label>
         <button
