@@ -10,8 +10,8 @@ import styles from "./page.module.css";
 
 const REPO = "https://github.com/thekennethgo/ragsimplified";
 
-// Set to a video path once the clip is recorded; null shows the picture.
-const HERO_CLIP: string | null = null;
+// Autoplays muted; visitors who prefer reduced motion get the same clip paused, with controls.
+const HERO_CLIP = "/office/hero.mp4";
 
 const EXAMPLES = FEATURED.slice(0, 3);
 
@@ -118,14 +118,7 @@ export default function Home() {
         <figure className={styles.clip}>
           <Clip
             src={HERO_CLIP}
-            poster="/office/ask-room.svg"
-            fallback={
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src="/office/ask-room.svg"
-                alt="The Ask office: the Translator, Scout, Judge and Storyteller at work"
-              />
-            }
+            fallback={<video src={HERO_CLIP} controls preload="metadata" />}
           />
           <figcaption>The office answering a question</figcaption>
         </figure>

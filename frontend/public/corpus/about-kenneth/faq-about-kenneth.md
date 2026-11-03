@@ -4,11 +4,11 @@ Common questions about Kenneth Go, the creator of this site, answered by Kenneth
 
 ## Who is Kenneth Go?
 
-Kenneth Go is a recent computer science graduate from UNSW Sydney. He is pursuing software engineering as a career and he currently lives in Sydney, Australia.
+Kenneth Go is a recent computer science graduate from UNSW Sydney. He is pursuing software engineering as a career and he currently lives in Sydney, Australia. He is particularly interested in system design and software architecture.
 
 ## What roles is Kenneth looking for?
 
-Graduate or junior roles as a software engineer, AI engineer, full-stack engineer or backend engineer, in Sydney or Singapore. He is open to remote, hybrid and on-site work.
+Graduate or junior roles as a software engineer, AI engineer, full-stack engineer or backend engineer, in Sydney. He is open to remote, hybrid and on-site work.
 
 ## What kind of team is Kenneth looking for?
 
@@ -24,7 +24,7 @@ AI agents: how they plan, use tools and work through multi-step tasks.
 
 ## What projects is Kenneth most proud of?
 
-Three projects: Jira Backlog Manager, an AI-powered prioritisation tool for an Atlassian client (not public) where he was the scrum master and this site RAG Visualised
+Kenneth is most proud of his work as a scrum master and software developer on the university project working with Atlassian. Kenneth also enjoyed developing this site, RAG Visualised, as a way to learn how AI engineering works.
 
 ## Why did Kenneth build this site?
 

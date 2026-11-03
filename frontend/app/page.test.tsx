@@ -70,7 +70,7 @@ test("the Kenneth section links to Ask and lists three example questions", () =>
   ).toHaveAttribute("href", "/ask");
 });
 
-test("What is RAG? has four character cards and no video while the clips are null", () => {
+test("What is RAG? has four character cards and only the hero video while the step clips are null", () => {
   const { container } = render(<Home />);
   const section = screen
     .getByRole("heading", { name: "What is RAG?" })
@@ -83,11 +83,9 @@ test("What is RAG? has four character cards and no video while the clips are nul
     "Storyteller",
   ]);
   expect(cards[0].style.borderTopColor).toBe("var(--translator)");
-  expect(container.querySelector("video")).toBeNull();
-  expect(screen.getByRole("img", { name: /Ask office/ })).toHaveAttribute(
-    "src",
-    "/office/ask-room.svg",
-  );
+  const videos = container.querySelectorAll("video");
+  expect(videos).toHaveLength(1);
+  expect(videos[0]).toHaveAttribute("src", "/office/hero.mp4");
 });
 
 test("links the Air Canada story and the four FAQ rows to the steps that show them", () => {
