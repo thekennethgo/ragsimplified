@@ -468,22 +468,53 @@ function AskOffice() {
   };
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.hidden}>Ask the library</h1>
-      <QuestionBubble
-        question={question}
-        onChange={setQuestion}
-        onSubmit={onSubmit}
-        busy={running}
-        offline={offline}
-        examples={examplesFor(library)}
-        featured={FEATURED}
-      />
-      {error && (
-        <p role="alert" className={styles.error}>
-          {error}
-        </p>
-      )}
+    <>
+      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
+        <h1 id="office-h" className={styles.title}>
+          The office
+        </h1>
+        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
+        <div className={styles.stage}>
+          <OfficeRoom
+            src="/office/ask-room.svg"
+            label={ASK_LABEL}
+            build={buildAskScenes}
+            queue={queue}
+          />
+          {library !== null && (
+            <span
+              className={styles.count}
+              style={{ left: `${ASK_DOC_COUNT.left}%`, top: `${ASK_DOC_COUNT.top}%` }}
+              aria-hidden="true"
+            >
+              {library.length + texts.length}
+            </span>
+          )}
+        </div>
+        <div className={styles.bubbles}>
+          {CREW.map((step) => {
+            const at = crewAt[step];
+            return at && <SpeechBubble key={step} name={NAMES[step]} text={crewSays[step]} at={at} />;
+          })}
+          {clerkAt && (
+            <div
+              className={`bubble ${styles.clerkWaits}`}
+              aria-label="The Clerk is waiting for a reply"
+              role="img"
+              style={{
+                left: `${clerkAt.left}px`,
+                top: `${clerkAt.top}px`,
+                transform: "translate(-50%, calc(-100% - 10px))",
+              }}
+            >
+              <span />
+              <span />
+              <span />
+              <span className="tail" style={{ left: "50%" }} />
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className={styles.grid}>
         <section ref={officeRef} aria-label="The office" className={styles.scene}>
