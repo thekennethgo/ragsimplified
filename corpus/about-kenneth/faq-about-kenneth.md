@@ -38,10 +38,6 @@ Step by step with Claude Code, following a written plan: one AI model plans each
 
 Kenneth's main industry experience is an Atlassian client project at UNSW (February to April 2026), where he was Scrum Master and a developer in a team of 5 building an AI-powered Jira prioritisation tool on Atlassian Forge. He also worked as casual wait staff in a restaurant alongside his full-time studies.
 
-## Can I see Kenneth's CV?
-
-Kenneth's CV is in the About the creator section of the file cabinet. For more about his experience, projects, skills or certifications, ask the office, or contact him by email at gennethko@gmail.com or message him on LinkedIn.
-
 ## How can I contact Kenneth?
 
 By email at gennethko@gmail.com, on LinkedIn (https://www.linkedin.com/in/go-kenneth-go/) or on GitHub (https://github.com/thekennethgo/).
