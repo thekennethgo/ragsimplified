@@ -5,7 +5,7 @@ import { type FormEvent, Suspense, useEffect, useRef, useState } from "react";
 
 import AnswerCard from "../../components/ask/AnswerCard";
 import { QuestionBubble } from "../../components/ask/QuestionBubble";
-import StepDetails, { type TabId } from "../../components/ask/StepDetails";
+import StepDetails, { type PartOf, type TabId } from "../../components/ask/StepDetails";
 import LibraryPanel, { type LibraryDocument } from "../../components/LibraryPanel";
 import AnimationToggle from "../../components/office/AnimationToggle";
 import OfficeRoom from "../../components/office/OfficeRoom";
@@ -133,6 +133,14 @@ function AskOffice() {
   const [sentPrompt, setSentPrompt] = useState<string | null>(null);
   const about = useAbout();
   const [library, setLibrary] = useState<LibraryDocument[] | null>(null);
+  /** "part 3 of 12": where a card sits in its document (just "part 3" until the library loads). */
+  const partOf: PartOf = (r) => {
+    const total =
+      r.source === "library"
+        ? library?.find((d) => d.id === r.document_id)?.chunk_count
+        : texts.find((t) => t.title === r.title)?.chunks.length;
+    return total ? `part ${r.position + 1} of ${total}` : `part ${r.position + 1}`;
+  };
 
   const privateChunks = texts
     .flatMap((item) =>
@@ -524,6 +532,7 @@ function AskOffice() {
             states={states}
             played={animationsOn ? shown : states}
             lookComing={lookComing}
+            partOf={partOf}
             answer={
               <AnswerCard
                 answer={revealed ? answer : ""}
@@ -536,6 +545,7 @@ function AskOffice() {
                 kept={nothingOnFile ? 0 : handedCount ?? 0}
                 targetFor={targetFor}
                 onOpen={openViewer}
+                partOf={partOf}
               />
             }
             revealed={revealed}

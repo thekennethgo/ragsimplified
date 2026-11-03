@@ -222,7 +222,7 @@ export default function Home() {
                 “1,000 characters. <span className={styles.cite}>1</span>”
               </p>
               <p className={styles.small}>
-                <span className={styles.mono}>[1]</span> Site FAQ · card 2:
+                <span className={styles.mono}>[1]</span> Site FAQ · part 2 of 4:
                 “…a question at most 1,000 characters…”
               </p>
             </div>

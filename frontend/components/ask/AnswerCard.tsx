@@ -4,6 +4,7 @@ import { useAbout } from "../../lib/about";
 import type { Citation } from "../../lib/ask";
 import type { ViewTarget } from "../../lib/viewer";
 import { AnswerBubble } from "./AnswerBubble";
+import type { PartOf } from "./StepDetails";
 import styles from "./AnswerCard.module.css";
 
 /** The answer with its sources; "Open" shows the cited passage in the library viewer below. */
@@ -18,7 +19,9 @@ export default function AnswerCard({
   kept,
   targetFor,
   onOpen,
+  partOf,
 }: {
+  partOf: PartOf;
   answer: string;
   citations: Citation[];
   askedQuestion: string;
@@ -75,7 +78,7 @@ export default function AnswerCard({
                     <div className={styles.cardHead}>
                       <span className={styles.num}>{c.n}</span>
                       <span className={styles.name}>{c.title}</span>
-                      <span className={styles.mono}>card {c.position + 1}</span>
+                      <span className={styles.mono}>{partOf(c)}</span>
                     </div>
                     <p className={styles.snippet}>{c.snippet}</p>
                     {t && (

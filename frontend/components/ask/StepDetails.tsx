@@ -42,8 +42,16 @@ const FOLLOWED = ["translator", "scout", "judge", "storyteller"] as const;
 
 const FILLER = new Set(["a","an","the","is","are","was","were","be","been","of","in","on","at","to","for","and","or","but","with","by","from","as","it","its","this","that","these","those","what","which","who","whom","whose","when","where","why","how","do","does","did","can","could","should","would","will","i","you","he","she","we","they","me","my","your","our","their","about","into","than","then","there","so","if","not","no","any","some"]);
 
-const where = (r: { title: string; heading: string | null; page: number | null }) =>
-  [r.title, r.heading, r.page !== null ? `page ${r.page}` : null].filter(Boolean).join(" · ");
+const where = (r: { title: string; heading: string | null; page: number | null }, part: string) =>
+  [r.title, r.heading, r.page !== null ? `page ${r.page}` : null, part].filter(Boolean).join(" · ");
+
+/** "part 3 of 12" for a card; the page builds it from the library and the visitor's texts. */
+export type PartOf = (r: {
+  source: "library" | "private";
+  document_id: number | null;
+  title: string;
+  position: number;
+}) => string;
 
 /** The tabs that get a second page when a second look happens. */
 const ROUND_TABS = ["translator", "scout", "judge"] as const;
@@ -91,9 +99,11 @@ function ScoutPage({
   overlay,
   points,
   error,
+  partOf,
   skipped = 0,
 }: {
   results: ScoutResult[];
+  partOf: PartOf;
   overlay: MapOverlay;
   points: MapPoint[] | null;
   error: boolean;
@@ -143,7 +153,7 @@ function ScoutPage({
             >
               {r.rank}
             </span>
-            <span className={styles.name}>{where(r)}</span>
+            <span className={styles.name}>{where(r, partOf(r))}</span>
             <span className={styles.mono}>{r.score.toFixed(3)}</span>
           </li>
         ))}
@@ -159,8 +169,10 @@ function JudgeVerdict({
   none,
   rule,
   maxPerDocument,
+  partOf,
   offset = 0,
 }: {
+  partOf: PartOf;
   results: JudgeResult[];
   title: string;
   none: string;
@@ -183,7 +195,7 @@ function JudgeVerdict({
             {kept.map((r) => (
               <li key={r.n}>
                 <span className={styles.num}>{(r.n ?? 0) + offset}</span>
-                <span className={styles.name}>{where(r)}</span>
+                <span className={styles.name}>{where(r, partOf(r))}</span>
                 <span className={styles.mono}>
                   {r.rerank_score === null ? "" : `${score(r)} · `}was #{r.old_rank}
                 </span>
@@ -198,7 +210,7 @@ function JudgeVerdict({
         <ul>
           {setAside.map((r) => (
             <li key={`${r.old_rank}`}>
-              {where(r)}
+              {where(r, partOf(r))}
               {r.rerank_score !== null && <span className={styles.mono}> {score(r)}</span>}
               {r.new_rank < worstKept && (
                 <span className={styles.empty}> {maxPerDocument} already from this document</span>
@@ -234,8 +246,10 @@ export default function StepDetails({
   overlay,
   privateSent,
   sentPrompt,
+  partOf,
   run = 0,
 }: {
+  partOf: PartOf;
   /** The open tab; the page owns it so it can open one from elsewhere. */
   tab: TabId;
   onTab: (tab: TabId) => void;
@@ -474,6 +488,7 @@ export default function StepDetails({
 
                   {view === 2 && tab === "scout" && round2.scout === "done" && scout2 && (
                     <ScoutPage
+                      partOf={partOf}
                       results={scout2.results}
                       overlay={overlay2}
                       points={points}
@@ -485,6 +500,7 @@ export default function StepDetails({
                   {view === 2 && tab === "judge" && round2.judge === "done" && judge2 && (
                     <>
                       <JudgeVerdict
+                        partOf={partOf}
                         results={judge2.results}
                         title={`New cards, ranked against “${judge2.query}”`}
                         none="None of the new cards were kept."
@@ -515,7 +531,7 @@ export default function StepDetails({
                           {judge2.finalCards.map((c) => (
                             <li key={c.n}>
                               <span className={styles.num}>{c.n}</span>
-                              <span className={styles.name}>{where(c)}</span>
+                              <span className={styles.name}>{where(c, partOf(c))}</span>
                               <span className={`${styles.mono} ${styles.roundTag}`}>
                                 {c.round === 1 ? "Initial" : "Second look"}
                               </span>
@@ -579,6 +595,7 @@ export default function StepDetails({
 
                       {done1 && tab === "scout" && (
                         <ScoutPage
+                      partOf={partOf}
                           results={scout ?? []}
                           overlay={overlay1}
                           points={points}
@@ -628,6 +645,7 @@ export default function StepDetails({
                               </div>
                             )}
                           <JudgeVerdict
+                        partOf={partOf}
                             results={judge ?? []}
                             title={`Kept: the best ${kept.length} of ${judge?.length ?? 0}`}
                             none="None of the cards answered the question, so the Judge kept nothing."
@@ -650,7 +668,7 @@ export default function StepDetails({
                               <li key={c.n}>
                                 <span className={styles.num}>{c.n}</span>
                                 <span className={styles.name}>{c.title}</span>
-                                <span className={styles.mono}>card {c.position + 1}</span>
+                                <span className={styles.mono}>{partOf(c)}</span>
                               </li>
                             ))
                           )}

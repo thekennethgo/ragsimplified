@@ -706,7 +706,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the other characters' copy.
 
-- [ ] 7.9n "part 3 of 12" instead of "card 3"
+- [x] 7.9n "part 3 of 12" instead of "card 3"
   - Do:
     - `frontend/app/ask/page.tsx`: add
       ```ts

@@ -23,6 +23,7 @@ const props = {
   privateSent: 0,
   lookComing: false,
   sentPrompt: null,
+  partOf: () => "part 1",
 };
 
 test("selecting the last tab scrolls the tab row sideways to show it", () => {

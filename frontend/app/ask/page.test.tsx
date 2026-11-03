@@ -1707,7 +1707,7 @@ test("the Scout's round 2 page shows the skipped chip and the new list", async (
   expect(steps.queryByText(/Searched for/)).toBeNull();
   expect(steps.getByText("2 already found, skipped")).toBeInTheDocument();
   expect(steps.getByText("1 cards found")).toBeInTheDocument();
-  expect(steps.getByText("Batam")).toBeInTheDocument();
+  expect(steps.getByText(/^Batam · part \d+/)).toBeInTheDocument();
   expect(steps.queryByText(/Apple Inc\./)).toBeNull();
   // Round 1 is still round 1's list.
   fireEvent.click(screen.getByRole("button", { name: "Initial" }));
