@@ -772,7 +772,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass; live, "Show Kenneth's CV" answers "Here is Kenneth's CV [n]." citing the CV, and its source opens the PDF in the viewer.
   - Out of scope: a special "show document" code path, other documents' titles.
 
-- [ ] 7.9t Under the hood: a paragraph, then bullet points
+- [x] 7.9t Under the hood: a paragraph, then bullet points
   - Do:
     - `frontend/lib/characters.ts`: `CharacterCopy.how` becomes `{ intro: string; points: string[] }`. Each `*Copy` function returns the text below (values from `/about` via `v(...)` exactly as today; `pct(x) = Math.round(x * 100) + "%"`). `secondLookLine` is replaced by `secondLookPoints(about): string[]`, appended to the Judge's points.
     - `frontend/components/characters/CharacterCard.tsx`: `how` prop takes the new shape and renders `<p>{how.intro}</p><ul className={styles.points}>{how.points.map((p) => <li key={p}>{p}</li>)}</ul>` in place of `<p>{how}</p>`. `CharacterCard.module.css`: `.points { margin: 0.5rem 0 0.75rem; padding-left: 1.2em; } .points li { margin-bottom: 0.4em; line-height: 1.5; }`.

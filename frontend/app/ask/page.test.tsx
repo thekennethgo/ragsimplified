@@ -1851,7 +1851,7 @@ test("the Judge's tab says how the second look works, from GET /about", async ()
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
-  expect(await screen.findByText(/The second look is on/)).toBeInTheDocument();
+  expect(await screen.findByText(/Then the second look/)).toBeInTheDocument();
 });
 
 test("the question box has no privacy line under it", () => {
