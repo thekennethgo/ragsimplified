@@ -740,6 +740,10 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
     - "What if nothing fits?": "It says “I can't answer that from the available documents.” instead of guessing."
   - Done when: `make lint` and `make test` pass (update tests that check the old text).
   - Out of scope: the rest of Home.
+- [x] 7.9q Progress line and wording polish
+  - Do: in `frontend/app/ask/page.tsx`, `progress` follows the newest step the office has started (`latestShown`), so it never jumps back to "The Translator is reading your question…"; the Storyteller line reads "The Judge handed over N cards. The Storyteller is writing…". In `frontend/components/ask/StepDetails.tsx` the meter label says "cards" instead of "sources".
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the office scenes, the bubbles.
 - [ ] 7.10 (You) Release review on alt-main
   - Do: deploy `alt-main` as a Vercel preview (and the backend if 7.8 shipped) and check keyboard use, reduced motion, the four sizes, a live run, the example run and a failed request.
   - Done when: the owner signs off on the preview.

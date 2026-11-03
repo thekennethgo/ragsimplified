@@ -419,12 +419,14 @@ function AskOffice() {
   const handedCount = judge2 && !judge2.check?.nothing ? judge2.finalCards.length : keptCount;
   const nothingOnFile = look?.nothing === true || judge2?.check?.nothing === true;
   const foundCount = (scout?.length ?? 0) + (scout2?.results.length ?? 0);
+  // The newest step the office has started, so the line never jumps back to the Translator.
+  const latestShown = (["storyteller", "judge", "scout"] as const).find((s) => shownPhase(s) !== "waiting");
   const progress =
-    shownPhase("storyteller") === "working"
-      ? `The Judge kept ${handedCount ?? 0} of ${foundCount}. The Storyteller is writing…`
-      : shownPhase("judge") === "working"
+    latestShown === "storyteller"
+      ? `The Judge handed over ${handedCount ?? 0} cards. The Storyteller is writing…`
+      : latestShown === "judge"
         ? `The Scout found ${scout?.length ?? 0} cards. The Judge is checking them…`
-        : shownPhase("scout") === "working"
+        : latestShown === "scout"
           ? "The Scout is searching the library…"
           : "The Translator is reading your question…";
   const crewSays: Record<(typeof CREW)[number], string> = {

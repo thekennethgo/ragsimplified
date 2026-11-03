@@ -1660,7 +1660,7 @@ test("a second look gives the Translator, Scout and Judge a round switch, opened
 test("the Judge's round 2 page shows who decided", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
-  expect(screen.getByText("Mercury Decide: 20% sure the sources were enough")).toBeInTheDocument();
+  expect(screen.getByText("Mercury Decide: 20% sure the cards were enough")).toBeInTheDocument();
   expect(screen.getByTestId("decide-meter-fill")).toHaveStyle({ width: "20%" });
   expect(screen.getByTestId("decide-meter-tick")).toHaveStyle({ left: "50%" });
   expect(screen.getByText("needs 50%")).toBeInTheDocument();

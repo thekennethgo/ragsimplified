@@ -460,7 +460,7 @@ export default function StepDetails({
                         <h3>Who decided</h3>
                         {look.enough !== null ? (
                           <>
-                            <p>Mercury Decide: {Math.round(look.enough * 100)}% sure the sources were enough</p>
+                            <p>Mercury Decide: {Math.round(look.enough * 100)}% sure the cards were enough</p>
                             <div className={styles.meter}>
                               <div className={styles.meterTrack}>
                                 <div
