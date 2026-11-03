@@ -1,35 +1,35 @@
 .root {
-  flex: 999 1 620px;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
 }
 
 .tabs {
-  margin-left: auto;
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 3px;
-  gap: 2px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--tab-soft);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 4px;
+  padding-left: 12px;
+  overflow-x: auto;
+  position: relative; /* so a tab's offsetLeft is measured from this row */
 }
 
 .tabs button {
   min-height: 40px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  font-weight: 600;
-  font-size: 14px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--c, var(--border-strong));
+  border-radius: 6px 6px 0 0;
+  background: var(--tab-soft);
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -42,8 +42,9 @@
 }
 
 .tabs button[aria-pressed="true"] {
-  background: var(--accent-dark);
-  color: #ffffff;
+  background: var(--panel);
+  border-bottom-color: var(--panel);
+  font-weight: 600;
 }
 
 .dot {
@@ -69,37 +70,27 @@
 }
 
 .body {
-  min-height: 320px;
-  max-height: 520px;
-  overflow-y: auto;
+  max-height: 70vh;
+  overflow: auto;
+  padding: 20px 22px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 8px;
+  box-shadow: 0 1px 3px rgba(47, 51, 55, 0.08);
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.answerTab {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+
+@media (min-width: 900px) {
+  .body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+  }
 }
 
-.answerCol {
-  flex: 999 1 340px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sources {
-  flex: 1 1 280px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sources h3,
 .block h3 {
   font-size: 14px;
   font-weight: 600;
@@ -110,36 +101,6 @@
   color: var(--muted);
 }
 
-.sources ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sources li {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: #ffffff;
-  border: 1px solid var(--border);
-}
-
-.cardHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.snippet {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-}
 
 .num {
   font:
@@ -434,19 +395,6 @@
   background: rgb(122, 82, 54);
 }
 
-.asked {
-  font-size: 14px;
-  color: var(--ink-soft);
-  margin: 0 0 8px;
-}
-
-.asked span {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
 
 .roundSwitch {
   display: inline-flex;
@@ -572,4 +520,61 @@
   font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
+}
+
+.headline {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 759px) {
+  .head {
+    margin-bottom: 8px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+    padding: 0;
+    overflow: visible;
+    gap: 6px;
+  }
+
+  .tabs button {
+    min-height: 44px;
+    flex: 1 1 auto;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .tabs button[aria-pressed="true"] {
+    background: var(--accent-dark);
+    color: var(--paper);
+    border-bottom-color: var(--accent-dark);
+  }
+
+  .body {
+    max-height: none;
+    overflow: visible;
+    padding: 14px;
+    border-radius: 12px;
+  }
+}
+
+.aside .mono {
+  margin-left: 0;
+}
+
+.aside .rule {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.aside li .empty {
+  display: inline;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  text-align: left;
 }

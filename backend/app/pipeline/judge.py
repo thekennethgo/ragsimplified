@@ -89,6 +89,33 @@ def _cap(ranked: list[Result], keep: int, per_document: int) -> list[Result]:
     return taken
 
 
+def _document_request(question: str, ranked: list[Result]) -> list[Result]:
+    """Scope a direct document-opening request to one unambiguous retrieved document.
+
+    Only accept a title, optionally preceded by a possessive owner. Ordinary questions and
+    ambiguous titles keep the usual evidence pool. Never treat a body mention as identity.
+    """
+    request = re.fullmatch(
+        r"(?:please\s+)?(?:show|open|display)(?:\s+me)?\s+(.+?)[.!?]*",
+        question.strip(),
+        re.IGNORECASE,
+    )
+    if not request:
+        return ranked
+    target = request[1].casefold().replace("’", "'")
+    matches = []
+    for result in ranked:
+        title = result.title.casefold().replace("’", "'").strip()
+        if not title:
+            continue
+        # "CV", "the CV", "Kenneth's CV" and the common typo "Kenneths CV".
+        pattern = rf"(?:(?:the|[\w]+(?:\s+[\w]+)*'?s)\s+)?{re.escape(title)}"
+        if re.fullmatch(pattern, target):
+            matches.append(result)
+    identities = {(r.source, r.document_id if r.source == "library" else r.title) for r in matches}
+    return matches if len(identities) == 1 else ranked
+
+
 def judge(
     question: str, candidates: list[Result], reranker: Reranker, keep: int = DEFAULT_K
 ) -> Judgement:
@@ -103,12 +130,21 @@ def judge(
     if not numbered:
         return Judgement([], [], False)
     try:
-        ranked = reranker.rerank(question, [r.text for r in numbered])
+        # Document requests need identity as well as content: a CV's body may never say "CV".
+        documents = [
+            f"Title: {r.title}\n" + (f"Heading: {r.heading}\n" if r.heading else "") + f"\n{r.text}"
+            for r in numbered
+        ]
+        ranked = reranker.rerank(question, documents)
     except Exception:
         shown = [replace(r, new_rank=r.old_rank) for r in numbered]
-        return Judgement(shown, _cap(shown, keep, MAX_PER_DOCUMENT), True)
+        return Judgement(
+            shown, _cap(_document_request(question, shown), keep, MAX_PER_DOCUMENT), True
+        )
     reordered = [
         replace(numbered[index], new_rank=new_rank, rerank_score=score)
         for new_rank, (index, score) in enumerate(ranked, start=1)
     ]
-    return Judgement(reordered, _cap(reordered, keep, MAX_PER_DOCUMENT), False)
+    return Judgement(
+        reordered, _cap(_document_request(question, reordered), keep, MAX_PER_DOCUMENT), False
+    )

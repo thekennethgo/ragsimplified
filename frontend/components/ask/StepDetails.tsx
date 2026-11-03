@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { useAbout } from "../../lib/about";
 import type {
@@ -15,7 +15,6 @@ import type {
 } from "../../lib/ask";
 import {
   askTranslatorCopy,
-  clerkCopy,
   judgeCopy,
   NOTHING_YET_ASK,
   scoutCopy,
@@ -23,48 +22,58 @@ import {
 } from "../../lib/characters";
 import { FOUND_BY_COLOR, keyOf, useMapPoints, type MapOverlay, type MapPoint } from "../../lib/map";
 import type { Phase } from "../../lib/sceneState";
-import type { ViewTarget } from "../../lib/viewer";
 import CharacterCard from "../characters/CharacterCard";
 import VectorMap from "../map/VectorMap";
-import { AnswerBubble } from "./AnswerBubble";
-import styles from "./AnswerPanel.module.css";
+import { showSelectedTab } from "../../lib/tabRow";
+import styles from "./StepDetails.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
-type TabId = "clerk" | "translator" | "scout" | "judge" | "storyteller" | "answer";
+export type TabId = "answer" | "translator" | "scout" | "judge" | "storyteller";
 
 const STEPS = [
-  { id: "clerk", name: "Clerk", part: "cl" },
   { id: "translator", name: "Translator", part: "tr" },
   { id: "scout", name: "Scout", part: "sc" },
   { id: "judge", name: "Judge", part: "jd" },
   { id: "storyteller", name: "Storyteller", part: "st" },
 ] as const;
 
-/** The steps that report their own phase; the Clerk's is worked out from them. */
+/** The steps, in the order the backend reports them. */
 const FOLLOWED = ["translator", "scout", "judge", "storyteller"] as const;
 
 const FILLER = new Set(["a","an","the","is","are","was","were","be","been","of","in","on","at","to","for","and","or","but","with","by","from","as","it","its","this","that","these","those","what","which","who","whom","whose","when","where","why","how","do","does","did","can","could","should","would","will","i","you","he","she","we","they","me","my","your","our","their","about","into","than","then","there","so","if","not","no","any","some"]);
 
-const where = (r: { title: string; heading: string | null; page: number | null }) =>
-  [r.title, r.heading, r.page !== null ? `page ${r.page}` : null].filter(Boolean).join(" · ");
+const where = (r: { title: string; heading: string | null; page: number | null }, part: string) =>
+  [r.title, r.heading, r.page !== null ? `page ${r.page}` : null, part].filter(Boolean).join(" · ");
+
+/** "part 3 of 12" for a card; the page builds it from the library and the visitor's texts. */
+export type PartOf = (r: {
+  source: "library" | "private";
+  document_id: number | null;
+  title: string;
+  position: number;
+}) => string;
 
 /** The tabs that get a second page when a second look happens. */
-const ROUND_TABS = ["clerk", "translator", "scout", "judge"] as const;
+const ROUND_TABS = ["translator", "scout", "judge"] as const;
 type RoundTab = (typeof ROUND_TABS)[number];
 
-/** Who decided whether the sources were enough, in one line. */
-function decidedLine(look: Look): string {
-  const pct = look.enough === null ? null : `${Math.round(look.enough * 100)}%`;
+/** Who decided whether the cards were enough, and why, in one line. */
+function decidedLine(look: Look, threshold: number, nothingThreshold: number): string {
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
   if (look.nothing && look.relevant !== null) {
-    return `Mercury Decide was only ${Math.round(look.relevant * 100)}% sure the sources say anything about this.`;
+    return `Mercury Decide was only ${pct(look.relevant)} sure the cards mention anything in your question (it stops below ${pct(nothingThreshold)}), so no answer was written.`;
   }
-  if (pct === null) return "The language model decided.";
+  if (look.enough === null) {
+    return look.query
+      ? "The language model read the cards, found something missing, and wrote a follow-up search."
+      : "The language model read the cards and found them enough.";
+  }
   if (look.decidedBy === "decider") {
-    return `Mercury Decide judged the sources enough (${pct} sure they were).`;
+    return `Mercury Decide was ${pct(look.enough)} sure the cards fully answer the question (it needs ${pct(threshold)}), so no second search was needed.`;
   }
   return look.query
-    ? `Mercury Decide judged the sources not enough (${pct} sure they were).`
-    : `Mercury Decide was only ${pct} sure, so the language model decided the sources were enough.`;
+    ? `Mercury Decide was only ${pct(look.enough)} sure the cards fully answer the question (it needs ${pct(threshold)}), so the language model wrote a follow-up search.`
+    : `Mercury Decide was only ${pct(look.enough)} sure (it needs ${pct(threshold)}), but the language model found nothing to search for, so the cards go as they are.`;
 }
 
 function RoundSwitch({ round, onChange }: { round: 1 | 2; onChange: (round: 1 | 2) => void }) {
@@ -90,9 +99,11 @@ function ScoutPage({
   overlay,
   points,
   error,
+  partOf,
   skipped = 0,
 }: {
   results: ScoutResult[];
+  partOf: PartOf;
   overlay: MapOverlay;
   points: MapPoint[] | null;
   error: boolean;
@@ -120,6 +131,9 @@ function ScoutPage({
         {skipped > 0 && <span className={styles.chipSkipped}>{skipped} already found, skipped</span>}
       </div>
       <VectorMap points={points} error={error} overlay={overlay} variant="compact" focus={focus} />
+      <p className={styles.empty}>
+        Each card's place in the meaning search and in the word search; cards high in both come first.
+      </p>
       <ol
         className={styles.scoutRows}
         style={{ gridTemplateRows: `repeat(${Math.ceil(results.length / 2)}, auto)` }}
@@ -142,8 +156,12 @@ function ScoutPage({
             >
               {r.rank}
             </span>
-            <span className={styles.name}>{where(r)}</span>
-            <span className={styles.mono}>{r.score.toFixed(3)}</span>
+            <span className={styles.name}>{where(r, partOf(r))}</span>
+            <span className={styles.mono} title={`merged score ${r.score.toFixed(3)}`}>
+              {[r.vector_rank && `meaning #${r.vector_rank}`, r.keyword_rank && `words #${r.keyword_rank}`]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </li>
         ))}
       </ol>
@@ -152,9 +170,27 @@ function ScoutPage({
 }
 
 /** The Judge's verdict on a list of candidates: the kept rows and the cards set aside. */
-function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title: string; none: string }) {
+function JudgeVerdict({
+  results,
+  title,
+  none,
+  rule,
+  maxPerDocument,
+  partOf,
+  offset = 0,
+}: {
+  partOf: PartOf;
+  results: JudgeResult[];
+  title: string;
+  none: string;
+  rule: string;
+  maxPerDocument: string;
+  offset?: number;
+}) {
   const kept = results.filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const setAside = results.filter((r) => !r.kept);
+  const worstKept = Math.max(...kept.map((r) => r.new_rank));
+  const score = (r: JudgeResult) => (r.rerank_score === null ? "" : `score ${r.rerank_score.toFixed(2)}`);
   return (
     <div className={styles.judge}>
       <div className={styles.block}>
@@ -165,9 +201,11 @@ function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title:
           <ol className={styles.rows}>
             {kept.map((r) => (
               <li key={r.n}>
-                <span className={styles.num}>{r.n}</span>
-                <span className={styles.name}>{where(r)}</span>
-                <span className={styles.mono}>was #{r.old_rank}</span>
+                <span className={styles.num}>{(r.n ?? 0) + offset}</span>
+                <span className={styles.name}>{where(r, partOf(r))}</span>
+                <span className={styles.mono}>
+                  {r.rerank_score === null ? "" : `${score(r)} · `}was #{r.old_rank}
+                </span>
               </li>
             ))}
           </ol>
@@ -175,9 +213,16 @@ function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title:
       </div>
       <div className={`${styles.block} ${styles.aside}`}>
         <h3>Set aside: {setAside.length} cards</h3>
+        <p className={styles.rule}>{rule}</p>
         <ul>
           {setAside.map((r) => (
-            <li key={`${r.old_rank}`}>{where(r)}</li>
+            <li key={`${r.old_rank}`}>
+              {where(r, partOf(r))}
+              {r.rerank_score !== null && <span className={styles.mono}> {score(r)}</span>}
+              {r.new_rank < worstKept && (
+                <span className={styles.empty}> {maxPerDocument} already from this document</span>
+              )}
+            </li>
           ))}
         </ul>
       </div>
@@ -185,43 +230,56 @@ function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title:
   );
 }
 
-/** The Answer panel: the answer with its sources, and one tab per step showing what it really did. */
-export default function AnswerPanel({
+/** "How it got there": one tab per step showing what it really did. */
+export default function StepDetails({
+  tab,
+  onTab,
   states,
+  played,
   answer,
+  revealed,
+  answerText,
   citations,
   words,
   scout,
   look = null,
+  lookComing,
   translator2 = null,
   scout2 = null,
   judge2 = null,
   round2 = {},
   judge,
-  askedQuestion,
-  targetFor,
-  onOpenInViewer,
   follow,
   overlay,
   privateSent,
   sentPrompt,
+  partOf,
   run = 0,
 }: {
+  partOf: PartOf;
+  /** The open tab; the page owns it so it can open one from elsewhere. */
+  tab: TabId;
+  onTab: (tab: TabId) => void;
   states: Record<string, Phase>;
-  answer: string;
+  /** What the office has played so far; the tab dots, chips and following use it, so the panel never runs ahead of the room. */
+  played: Record<string, Phase>;
+  /** The Answer tab's body: the page's answer card. */
+  answer: ReactNode;
+  /** True once the answer is shown to the visitor. */
+  revealed: boolean;
+  answerText: string;
   citations: Citation[];
   words: Word[];
   scout: ScoutResult[] | null;
   /** The second look: the check's outcome, each character's round 2 page, and its progress. */
   look?: Look | null;
+  /** Round 1 asked for a second look that has not played yet. */
+  lookComing: boolean;
   translator2?: TranslatorRound2 | null;
   scout2?: ScoutRound2 | null;
   judge2?: JudgeRound2 | null;
   round2?: Record<string, Phase>;
   judge: JudgeResult[] | null;
-  askedQuestion: string;
-  targetFor: (citation: Citation) => ViewTarget | null;
-  onOpenInViewer: (target: ViewTarget) => void;
   /** Jump to each step as its results arrive (off when the animations are off). */
   follow: boolean;
   /** The question and the Scout's candidates, drawn on the Scout tab's map. */
@@ -233,23 +291,24 @@ export default function AnswerPanel({
   /** Changes with every new question, which hands the panel back to the steps. */
   run?: number;
 }) {
-  const [tab, setTab] = useState<TabId>("answer");
   // Once the visitor picks a tab, the panel stops switching on its own until the next run.
   // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
   const touched = useRef(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => showSelectedTab(tabsRef.current), [tab]);
   // Which round each tab shows; a tab with a second page opens on it when round 2 starts.
   const [rounds, setRounds] = useState<Record<string, 1 | 2>>({});
   const { points, error } = useMapPoints(tab === "scout");
   const about = useAbout();
   const threshold = about?.second_look.threshold ?? 0.5;
+  const nothingThreshold = about?.second_look.nothing_threshold ?? 0.1;
   const started: Record<RoundTab, boolean> = {
-    clerk: Boolean(look?.query),
     translator: round2.translator !== undefined,
     scout: round2.scout !== undefined,
     judge: round2.judge !== undefined,
   };
   const startedKey = ROUND_TABS.map((id) => (started[id] ? "1" : "0")).join("");
-  const wasStarted = useRef("0000");
+  const wasStarted = useRef("000");
   useEffect(() => {
     const changed: Record<string, 1 | 2> = {};
     ROUND_TABS.forEach((id, i) => {
@@ -261,39 +320,38 @@ export default function AnswerPanel({
   const hasSecond = (id: string): id is RoundTab =>
     (ROUND_TABS as readonly string[]).includes(id) && started[id as RoundTab];
   const view: 1 | 2 = hasSecond(tab) ? (rounds[tab] ?? 2) : 1;
-  const phases = Object.values(states);
-  const phase = (id: string): Phase =>
-    id === "clerk"
-      ? phases.includes("error")
-        ? "error"
-        : states.storyteller === "done"
-          ? "done"
-          : phases.length > 0
-            ? "working"
-            : "waiting"
-      : (states[id] ?? "waiting");
-  // Follow the newest step whose results are in, and show the answer when it first appears.
-  const latest = [...FOLLOWED].reverse().find((id) => phase(id) === "done");
+  const phase = (id: string): Phase => states[id] ?? "waiting";
+  // Follow the newest step whose results are in; once the answer is there, stay where it is.
+  const playedPhase = (id: string): Phase => played[id] ?? "waiting";
+  // The last step still working, else the newest one done; so a second look never pulls the panel back.
+  const lastWhere = (p: Phase) => [...FOLLOWED].reverse().find((id) => playedPhase(id) === p);
+  const latest = lastWhere("working") ?? lastWhere("done");
+  // The tab this panel last chose; any other change to `tab` came from the page (the step strip) and counts as a pick.
+  const chosen = useRef(tab);
   useEffect(() => {
     touched.current = false;
+    chosen.current = tab;
   }, [run]);
   useEffect(() => {
-    if (touched.current) return;
-    if (follow && latest) setTab(latest);
-  }, [follow, latest]);
-  const hasAnswer = Boolean(answer);
+    if (tab !== chosen.current) touched.current = true;
+  }, [tab]);
   useEffect(() => {
-    if (touched.current) return;
-    if (hasAnswer) setTab("answer");
-  }, [hasAnswer]);
+    if (touched.current || !follow) return;
+    if (revealed) {
+      chosen.current = "answer";
+      onTab("answer");
+    } else if (latest) {
+      chosen.current = latest;
+      onTab(latest);
+    }
+  }, [follow, latest, revealed, onTab]);
   const step = STEPS.find((s) => s.id === tab);
   const copy = {
-    clerk: clerkCopy(about),
     translator: askTranslatorCopy(about),
     scout: scoutCopy(about),
     judge: judgeCopy(about),
     storyteller: storytellerCopy(about),
-  }[tab === "answer" ? "clerk" : tab];
+  }[tab === "answer" ? "translator" : tab];
   const kept = (judge ?? []).filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const bestByWord = new Map<string, { text: string; influence: number }>();
   for (const w of words) {
@@ -308,7 +366,7 @@ export default function AnswerPanel({
     .slice(0, 5);
   // Round 1 is finished once its results are in, even while the second look runs.
   const done1 =
-    tab === "judge" ? judge !== null : phase(tab) === "done" || (hasSecond(tab) && tab !== "clerk");
+    tab === "judge" ? judge !== null : phase(tab) === "done" || hasSecond(tab);
   const overlay1: MapOverlay = { question: overlay?.question, candidates: overlay?.candidates };
   const overlay2: MapOverlay = {
     question: overlay?.question,
@@ -317,25 +375,24 @@ export default function AnswerPanel({
   };
 
   return (
-    <div className={`panel ${styles.root}`} role="group" aria-labelledby="ans-h">
+    <section className={styles.root} aria-labelledby="steps-h">
       <div className={styles.head}>
-        <h2 id="ans-h">Answer</h2>
-        <div
-          role="group"
-          aria-label="The characters and the answer"
-          className={styles.tabs}
-        >
+        <h2 id="steps-h" className="visually-hidden">
+          Answer and how it got there
+        </h2>
+        <div ref={tabsRef} role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button
               key={s.id}
               type="button"
               aria-pressed={tab === s.id}
+              style={{ "--c": `var(--${s.id})` } as CSSProperties}
               onClick={() => {
                 touched.current = true;
-                setTab(s.id);
+                onTab(s.id);
               }}
             >
-              <span className={`${styles.dot} ${styles[phase(s.id)]}`} title={phase(s.id)} />
+              <span className={`${styles.dot} ${styles[playedPhase(s.id)]}`} title={playedPhase(s.id)} />
               {s.name}
             </button>
           ))}
@@ -344,7 +401,7 @@ export default function AnswerPanel({
             aria-pressed={tab === "answer"}
             onClick={() => {
               touched.current = true;
-              setTab("answer");
+              onTab("answer");
             }}
           >
             Answer
@@ -353,58 +410,7 @@ export default function AnswerPanel({
       </div>
 
       <div className={styles.body}>
-        {tab === "answer" && (
-          <div className={styles.answerTab}>
-            <div className={styles.answerCol}>
-              {answer ? (
-                <>
-                  <p className={styles.asked}>
-                    <span>You asked</span>
-                    {askedQuestion}
-                  </p>
-                  <AnswerBubble
-                    answer={answer}
-                    citations={citations}
-                    targetFor={targetFor}
-                    onOpenInViewer={onOpenInViewer}
-                  />
-                </>
-              ) : phase("translator") !== "waiting" ? (
-                <p className={styles.empty}>Working on it. Open a step above to watch.</p>
-              ) : (
-                <p className={styles.empty}>Your answer shows up here, with its sources.</p>
-              )}
-            </div>
-            <section aria-labelledby="src-h" className={styles.sources}>
-              <h3 id="src-h">Sources</h3>
-              {citations.length > 0 ? (
-                <ol>
-                  {citations.map((c) => {
-                    const t = targetFor(c);
-                    return (
-                      <li key={c.n}>
-                        <div className={styles.cardHead}>
-                          <span className={styles.num}>{c.n}</span>
-                          <span className={styles.name}>{c.title}</span>
-                          <span className={styles.mono}>card {c.position + 1}</span>
-                        </div>
-                        <p className={styles.snippet}>{c.snippet}</p>
-                        {t && (
-                          <button type="button" onClick={() => onOpenInViewer(t)}>
-                            Open in viewer
-                          </button>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              ) : (
-                <p className={styles.empty}>{answer ? "Nothing was cited." : "No sources yet."}</p>
-              )}
-            </section>
-          </div>
-        )}
-
+        {tab === "answer" && answer}
         {step && (
           <div className={styles.step}>
             <CharacterCard
@@ -412,7 +418,7 @@ export default function AnswerPanel({
               room="/office/ask-room.svg"
               part={step.part}
               role={copy.role}
-              phase={phase(tab)}
+              phase={playedPhase(tab)}
               plain={copy.plain}
               tech={copy.tech}
               how={copy.how}
@@ -444,17 +450,17 @@ export default function AnswerPanel({
                     />
                   )}
 
-                  {view === 2 && tab === "clerk" && look?.query && (
+                  {view === 2 && round2[tab] !== "done" && (
+                    <p className={styles.empty}>Working on it…</p>
+                  )}
+
+                  {view === 2 && tab === "judge" && look?.query && (
                     <>
-                      <div className={styles.askedCard}>
-                        <span>On the board</span>
-                        <p>{look.query}</p>
-                      </div>
                       <div className={styles.block}>
                         <h3>Who decided</h3>
                         {look.enough !== null ? (
                           <>
-                            <p>Mercury Decide: {Math.round(look.enough * 100)}% sure the sources were enough</p>
+                            <p>Mercury Decide: {Math.round(look.enough * 100)}% sure the cards were enough</p>
                             <div className={styles.meter}>
                               <div className={styles.meterTrack}>
                                 <div
@@ -471,29 +477,16 @@ export default function AnswerPanel({
                                 </div>
                               </div>
                             </div>
-                            {look.decidedBy === "llm" && !look.query && (
-                              <p>The language model decided the sources were enough.</p>
-                            )}
                           </>
-                        ) : (
-                          <>
-                            <div className={styles.chips}>
-                              <span className={styles.chipSoft}>Decided by the language model</span>
-                            </div>
-                            <p>The language model decided.</p>
-                          </>
-                        )}
+                        ) : null}
+                        <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                       </div>
                     </>
                   )}
 
-                  {view === 2 && tab !== "clerk" && round2[tab] !== "done" && (
-                    <p className={styles.empty}>Working on it…</p>
-                  )}
-
                   {view === 2 && tab === "translator" && round2.translator === "done" && (
                     <div className={styles.block}>
-                      <p>Fingerprinted the Clerk's new query: “{translator2?.query}”</p>
+                      <p className={styles.headline}>New search: “{translator2?.query}”</p>
                       <p className={styles.empty}>
                         Word weights are only worked out for your own question (see Initial).
                       </p>
@@ -502,6 +495,7 @@ export default function AnswerPanel({
 
                   {view === 2 && tab === "scout" && round2.scout === "done" && scout2 && (
                     <ScoutPage
+                      partOf={partOf}
                       results={scout2.results}
                       overlay={overlay2}
                       points={points}
@@ -513,9 +507,13 @@ export default function AnswerPanel({
                   {view === 2 && tab === "judge" && round2.judge === "done" && judge2 && (
                     <>
                       <JudgeVerdict
+                        partOf={partOf}
                         results={judge2.results}
                         title={`New cards, ranked against “${judge2.query}”`}
                         none="None of the new cards were kept."
+                        rule={about ? `Only the best ${about.second_look.slots} new cards are added.` : "…"}
+                        maxPerDocument={about ? String(about.judge.max_per_document) : "…"}
+                        offset={judge2.finalCards.filter((c) => c.round === 1).length}
                       />
                       {judge2.check?.nothing && (
                         <div className={styles.banner}>
@@ -540,7 +538,7 @@ export default function AnswerPanel({
                           {judge2.finalCards.map((c) => (
                             <li key={c.n}>
                               <span className={styles.num}>{c.n}</span>
-                              <span className={styles.name}>{where(c)}</span>
+                              <span className={styles.name}>{where(c, partOf(c))}</span>
                               <span className={`${styles.mono} ${styles.roundTag}`}>
                                 {c.round === 1 ? "Initial" : "Second look"}
                               </span>
@@ -553,28 +551,22 @@ export default function AnswerPanel({
 
                   {view === 1 && (
                     <>
-                      {tab === "clerk" && askedQuestion ? (
-                        <>
-                          <div className={styles.askedCard}>
-                            <span>You asked</span>
-                            <p>{askedQuestion}</p>
-                          </div>
-                          <div className={styles.chips}>
-                            <span className={styles.chipSoft}>
-                              Cards from your folder searched: {privateSent > 0 ? privateSent : "none"}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        !done1 && (
-                          <p className={styles.empty}>
-                            {phase(tab) === "error"
-                              ? "This step did not finish."
-                              : phase(tab) === "working"
-                                ? "Working on it…"
-                                : NOTHING_YET_ASK}
-                          </p>
-                        )
+                      {tab === "scout" && (
+                        <div className={styles.chips}>
+                          <span className={styles.chipSoft}>
+                            Cards from your folder searched: {privateSent > 0 ? privateSent : "none"}
+                          </span>
+                        </div>
+                      )}
+
+                      {!done1 && (
+                        <p className={styles.empty}>
+                          {phase(tab) === "error"
+                            ? "This step did not finish."
+                            : phase(tab) === "working"
+                              ? "Working on it…"
+                              : NOTHING_YET_ASK}
+                        </p>
                       )}
 
                       {done1 && tab === "translator" && (
@@ -610,6 +602,7 @@ export default function AnswerPanel({
 
                       {done1 && tab === "scout" && (
                         <ScoutPage
+                      partOf={partOf}
                           results={scout ?? []}
                           overlay={overlay1}
                           points={points}
@@ -626,7 +619,7 @@ export default function AnswerPanel({
                                   Not enough to answer yet. Second look: searching for “{look.query}”
                                 </strong>
                               </p>
-                              <p>{decidedLine(look)}</p>
+                              <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                               {round2.judge === "done" ? (
                                 <button
                                   type="button"
@@ -644,29 +637,36 @@ export default function AnswerPanel({
                               <p>
                                 <strong>Nothing on file about this, so no answer was written.</strong>
                               </p>
-                              <p>{decidedLine(look)}</p>
+                              <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                             </div>
                           )}
                           {kept.length > 0 &&
                             !look?.query &&
                             !look?.nothing &&
-                            (look !== null || phase("judge") !== "working") && (
+                            (look !== null || !lookComing) && (
                               <div className={styles.banner}>
                                 <p>
                                   <strong>Enough to answer. These cards go to the Storyteller.</strong>
                                 </p>
-                                {look && <p>{decidedLine(look)}</p>}
+                                {look && <p>{decidedLine(look, threshold, nothingThreshold)}</p>}
                               </div>
                             )}
                           <JudgeVerdict
+                        partOf={partOf}
                             results={judge ?? []}
                             title={`Kept: the best ${kept.length} of ${judge?.length ?? 0}`}
                             none="None of the cards answered the question, so the Judge kept nothing."
+                            rule={
+                              about
+                                ? `Only the best ${about.judge.keep} are kept, at most ${about.judge.max_per_document} from one document.`
+                                : "…"
+                            }
+                            maxPerDocument={about ? String(about.judge.max_per_document) : "…"}
                           />
                         </>
                       )}
 
-                      {phase(tab) === "done" && tab === "storyteller" && answer && (
+                      {phase(tab) === "done" && tab === "storyteller" && answerText && (
                         <ol className={styles.rows}>
                           {citations.length === 0 ? (
                             <li className={styles.empty}>Nothing was cited.</li>
@@ -675,7 +675,7 @@ export default function AnswerPanel({
                               <li key={c.n}>
                                 <span className={styles.num}>{c.n}</span>
                                 <span className={styles.name}>{c.title}</span>
-                                <span className={styles.mono}>card {c.position + 1}</span>
+                                <span className={styles.mono}>{partOf(c)}</span>
                               </li>
                             ))
                           )}
@@ -689,6 +689,6 @@ export default function AnswerPanel({
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

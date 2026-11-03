@@ -36,7 +36,7 @@ export default function CharacterCard({
   plain: string;
   thisRun: ReactNode;
   tech: string[];
-  how: string;
+  how: { intro: string; points: string[] };
   settings: [string, string][];
   extra?: ReactNode;
 }) {
@@ -60,7 +60,12 @@ export default function CharacterCard({
       <details className={styles.hood}>
         <summary>Under the hood</summary>
         <div className={styles.hoodBody}>
-          <p>{how}</p>
+          <p>{how.intro}</p>
+          <ul className={styles.points}>
+            {how.points.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
           <ul className={styles.tech}>
             {tech.map((t) => (
               <li key={t}>{t}</li>

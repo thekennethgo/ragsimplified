@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { useAbout } from "../../lib/about";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../../lib/characters";
 import type { Phase } from "../../lib/sceneState";
 import CharacterCard from "../characters/CharacterCard";
+import { showSelectedTab } from "../../lib/tabRow";
 import styles from "./WhatHappened.module.css";
 
 export type ChunkDetail = {
@@ -34,20 +35,31 @@ export default function WhatHappened({
   states,
   chunks,
   vectors,
+  envelope,
   run = 0,
 }: {
   states: Record<string, Phase>;
   chunks: ChunkDetail[] | null;
   vectors: number[][] | null;
+  /** The upload form, shown in the first tab ("Your document"). */
+  envelope: ReactNode;
   /** Changes with every new upload, which hands the panel back to the steps. */
   run?: number;
 }) {
-  const [step, setStep] = useState<StepId>("chopper");
+  const [step, setStep] = useState<StepId | "doc">("doc");
   // Once the visitor picks a tab, the panel stops following the steps until the next upload.
   // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
   const touched = useRef(false);
+  const prevRun = useRef(run);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => showSelectedTab(tabsRef.current), [step]);
   useEffect(() => {
     touched.current = false;
+    // Sending moves the panel from the form to the steps.
+    if (run !== prevRun.current) {
+      prevRun.current = run;
+      setStep("chopper");
+    }
   }, [run]);
   // Show a step's results as soon as they arrive.
   const latest = [...STEPS].reverse().find((s) => states[s.id] === "done")?.id;
@@ -56,12 +68,13 @@ export default function WhatHappened({
     if (latest) setStep(latest);
   }, [latest]);
   const about = useAbout();
+  const current: StepId = step === "doc" ? "chopper" : step;
   const copy = {
     chopper: chopperCopy(about),
     translator: uploadTranslatorCopy(about),
     archivist: archivistCopy(),
-  }[step];
-  const phase = states[step] ?? "waiting";
+  }[current];
+  const phase = states[current] ?? "waiting";
   const ready = phase === "done";
 
   // Where each card starts and ends in the text, from the real lengths and overlaps.
@@ -73,32 +86,53 @@ export default function WhatHappened({
   const total = cards.length ? cards[cards.length - 1].to : 0;
 
   return (
-    <section className={`panel ${styles.panel}`}>
-      <details open className={styles.details}>
-        <summary className={styles.summary}>
-          <h2>Meet the team</h2>
-        </summary>
-        <div className={styles.inner}>
-          <div role="group" aria-label="The characters that filed your text" className={styles.tabs}>
-            {STEPS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                aria-pressed={step === s.id}
-                onClick={() => {
-                  touched.current = true;
-                  setStep(s.id);
-                }}
-              >
-                <span
-                  className={`${styles.dot} ${styles[states[s.id] ?? "waiting"]}`}
-                  title={states[s.id] ?? "waiting"}
-                />
-                {s.name}
-              </button>
-            ))}
-          </div>
+    <section className={styles.root} aria-labelledby="team-h">
+      <div className={styles.head}>
+        <h2 id="team-h" className="visually-hidden">
+          Meet the team
+        </h2>
+        <div
+          ref={tabsRef}
+          role="group"
+          aria-label="The characters that filed your text"
+          className={styles.tabs}
+        >
+          <button
+            type="button"
+            aria-pressed={step === "doc"}
+            onClick={() => {
+              touched.current = true;
+              setStep("doc");
+            }}
+          >
+            Your document
+          </button>
+          {STEPS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              aria-pressed={step === s.id}
+              style={{ "--c": `var(--${s.id})` } as CSSProperties}
+              onClick={() => {
+                touched.current = true;
+                setStep(s.id);
+              }}
+            >
+              <span
+                className={`${styles.dot} ${styles[states[s.id] ?? "waiting"]}`}
+                title={states[s.id] ?? "waiting"}
+              />
+              {s.name}
+            </button>
+          ))}
+        </div>
+      </div>
           <div className={styles.body}>
+            {/* Kept mounted so a half-typed text survives a trip to the other tabs. */}
+            <div hidden={step !== "doc"} className={styles.envelope}>
+              {envelope}
+            </div>
+            {step !== "doc" && (
             <CharacterCard
               name={STEPS.find((s) => s.id === step)!.name}
               room="/office/upload-room.svg"
@@ -205,9 +239,8 @@ export default function WhatHappened({
                 </>
               }
             />
+            )}
           </div>
-        </div>
-      </details>
     </section>
   );
 }

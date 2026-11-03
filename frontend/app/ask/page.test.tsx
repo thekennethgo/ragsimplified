@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -24,7 +25,7 @@ const ABOUT = {
   judge: { keep: 5, max_per_document: 2 },
   second_look: {
     enabled: true,
-    decider: "inception/mercury-decide:free",
+    decider: "inception/mercury-decide",
     threshold: 0.5,
     max_cards: 7,
     slots: 2,
@@ -35,8 +36,18 @@ const ABOUT = {
 
 const emitted = vi.hoisted(() => [] as { name: string; data?: unknown }[]);
 const search = vi.hoisted(() => ({ params: new URLSearchParams() }));
+// When `hold` is set no scene ever ends: the office is still playing when the stream is over.
 // When set, a second_look_rewrite or second_look_nothing scene never reaches its end ("in progress").
-const mid = vi.hoisted(() => ({ rewrite: false, nothing: false }));
+// When `gate` is set the storyteller_start scene never starts by itself: `release` starts it.
+const mid = vi.hoisted(() => ({
+  rewrite: false,
+  nothing: false,
+  hold: false,
+  gate: false,
+  gateLook: false,
+  releaseLook: () => {},
+  release: () => {},
+}));
 vi.mock("next/navigation", () => ({ useSearchParams: () => search.params }));
 vi.mock("../../components/office/OfficeRoom", () => ({ default: () => null }));
 vi.mock("../../lib/office/useFollow", () => ({
@@ -51,11 +62,14 @@ vi.mock("../../lib/office/useSceneQueue", () => {
       hooks?: { onStart?: () => void; onEnd?: () => void },
     ) => {
       emitted.push(event);
-      hooks?.onStart?.();
+      if (mid.gateLook && /^(second_look_rewrite|second_look_nothing|judge_handover)$/.test(event.name))
+        mid.releaseLook = () => hooks?.onStart?.();
+      else if (mid.gate && event.name === "storyteller_start") mid.release = () => hooks?.onStart?.();
+      else hooks?.onStart?.();
       const playing =
         (mid.rewrite && event.name === "second_look_rewrite") ||
         (mid.nothing && event.name === "second_look_nothing");
-      if (!playing) hooks?.onEnd?.();
+      if (!playing && !mid.hold) hooks?.onEnd?.();
     },
     clear: () => undefined,
     skipAll: () => undefined,
@@ -70,6 +84,11 @@ beforeEach(() => {
   emitted.length = 0;
   mid.rewrite = false;
   mid.nothing = false;
+  mid.hold = false;
+  mid.gate = false;
+  mid.gateLook = false;
+  mid.releaseLook = () => {};
+  mid.release = () => {};
   search.params = new URLSearchParams();
 });
 
@@ -364,15 +383,12 @@ function stubWithDocument(events: object[]) {
   );
 }
 
-test("Open in viewer selects the File cabinet's Viewer tab and shows the document", async () => {
+test("opening a citation shows the passage in the library viewer and scrolls to it", async () => {
   const scroll = vi.fn();
   Element.prototype.scrollIntoView = scroll;
   stubWithDocument(EVENTS);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   const cabinet = screen.getByRole("region", { name: "File cabinet" });
-  expect(
-    within(cabinet).getByRole("button", { name: "Viewer" }),
-  ).toBeDisabled();
   ask("When was Apple founded?");
   fireEvent.click(await screen.findByRole("button", { name: "Source 1" }));
   fireEvent.click(
@@ -380,15 +396,21 @@ test("Open in viewer selects the File cabinet's Viewer tab and shows the documen
       name: "Open in viewer",
     }),
   );
-
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(await screen.findByText("Full founding text.")).toBeInTheDocument();
-  expect(
-    within(cabinet).getByRole("button", { name: "Viewer" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  expect(scroll).toHaveBeenCalled();
-  // the Answer panel has no Viewer tab of its own
-  expect(screen.getAllByRole("button", { name: "Viewer" })).toHaveLength(1);
+  expect(within(cabinet).getByRole("button", { name: "Viewer" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("group", { name: "Answer card" })).not.toHaveTextContent("Full founding text.");
+  expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ block: "start" }));
+});
+
+test("a source's Open button puts the passage in the library viewer", async () => {
+  Element.prototype.scrollIntoView = vi.fn();
+  stubWithDocument(EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  fireEvent.click(await screen.findByRole("button", { name: "Open source 1" }));
+  expect(await screen.findByText("Full founding text.")).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: "Answer card" })).not.toHaveTextContent("Full founding text.");
 });
 
 test("on the Ask page a cabinet title opens the viewer instead of a page", async () => {
@@ -690,21 +712,19 @@ test("a failed step shows the running step as an error", async () => {
     ),
   ).toBeInTheDocument();
   expect(names()).toEqual([
-    "clerk_away",
-    "clerk_start",
+    "question_start",
     "translator_start",
     "error",
   ]);
 });
 
-test("a good question plays the Clerk, the crew in order, then the Clerk with the answer", async () => {
+test("a good question puts the question on the board, then plays the four crew in order", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   expect(emitted).toEqual([
-    { name: "clerk_away" },
-    { name: "clerk_start" },
+    { name: "question_start" },
     { name: "translator_start" },
     { name: "translator_done" },
     { name: "scout_start" },
@@ -713,12 +733,10 @@ test("a good question plays the Clerk, the crew in order, then the Clerk with th
     { name: "judge_done", data: { nothing: false } },
     { name: "storyteller_start" },
     { name: "storyteller_done" },
-    { name: "clerk_done" },
-    { name: "clerk_back" },
   ]);
 });
 
-test("when the Judge keeps nothing the Judge tells the Clerk and the Clerk shrugs", async () => {
+test("when the Judge keeps nothing the board says so and the last scene still ends the run", async () => {
   stubAsk([
     { step: "scout", status: "start" },
     { step: "scout", status: "done", data: { results: [] } },
@@ -759,15 +777,14 @@ test("when the Judge keeps nothing the Judge tells the Clerk and the Clerk shrug
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("Capital of Peru?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   expect(emitted).toContainEqual({
     name: "judge_done",
     data: { nothing: true },
   });
-  expect(names().slice(-2)).toEqual(["clerk_done", "clerk_shrug"]);
-  expect(names()).not.toContain("clerk_back");
+  expect(names().slice(-1)).toEqual(["storyteller_done"]);
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
 });
 
@@ -793,9 +810,6 @@ test("only the working crew member has a speech bubble", async () => {
     within(bubble).getByText("Turning your question into numbers…"),
   ).toBeInTheDocument();
   expect(within(bubble).queryByText("Working")).toBeNull();
-  expect(
-    screen.getByRole("img", { name: "The Clerk is waiting for a reply" }),
-  ).toBeInTheDocument();
 
   push({ step: "translator", status: "done", data: { words: [] } });
   push({ step: "scout", status: "start" });
@@ -862,16 +876,113 @@ test("with the animations off the streamed answer is visible", async () => {
   }
 });
 
-test("with the animations on the streamed answer waits for the Clerk", async () => {
+test("with animations on the answer waits for the Storyteller's scene to start", async () => {
+  mid.gate = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
+  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  const card = screen.getByRole("group", { name: "Answer card" });
+  expect(card).not.toHaveTextContent("Apple was founded in 1976");
+  expect(screen.queryByRole("button", { name: "Source 1" })).toBeNull();
+  act(() => mid.release());
+  expect(card).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
+  expect(screen.getByRole("button", { name: "Source 1" })).toBeInTheDocument();
+});
+
+test("with animations on the answer appears only when the Storyteller's scene starts, with no timer", async () => {
+  mid.gate = true;
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    stubAsk();
+    render(<AskPage />, { wrapper: PrivateTextsProvider });
+    ask("When was Apple founded?");
+    // waitFor can't run with a faked setTimeout, so let the stream finish by advancing a little.
+    await act(() => vi.advanceTimersByTimeAsync(100));
+    expect(names()).toContain("storyteller_done");
+    fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+    const card = screen.getByRole("group", { name: "Answer card" });
+    await act(() => vi.advanceTimersByTimeAsync(10000));
+    expect(card).not.toHaveTextContent("Apple was founded in 1976");
+    act(() => mid.release());
+    expect(card).toHaveTextContent("Apple was founded in 1976 [1]. Also.");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("the progress line shows the Scout's count while the Judge's scene plays", async () => {
+  mid.hold = true;
+  mid.gate = true;
   stubAsk([
-    { step: "storyteller", status: "start" },
-    { step: "answer", delta: "Streamed words that must wait." },
+    { step: "translator", status: "start" },
+    { step: "translator", status: "done", data: { words: [] } },
+    { step: "scout", status: "start" },
+    { step: "scout", status: "done", data: { results: (EVENTS[3].data as { results: object[] }).results } },
+    { step: "judge", status: "start" },
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
-  await waitFor(() => expect(names()).toContain("storyteller_start"));
-  await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(screen.queryByText(/Streamed words that must wait/)).toBeNull();
+  // in the caption under the room and in the answer card
+  expect(
+    await screen.findAllByText("The Scout found 3 cards. The Judge is checking them…"),
+  ).toHaveLength(2);
+});
+
+test("turning the animations off mid-run keeps the answer that has arrived", async () => {
+  mid.hold = true;
+  stubAsk([
+    { step: "storyteller", status: "start" },
+    { step: "answer", delta: "Streamed words that stay." },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  expect(await screen.findByText(/Streamed words that stay/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("switch", { name: /Animations/ }));
+  expect(screen.getByText(/Streamed words that stay/)).toBeInTheDocument();
+  localStorage.removeItem("ragsimplified.animations");
+});
+
+test("the Ask button is enabled once the stream ends while scenes are still playing", async () => {
+  mid.hold = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  fireEvent.change(screen.getByLabelText("Your question"), {
+    target: { value: "Another question?" },
+  });
+  expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled();
+});
+
+test("while scenes are still playing the Ask button is enabled ", async () => {
+  mid.hold = true;
+  stubAsk([
+    { step: "translator", status: "start" },
+    { step: "translator", status: "done", data: { words: [] } },
+  ]);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("translator_done"));
+  fireEvent.change(screen.getByLabelText("Your question"), {
+    target: { value: "Another question?" },
+  });
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Ask" })).toBeEnabled(),
+  );
+});
+
+test("with the animations on the answer is in the Answer tab, selected when it is revealed", async () => {
+  mid.hold = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("region", { name: "Answer" })).toHaveTextContent(
+    "Apple was founded in 1976",
+  );
 });
 
 test("each tab opens when its results arrive, and a starting step does not steal focus", async () => {
@@ -893,7 +1004,7 @@ test("each tab opens when its results arrive, and a starting step does not steal
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Translator" })).toBeEnabled(),
   );
-  // working, not done yet: still on Answer
+  // working, not done yet: still on the Answer tab
   expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -922,7 +1033,7 @@ test("each tab opens when its results arrive, and a starting step does not steal
   close();
 });
 
-test("with the animations off the Answer tab stays selected throughout", async () => {
+test("with the animations off the Translator tab stays selected throughout", async () => {
   localStorage.setItem("ragsimplified.animations", "off");
   Element.prototype.scrollIntoView = vi.fn();
   try {
@@ -940,6 +1051,10 @@ test("with the animations off the Answer tab stays selected throughout", async (
       "aria-pressed",
       "true",
     );
+    expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(screen.getByRole("button", { name: "Judge" })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -947,6 +1062,45 @@ test("with the animations off the Answer tab stays selected throughout", async (
   } finally {
     localStorage.removeItem("ragsimplified.animations");
   }
+});
+
+test("the answer is in the Answer tab, and a new run starts on it", async () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await screen.findByRole("button", { name: "Source 1" });
+  const panel = screen.getByRole("region", { name: "Answer and how it got there" });
+  expect(within(panel).getByRole("group", { name: "Answer card" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(screen.queryByRole("group", { name: "Answer card" })).toBeNull();
+  ask("When was Apple founded again?");
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a tab pick during the run is kept when the answer is revealed", async () => {
+  mid.gate = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  act(() => mid.release());
+  await screen.findByRole("button", { name: "Source 1" }).catch(() => undefined);
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Answer" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("the panel does not run ahead of the office: no Storyteller tab or Done dot before its scene plays", async () => {
+  mid.hold = true;
+  mid.gate = true;
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
+  const storyteller = screen.getByRole("button", { name: "Storyteller" });
+  expect(storyteller).toHaveAttribute("aria-pressed", "false");
+  expect(storyteller.querySelector('[title="done"]')).toBeNull();
+  expect(screen.getByRole("button", { name: "Translator" }).querySelector('[title="done"]')).toBeNull();
 });
 
 test("the Animations switch toggles and remembers its setting", () => {
@@ -1002,8 +1156,8 @@ test("after the answer the question box is empty and the question is echoed", as
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
   expect(screen.getByLabelText("Your question")).toHaveValue("");
-  expect(screen.getByText("You asked")).toBeInTheDocument();
-  expect(screen.getByText("You asked").closest("p")).toHaveTextContent(
+  const card = within(screen.getByRole("group", { name: "Answer card" }));
+  expect(card.getByText("You asked").closest("p")).toHaveTextContent(
     "When was Apple founded?",
   );
 });
@@ -1069,7 +1223,6 @@ test("once a tab is clicked the panel stops switching on its own, until a new qu
   first.close();
   await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
   expect(pressed("Translator")).toHaveAttribute("aria-pressed", "true");
-  expect(pressed("Answer")).toHaveAttribute("aria-pressed", "false");
 
   // a new question starts following again
   ask("Again?");
@@ -1092,7 +1245,7 @@ test("a tab clicked the moment a step lands is not undone by the panel", async (
     const translator = screen.queryByRole("button", { name: "Translator" });
     if (!clicked && translator && within(translator).queryByTitle("done")) {
       clicked = true;
-      fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
+      fireEvent.click(screen.getByRole("button", { name: "Judge" }));
     }
   });
   observer.observe(document.body, { childList: true, subtree: true, attributes: true });
@@ -1101,7 +1254,7 @@ test("a tab clicked the moment a step lands is not undone by the panel", async (
   observer.disconnect();
   await waitFor(() => expect(screen.getByLabelText("Your question")).toHaveValue(""));
   await new Promise((resolve) => setTimeout(resolve, 50));
-  expect(screen.getByRole("button", { name: "Clerk" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Judge" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("the Top 5 leaves filler words out", async () => {
@@ -1127,26 +1280,28 @@ test("the Top 5 leaves filler words out", async () => {
   expect(items.map((li) => li.textContent)).toEqual(["silicon0.95", "Apple0.70"]);
 });
 
-test("example questions come from the shelves in the library, as cards in the shelf colours", async () => {
+test("example questions come from the shelves in the library: three chips, the rest in cards", async () => {
   const fetchMock = stubAsk(EVENTS, [
     { id: 1, title: "Personal", filename: "about-kenneth/personal.md", chunk_count: 1 },
     { id: 2, title: "Vector database", filename: "rag-basics/vector-database.md", chunk_count: 1 },
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("button", { name: "What is Kenneth's academic background?" });
-  expect(screen.getByText("Not sure what to ask? Try one of these")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "What project is Kenneth most proud of?" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "What is retrieval-augmented generation?" })).toBeInTheDocument();
+  // "See an example" is wired in 7.5; until then it is hidden.
+  expect(screen.getByText(/See an example/).closest("button")).toHaveAttribute("hidden");
+  // The questions that are not chips are in cards under "Browse all topics", in the shelf colours.
+  expect(screen.getByText("Browse all topics")).toBeInTheDocument();
   const cards = screen.getAllByTestId("shelf-card");
-  expect(cards).toHaveLength(2);
-  expect(cards[0]).toHaveTextContent("About the creator");
-  expect(cards[0]).toHaveStyle({ borderLeftColor: "#4e79a7" });
-  expect(cards[1]).toHaveTextContent("RAG basics");
-  expect(cards[1]).toHaveStyle({ borderLeftColor: "#e15759" });
-  expect(screen.getByRole("button", { name: "What is a vector database?" })).toBeInTheDocument();
+  expect(cards).toHaveLength(1);
+  expect(cards[0]).toHaveTextContent("RAG basics");
+  expect(cards[0]).toHaveStyle({ borderLeftColor: "#e15759" });
+  expect(screen.getByRole("button", { name: /What is a vector database\?/ })).toBeInTheDocument();
   // No documents on these shelves, so no cards for them.
   expect(screen.queryByRole("button", { name: "Why does the Judge sometimes take a second look?" })).toBeNull();
   const row = screen.getByRole("region", { name: "Suggested questions" });
   expect(row).toHaveAttribute("tabindex", "0");
-  expect(screen.queryByRole("button", { name: /Show all shelves/ })).toBeNull();
 
   fireEvent.click(
     screen.getByRole("button", { name: "What is retrieval-augmented generation?" }),
@@ -1160,7 +1315,7 @@ test("example questions come from the shelves in the library, as cards in the sh
   ).toBe(false);
 });
 
-test("shows every shelf card in one scrolling row, with no Show all button", async () => {
+test("every shelf's questions are reachable: three chips, then one card per shelf with questions left", async () => {
   stubAsk(
     EVENTS,
     [
@@ -1179,8 +1334,81 @@ test("shows every shelf card in one scrolling row, with no Show all button", asy
   );
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("region", { name: "Suggested questions" });
-  expect(screen.getAllByTestId("shelf-card")).toHaveLength(6);
+  // The first shelf's two questions and the second shelf's first are chips.
+  expect(screen.getAllByTestId("shelf-card")).toHaveLength(5);
   expect(screen.queryByRole("button", { name: /Show all shelves|Show fewer/ })).toBeNull();
+});
+
+test("the Query room is gone: the caption invites a question", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.queryByRole("heading", { name: "Query" })).toBeNull();
+  const scene = screen.getByRole("region", { name: "The office" });
+  const caption = within(scene).getByText("Ask a question and watch the office find the answer.");
+  expect(caption).toHaveClass("visually-hidden");
+  expect(caption).toHaveAttribute("aria-live", "polite");
+  expect(within(scene).getByRole("switch", { name: /Animations/ })).toBeInTheDocument();
+});
+
+test("the office has no step strip; the panel's tabs switch steps", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.queryByRole("group", { name: "Steps" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Translator" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("How it got there and Browse the library are visible without a click", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  expect(screen.getByRole("heading", { name: "Answer and how it got there" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Browse the library" })).toBeVisible();
+  expect(screen.queryByText("Browse the library", { selector: "summary" })).toBeNull();
+});
+
+test("a tab pick sticks: later steps do not pull the tab away", async () => {
+  const encoder = new TextEncoder();
+  let push: (event: object) => void = () => undefined;
+  let close: () => void = () => undefined;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      push = (event) => controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      close = () => controller.close();
+    },
+  });
+  stubFetch(() => new Response(body));
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("When was Apple founded?");
+  push({ step: "translator", status: "start" });
+  push({ step: "translator", status: "done", data: { words: [] } });
+  const done = (name: string) =>
+    waitFor(() =>
+      expect(screen.getByRole("button", { name }).querySelector('[title="done"]')).not.toBeNull(),
+    );
+  await done("Translator");
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
+  push({ step: "scout", status: "start" });
+  push({ step: "scout", status: "done", data: { results: [] } });
+  await done("Scout");
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  push({ step: "judge", status: "start" });
+  push({ step: "judge", status: "done", data: { results: [] } });
+  await done("Judge");
+  expect(screen.getByRole("button", { name: "Scout" })).toHaveAttribute("aria-pressed", "true");
+  close();
+});
+
+test("the Watch the office button toggles aria-expanded", () => {
+  stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const watch = screen.getByRole("button", { name: /Watch the office/ });
+  expect(watch).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "true");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "false");
 });
 
 test("shows no starter question cards while the library is empty", async () => {
@@ -1188,7 +1416,7 @@ test("shows no starter question cards while the library is empty", async () => {
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   await screen.findByRole("button", { name: "Ask" });
   expect(screen.queryByTestId("shelf-card")).toBeNull();
-  expect(screen.queryByText("Not sure what to ask? Try one of these")).toBeNull();
+  expect(screen.queryByText("Browse all topics")).toBeNull();
 });
 
 test("when the library is offline the Ask button is disabled and a note shows", async () => {
@@ -1219,7 +1447,7 @@ test("a tab clicked before asking does not stop the panel following the run", as
   });
   stubFetch(() => new Response(body));
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   ask("When was Apple founded?");
 
   push({ step: "translator", status: "start" });
@@ -1233,10 +1461,12 @@ test("a tab clicked before asking does not stop the panel following the run", as
   close();
 });
 
-test("the six character tabs are all enabled before asking", () => {
+test("the four character tabs are all enabled before asking", () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
-  for (const name of ["Clerk", "Translator", "Scout", "Judge", "Storyteller", "Answer"]) {
+  const tabs = within(screen.getByRole("group", { name: "The characters" })).getAllByRole("button");
+  expect(tabs.map((t) => t.textContent)).toEqual(["Translator", "Scout", "Judge", "Storyteller", "Answer"]);
+  for (const name of ["Answer", "Translator", "Scout", "Judge", "Storyteller"]) {
     expect(screen.getByRole("button", { name })).toBeEnabled();
   }
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
@@ -1271,14 +1501,12 @@ test("the Storyteller tab shows the system prompt and the exact message sent", a
   expect(screen.getByText(/Google Gemini · gemini-3\.5-flash-lite/)).toBeInTheDocument();
 });
 
-test("the Clerk tab shows the question that was asked", async () => {
+test("the Scout tab shows how many of the visitor's own cards were searched", async () => {
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  const card = screen.getByText("You asked").closest("div") as HTMLElement;
-  expect(card).toHaveTextContent("When was Apple founded?");
+  fireEvent.click(screen.getByRole("button", { name: "Scout" }));
   expect(screen.getByText("Cards from your folder searched: none")).toBeInTheDocument();
 });
 
@@ -1413,40 +1641,35 @@ async function runSecondLook() {
 
 const pressed = (name: string) => screen.getByRole("button", { name }).getAttribute("aria-pressed");
 
-test("a second look gives the Clerk, Translator, Scout and Judge a round switch, opened on round 2", async () => {
+test("a second look gives the Translator, Scout and Judge a round switch, opened on round 2", async () => {
   await runSecondLook();
   expect(names()).toEqual(
     expect.arrayContaining(["judge_ruled", "second_look_rewrite", "translator_start", "judge_done"]),
   );
-  // The round 2 verdict is not "nothing found": the Clerk comes back with the answer.
-  expect(names()).toContain("clerk_back");
-  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+  // The round 2 verdict is not "nothing found": the Storyteller still writes.
+  expect(names()).toContain("storyteller_done");
+  for (const tab of ["Translator", "Scout", "Judge"]) {
     fireEvent.click(screen.getByRole("button", { name: tab }));
     expect(pressed("Second look")).toBe("true");
     expect(pressed("Initial")).toBe("false");
   }
   fireEvent.click(screen.getByRole("button", { name: "Storyteller" }));
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Answer" }));
-  expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
-test("the Clerk's round 2 page shows the new query and who decided", async () => {
+test("the Judge's round 2 page shows who decided", async () => {
   await runSecondLook();
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  const board = screen.getByText("On the board").closest("div") as HTMLElement;
-  expect(board).toHaveTextContent("Batam city overview");
-  expect(screen.getByText("Mercury Decide: 20% sure the sources were enough")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  expect(screen.getByText("Mercury Decide: 20% sure the cards were enough")).toBeInTheDocument();
   expect(screen.getByTestId("decide-meter-fill")).toHaveStyle({ width: "20%" });
   expect(screen.getByTestId("decide-meter-tick")).toHaveStyle({ left: "50%" });
   expect(screen.getByText("needs 50%")).toBeInTheDocument();
-  expect(screen.queryByText("Decided by the language model")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Initial" }));
-  const asked = screen.getByText("You asked").closest("div") as HTMLElement;
-  expect(asked).toHaveTextContent("What is Kenneth's hometown like?");
+  expect(
+    screen.getByText(/Mercury Decide was only 20% sure the cards fully answer the question \(it needs 50%\)/),
+  ).toBeInTheDocument();
 });
 
-test("the Clerk says the language model decided when no probability was given", async () => {
+test("the Judge says the language model decided when no probability was given", async () => {
   stubAsk(
     SECOND_LOOK_EVENTS.map((e) =>
       (e as { step: string; status?: string }).step === "second_look" &&
@@ -1458,16 +1681,17 @@ test("the Clerk says the language model decided when no probability was given", 
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("What is Kenneth's hometown like?");
   await screen.findByRole("button", { name: "Source 1" });
-  fireEvent.click(screen.getByRole("button", { name: "Clerk" }));
-  expect(screen.getByText("Decided by the language model")).toBeInTheDocument();
-  expect(screen.getByText("The language model decided.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Judge" }));
+  expect(
+    screen.getByText("The language model read the cards, found something missing, and wrote a follow-up search."),
+  ).toBeInTheDocument();
   expect(screen.queryByTestId("decide-meter-fill")).toBeNull();
 });
 
 test("the Translator's round 2 page shows the new query and no word blocks; round 1 keeps its words", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Translator" }));
-  expect(screen.getByText("Fingerprinted the Clerk's new query: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("New search: “Batam city overview”")).toBeInTheDocument();
   expect(
     screen.getByText("Word weights are only worked out for your own question (see Initial)."),
   ).toBeInTheDocument();
@@ -1479,11 +1703,12 @@ test("the Translator's round 2 page shows the new query and no word blocks; roun
 test("the Scout's round 2 page shows the skipped chip and the new list", async () => {
   await runSecondLook();
   fireEvent.click(screen.getByRole("button", { name: "Scout" }));
-  expect(screen.queryByText(/Searched for/)).toBeNull();
-  expect(screen.getByText("2 already found, skipped")).toBeInTheDocument();
-  expect(screen.getByText("1 cards found")).toBeInTheDocument();
-  expect(screen.getByText("Batam")).toBeInTheDocument();
-  expect(screen.queryByText(/Apple Inc\./)).toBeNull();
+  const steps = within(screen.getByRole("region", { name: "Answer and how it got there" }));
+  expect(steps.queryByText(/Searched for/)).toBeNull();
+  expect(steps.getByText("2 already found, skipped")).toBeInTheDocument();
+  expect(steps.getByText("1 cards found")).toBeInTheDocument();
+  expect(steps.getByText(/^Batam · part \d+/)).toBeInTheDocument();
+  expect(steps.queryByText(/Apple Inc\./)).toBeNull();
   // Round 1 is still round 1's list.
   fireEvent.click(screen.getByRole("button", { name: "Initial" }));
   expect(screen.getByText("3 cards found")).toBeInTheDocument();
@@ -1514,7 +1739,7 @@ test("a run without a second look has no round switch and the Judge says it was 
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("When was Apple founded?");
   await screen.findByRole("button", { name: "Source 1" });
-  for (const tab of ["Clerk", "Translator", "Scout", "Judge"]) {
+  for (const tab of ["Translator", "Scout", "Judge"]) {
     fireEvent.click(screen.getByRole("button", { name: tab }));
     expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
   }
@@ -1534,11 +1759,11 @@ test("a check that says enough shows the Judge's banner with the decision", asyn
   await screen.findByRole("button", { name: "Source 1" });
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Enough to answer. These cards go to the Storyteller.")).toBeInTheDocument();
-  expect(screen.getByText(/Mercury Decide judged the sources enough \(90% sure they were\)/)).toBeInTheDocument();
+  expect(screen.getByText(/Mercury Decide was 90% sure the cards fully answer the question \(it needs 50%\), so no second search was needed\./)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
-test("a check that finds nothing on file has the Judge tell the Clerk instead of the Storyteller", async () => {
+test("a check that finds nothing on file has the board say so instead of the Storyteller", async () => {
   const refusal = "I can't answer that from the available documents.";
   stubAsk([
     ...EVENTS.slice(0, 5),
@@ -1555,24 +1780,23 @@ test("a check that finds nothing on file has the Judge tell the Clerk instead of
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("Who is the best basketball player?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
   expect(names()).not.toContain("judge_handover");
-  expect(names()).not.toContain("clerk_back");
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(
     screen.getByText("Nothing on file about this, so no answer was written."),
   ).toBeInTheDocument();
   expect(
-    screen.getByText("Mercury Decide was only 2% sure the sources say anything about this."),
+    screen.getByText("Mercury Decide was only 2% sure the cards mention anything in your question (it stops below 10%), so no answer was written."),
   ).toBeInTheDocument();
   expect(screen.queryByText("Enough to answer. These cards go to the Storyteller.")).toBeNull();
 });
 
-test("a final check that finds nothing after the second look has the Judge tell the Clerk", async () => {
+test("a final check that finds nothing after the second look has the board say so", async () => {
   const refusal = "I can't answer that from the available documents.";
   const judge2 = SECOND_LOOK_EVENTS.findIndex((e) => {
     const event = e as { step: string; status?: string; data?: { round?: number } };
@@ -1594,13 +1818,12 @@ test("a final check that finds nothing after the second look has the Judge tell 
   ]);
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   ask("What is Kenneth's hometown's most famous dish?");
-  await waitFor(() => expect(names()).toContain("clerk_shrug"));
+  await waitFor(() => expect(names()).toContain("storyteller_done"));
   const after = names().slice(names().indexOf("second_look_rewrite"));
   expect(after).toEqual(expect.arrayContaining(["judge_ruled", "second_look_nothing"]));
   expect(after).not.toContain("judge_handover");
-  expect(names()).not.toContain("clerk_back");
   expect(
-    screen.getByText("Sorry, nothing on file about that. Try something else?"),
+    screen.getByText("Nothing on file about that. Try something else?"),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   fireEvent.click(screen.getByRole("button", { name: "Second look" }));
@@ -1628,7 +1851,7 @@ test("the Judge's tab says how the second look works, from GET /about", async ()
   stubAsk();
   render(<AskPage />, { wrapper: PrivateTextsProvider });
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
-  expect(await screen.findByText(/The second look is on/)).toBeInTheDocument();
+  expect(await screen.findByText(/Then the second look/)).toBeInTheDocument();
 });
 
 test("the question box has no privacy line under it", () => {
@@ -1637,7 +1860,7 @@ test("the question box has no privacy line under it", () => {
   expect(screen.queryByText(/Sent to Voyage AI/)).toBeNull();
 });
 
-test("while the Clerk rewrites the question the Judge and the Clerk say so", async () => {
+test("while the Judge asks for a better search the Judge and the caption say so", async () => {
   mid.rewrite = true;
   const encoder = new TextEncoder();
   let push: (event: object) => void = () => undefined;
@@ -1655,12 +1878,12 @@ test("while the Clerk rewrites the question the Judge and the Clerk say so", asy
   push({ step: "second_look", status: "start" });
   push({ step: "second_look", status: "done", data: { query: "Batam city overview", enough: 0.2 } });
   expect(await screen.findByText("We need more on: “Batam city overview”")).toBeInTheDocument();
-  expect(screen.getByText("Rewriting the question: “Batam city overview”")).toBeInTheDocument();
+  expect(screen.getByText("The Judge asked for a better search: “Batam city overview”")).toBeInTheDocument();
   expect(names()).toEqual(expect.arrayContaining(["judge_ruled", "second_look_rewrite"]));
   close();
 });
 
-test("while the Judge tells the Clerk nothing is on file the Judge says so", async () => {
+test("while the board says nothing is on file the Judge says so", async () => {
   mid.nothing = true;
   const encoder = new TextEncoder();
   let push: (event: object) => void = () => undefined;
@@ -1790,4 +2013,31 @@ test("a failed /library shows no count, and a later retry shows it", async () =>
   } finally {
     vi.useRealTimers();
   }
+});
+
+test("the second look's pages show only once the office plays the Judge's check", async () => {
+  mid.gateLook = true;
+  stubAsk(SECOND_LOOK_EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(names()).toContain("second_look_rewrite");
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect(screen.queryByRole("button", { name: "Second look" })).toBeNull();
+  expect(screen.queryByText(/New search/)).toBeNull();
+  act(() => mid.releaseLook());
+  expect(await screen.findByRole("button", { name: "Second look" })).toBeInTheDocument();
+});
+
+test("Enter in the question box asks; Shift+Enter and Enter while composing do not", async () => {
+  const fetchMock = stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const box = screen.getByLabelText("Your question");
+  fireEvent.change(box, { target: { value: "When was Apple founded?" } });
+  fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
+  fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+  expect(askCall(fetchMock)).toBeUndefined();
+  fireEvent.keyDown(box, { key: "Enter" });
+  await waitFor(() => expect(askCall(fetchMock)).toBeDefined());
+  expect(JSON.parse(askCall(fetchMock)[1].body as string).question).toBe("When was Apple founded?");
 });

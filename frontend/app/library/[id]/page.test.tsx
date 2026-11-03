@@ -49,15 +49,16 @@ test("highlights and scrolls to the cited chunk", async () => {
 test("links to the original file, at the cited page for a PDF", async () => {
   stubDocument("paper.pdf");
   render(<LibraryDocumentPage />);
-  const link = await screen.findByRole("link", { name: /Open the original/ });
+  const link = await screen.findByRole("link", { name: "Inspect document" });
   expect(link).toHaveAttribute("href", "/corpus/paper.pdf#page=4");
-  expect(link).toHaveTextContent("at page 4");
+  expect(link).toHaveAttribute("target", "_blank");
+  expect(link).toHaveAttribute("rel", "noopener noreferrer");
 });
 
 test("a Markdown original has no page anchor", async () => {
   stubDocument("apple-inc.md");
   render(<LibraryDocumentPage />);
-  const link = await screen.findByRole("link", { name: /Open the original/ });
+  const link = await screen.findByRole("link", { name: "Inspect document" });
   expect(link).toHaveAttribute("href", "/corpus/apple-inc.md");
 });
 

@@ -169,3 +169,13 @@
   border-radius: 6px;
   padding: 10px;
 }
+
+.points {
+  margin: 0.5rem 0 0.75rem;
+  padding-left: 1.2em;
+}
+
+.points li {
+  margin-bottom: 0.4em;
+  line-height: 1.5;
+}

@@ -24,6 +24,8 @@ export type ScoutResult = {
   page: number | null;
   heading: string | null;
   score: number;
+  vector_rank: number | null;
+  keyword_rank: number | null;
   found_by: "vector" | "keyword" | "both";
 };
 
@@ -65,7 +67,7 @@ export type Look = {
   decidedBy: "decider" | "llm";
 };
 
-/** The Translator's second page: the Clerk's follow-up query, fingerprinted. */
+/** The Translator's second page: the follow-up query, fingerprinted. */
 export type TranslatorRound2 = { query: string };
 
 /** The Scout's second page. */

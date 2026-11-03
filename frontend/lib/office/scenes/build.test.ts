@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import gsap from "gsap";
 import { afterEach, describe, expect, test } from "vitest";
 
 import { buildAskScenes } from "./ask";
 import { buildQueryScenes } from "./query";
 import { buildUploadScenes } from "./upload";
+import { at, spot } from "../spots";
 import type { SceneSet } from "../types";
 
 // jsdom has no SVG geometry; GSAP only needs these to exist for transforms with an svgOrigin.
@@ -53,7 +55,7 @@ const rooms: {
     file: "ask-room.svg",
     build: buildAskScenes,
     scenes: [
-      "clerk_start",
+      "question_start",
       "translator_start",
       "translator_done",
       "scout_start",
@@ -63,20 +65,19 @@ const rooms: {
       "judge_ruled",
       "judge_handover",
       "second_look_rewrite",
-      "second_look_nothing",
       "storyteller_start",
       "storyteller_done",
-      "clerk_done",
+      "second_look_nothing", // last: it sets "nothing found", which empties the Storyteller's scenes
     ],
     handoffs: [
-      "clerk_start",
+      "question_start",
       "translator_done",
       "scout_done",
       "judge_done",
       "judge_handover",
       "second_look_rewrite",
       "second_look_nothing",
-      "clerk_done",
+      "storyteller_done",
     ],
   },
   {
@@ -106,17 +107,38 @@ describe.each(rooms)("$room room", ({ file, build, scenes, handoffs }) => {
   });
 });
 
-test("the Judge's nothing-found scene walks to the Clerk and the Storyteller has nothing to do", () => {
+test("the Judge's nothing-found scene crosses the board and the Storyteller has nothing to do", () => {
   const set = buildAskScenes(load("ask-room.svg"));
   set.reset();
   const normal = set.scenes.judge_done();
   const nothing = set.scenes.judge_done({ nothing: true });
   expect(nothing.duration()).not.toBe(normal.duration());
   expect("handoff" in nothing.labels).toBe(true);
-  // after "nothing kept" the Storyteller's scenes are empty and the Clerk skips the answer
+  // after "nothing kept" the Storyteller's scenes are empty
   expect(set.scenes.storyteller_start().duration()).toBeLessThan(0.1);
   expect(set.scenes.storyteller_done().duration()).toBeLessThan(0.1);
-  const leave = set.scenes.clerk_done();
+});
+
+test("storyteller_done ends with the answer on the board", () => {
+  const root = load("ask-room.svg");
+  const set = buildAskScenes(root);
   set.reset();
-  expect(set.scenes.clerk_done().duration()).toBeGreaterThan(leave.duration());
+  const tl = set.scenes.storyteller_done();
+  tl.progress(1);
+  const marks = [...root.querySelectorAll("#board-a > *")];
+  expect(marks).toHaveLength(3);
+  for (const mark of marks) expect(Number(gsap.getProperty(mark, "opacity"))).toBe(1);
+  tl.kill();
+});
+
+test("the Storyteller walks back to her desk after writing on the board", () => {
+  const root = load("ask-room.svg");
+  const set = buildAskScenes(root);
+  set.reset();
+  const tl = set.scenes.storyteller_done();
+  tl.progress(1);
+  const home = spot(root, "storyteller");
+  expect(Number(gsap.getProperty(root.querySelector("#storyteller")!, "x"))).toBeCloseTo(at(home).x, 3);
+  expect(Number(gsap.getProperty(root.querySelector("#storyteller")!, "y"))).toBeCloseTo(at(home).y, 3);
+  tl.kill();
 });

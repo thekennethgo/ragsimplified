@@ -63,6 +63,49 @@ def test_no_candidates_skips_the_reranker():
     assert (outcome.candidates, outcome.kept, outcome.fallback) == ([], [], False)
 
 
+def test_reranker_can_find_a_document_by_title_when_its_body_does_not_name_it():
+    pool = [
+        Result("library", 0.02, "FAQ", 0, None, None, "See the file cabinet.", 1),
+        Result("library", 0.01, "CV", 0, "Experience", 1, "Kenneth Go, engineer.", 2),
+    ]
+    outcome = judge("CV", pool, FakeReranker(), keep=1)
+    assert outcome.kept[0].document_id == 2
+    assert outcome.kept[0].text == "Kenneth Go, engineer."
+
+
+@pytest.mark.parametrize("question", ["Show Kenneths CV", "Show Kenneth's CV", "Open the CV"])
+def test_document_request_excludes_a_higher_ranked_mention(question):
+    pool = [
+        Result("library", 0.02, "FAQ", 0, None, None, "Show Kenneth's CV here.", 1),
+        Result("library", 0.01, "CV", 0, None, 1, "Kenneth Go, engineer.", 2),
+    ]
+    outcome = judge(question, pool, FakeReranker())
+    assert [r.document_id for r in outcome.kept] == [2]
+    assert len(outcome.candidates) == 2
+
+
+@pytest.mark.parametrize("question", ["What does the CV say?", "Show missing document"])
+def test_other_questions_keep_the_evidence_pool(question):
+    pool = [chunk("FAQ", 0, "CV details", 1), chunk("CV", 0, "Experience", 2)]
+    assert len(judge(question, pool, FakeReranker()).kept) == 2
+
+
+def test_ambiguous_document_titles_are_not_resolved_arbitrarily():
+    pool = [chunk("CV", 0, "Alice", 1), chunk("CV", 0, "Bob", 2)]
+    assert len(judge("Show CV", pool, FakeReranker()).kept) == 2
+
+
+def test_document_request_still_scopes_sources_when_reranker_fails():
+    class Broken:
+        def rerank(self, query, documents):
+            raise RuntimeError("down")
+
+    pool = [chunk("FAQ", 0, "See the CV", 1), chunk("CV", 0, "Experience", 2)]
+    outcome = judge("Show Kenneths CV", pool, Broken())
+    assert outcome.fallback
+    assert [r.document_id for r in outcome.kept] == [2]
+
+
 def make_reranker(handler):
     client = httpx.Client(transport=httpx.MockTransport(handler))
     return VoyageReranker(api_key="pa-fake", client=client)

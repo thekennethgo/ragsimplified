@@ -31,3 +31,17 @@
   background: var(--accent-dark);
   color: #ffffff;
 }
+
+@media (max-width: 759px) {
+  .nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .link {
+    justify-content: center;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+}

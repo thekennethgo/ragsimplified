@@ -12,6 +12,7 @@ import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHapp
 import { backendUrl, readEvents } from "../../lib/backend";
 import { archivistSays, chopperSays, uploadTranslatorSays } from "../../lib/characters";
 import { useBackendHealth } from "../../lib/health";
+import { reducedMotion } from "../../lib/office/motion";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
 import { buildUploadScenes } from "../../lib/office/scenes/upload";
@@ -34,6 +35,8 @@ export default function UploadPage() {
     if (!animationsOn) queue.skipAll();
   }, [animationsOn, queue]);
   const officeRef = useRef<HTMLElement>(null);
+  // Under 760px the room picture is hidden until the visitor asks to watch.
+  const [watching, setWatching] = useState(false);
   // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
   const { texts, add } = usePrivateTexts();
   const offline = useBackendHealth() === "offline";
@@ -84,6 +87,11 @@ export default function UploadPage() {
     const upload = typeof source === "string" ? null : source;
     const text = upload ? upload.pages.map((p) => p.text).join("\n\n") : (source as string);
     setRun((n) => n + 1);
+    // On a phone the office is folded, so open it and bring it into view.
+    if (window.matchMedia?.("(max-width: 759px)").matches) {
+      setWatching(true);
+      officeRef.current?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+    }
     setBusy(true);
     setAnimating(true);
     setError("");
@@ -183,49 +191,66 @@ export default function UploadPage() {
 
   return (
     <>
-      <section ref={officeRef} aria-labelledby="office-h" className={styles.office}>
-        <h1 id="office-h" className={styles.title}>
-          The office
-        </h1>
-        <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
-        <div className={styles.stage}>
-          <OfficeRoom
-            src="/office/upload-room.svg"
-            label={ROOM_LABEL}
-            build={buildUploadScenes}
-            queue={queue}
-          />
-          {documents !== null && (
-            <span
-              className={styles.count}
-              style={{
-                left: `${UPLOAD_DOC_COUNT.left}%`,
-                top: `${UPLOAD_DOC_COUNT.top}%`,
-              }}
-              aria-hidden="true"
-            >
-              {documents}
-            </span>
-          )}
-        </div>
-        <div className={styles.bubbles}>
-          {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
-          {translatorAt && (
-            <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />
-          )}
-          {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
-        </div>
-      </section>
-
+      <h1 className="visually-hidden">Upload a document</h1>
       {error && (
         <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
 
-      <div className={styles.row}>
-        <EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />
-        <WhatHappened run={run} states={states} chunks={chunkDetails} vectors={vectors} />
+      <div className={styles.grid}>
+        <section ref={officeRef} aria-label="The office" className={styles.scene}>
+          <button
+            type="button"
+            className={styles.watch}
+            aria-expanded={watching}
+            onClick={() => setWatching((on) => !on)}
+          >
+            {watching ? "▾" : "▸"} Watch the office
+          </button>
+          <div className={`${styles.room} ${watching ? styles.roomOpen : ""}`}>
+            <div className={styles.stage}>
+              <OfficeRoom
+                src="/office/upload-room.svg"
+                label={ROOM_LABEL}
+                build={buildUploadScenes}
+                queue={queue}
+              />
+              {documents !== null && (
+                <span
+                  className={styles.count}
+                  style={{
+                    left: `${UPLOAD_DOC_COUNT.left}%`,
+                    top: `${UPLOAD_DOC_COUNT.top}%`,
+                  }}
+                  aria-hidden="true"
+                >
+                  {documents}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className={styles.bubbles}>
+            {chopperAt && <SpeechBubble name="Chopper" text={says.chopper} at={chopperAt} />}
+            {translatorAt && (
+              <SpeechBubble name="Translator" text={says.translator} at={translatorAt} />
+            )}
+            {archivistAt && <SpeechBubble name="Archivist" text={says.archivist} at={archivistAt} />}
+          </div>
+          <div className={styles.caption}>
+            <AnimationToggle on={animationsOn} onChange={setAnimationsOn} />
+          </div>
+        </section>
+
+        <div className={styles.side}>
+          <WhatHappened
+            run={run}
+            states={states}
+            chunks={chunkDetails}
+            vectors={vectors}
+            envelope={<EnvelopeForm onSubmit={onSubmit} busy={busy || animating} offline={offline} />}
+          />
+        </div>
       </div>
 
       <LibraryPanel onCount={setStarterBooks} onOpen={openViewer} viewer={viewer} />

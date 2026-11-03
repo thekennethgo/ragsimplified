@@ -16,7 +16,7 @@ function card() {
       plain="I search two ways."
       thisRun={<p>Nothing yet.</p>}
       tech={["pgvector · cosine"]}
-      how="Meaning search uses pgvector."
+      how={{ intro: "Meaning search uses pgvector.", points: ["Top 20 cards."] }}
       settings={[["Cards per search", "20"]]}
       extra={<p>Extra inside</p>}
     />,

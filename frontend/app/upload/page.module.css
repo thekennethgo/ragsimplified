@@ -1,31 +1,44 @@
-.office {
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.scene {
   position: relative;
-  border: 1px solid var(--border-strong);
-  border-radius: 12px;
-  overflow: hidden;
   background: var(--room);
-  width: 70%;
-  margin-inline: auto;
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
-.title {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 2;
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  padding: 4px 12px;
+.room {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* The room's own shape (its viewBox is 884 by 666), so the document count keeps its place on the art. */
 .stage {
   position: relative;
   container-type: inline-size;
-  min-height: 120px;
+  width: 100%;
+  aspect-ratio: 884 / 666;
+}
+
+/* The art fills the stage exactly; without this the svg'd use its width and height attributes' shape, not its viewBox's. */
+.stage > div,
+.stage > div > div,
+.stage div svg {
+  height: 100%;
 }
 
 /* The documents-on-file number, beside the plaque above the file cabinets. */
@@ -41,10 +54,38 @@
   pointer-events: none;
 }
 
+.watch {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: #cdbba3;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
 .bubbles {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 4px;
+  color: #cdbba3;
+  font-size: 12px;
+}
+
+/* The toggle is absolutely placed for other pages; here it sits in the row. */
+.caption > button {
+  position: static;
+  flex: none;
 }
 
 .error {
@@ -55,16 +96,56 @@
   font-size: 14px;
 }
 
-.row {
+.side {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    align-items: stretch;
+    height: clamp(460px, calc(100svh - 250px), 760px);
+  }
+
+  .scene {
+    min-height: 0;
+  }
+
+  .room {
+    flex: 1;
+    min-height: 0;
+    container-type: size;
+  }
+
+  /* The biggest 884:666 box that fits the space left for the room. */
+  .stage {
+    width: min(100cqw, 100cqh * 884 / 666);
+  }
+
+  .side {
+    position: relative;
+  }
+
+  .side > * {
+    position: absolute;
+    inset: 0;
+  }
 }
 
 @media (max-width: 760px) {
-  .office {
-    width: 100%;
+  .watch {
+    display: block;
+  }
+
+  .room {
+    display: none;
+  }
+
+  .roomOpen {
+    display: block;
   }
 
   .bubbles {
@@ -72,7 +153,16 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 12px;
-    background: #3a2a20;
+    padding: 2px;
+  }
+
+  .bubbles:empty {
+    display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .watch {
+    min-height: 44px;
   }
 }

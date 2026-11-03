@@ -68,6 +68,8 @@ export default function PdfView({
   const width = pageWidth(available, height, aspect);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  // DocViewer remounts for a new target. Later text-layer renders must not steal the scroll.
+  const didScroll = useRef(false);
   const cited = citedText === null ? null : normalise(citedText);
 
   useEffect(() => {
@@ -101,8 +103,10 @@ export default function PdfView({
   }, []);
 
   function scrollToCited() {
+    if (didScroll.current) return;
     const wrapper = page === null ? null : pageRefs.current[page];
     if (!wrapper) return;
+    didScroll.current = true;
     (wrapper.querySelector("mark") ?? wrapper).scrollIntoView?.({ block: "center" });
   }
 

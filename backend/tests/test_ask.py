@@ -523,7 +523,7 @@ def test_a_decider_sure_nothing_is_on_file_refuses_without_any_llm_call(client, 
     assert (look["nothing"], look["relevant"], look["decided_by"]) == (True, 0.02, "decider")
     assert llm.look_calls == [] and llm.calls == []
     story = done_events(got, "storyteller")[0]["data"]
-    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": []}
+    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": [], "model": None}
 
 
 def test_a_second_round_that_finds_nothing_new_still_answers_from_round_one(
@@ -598,7 +598,7 @@ def test_after_a_second_look_the_decider_checks_the_final_cards(client, llm, loo
     assert "Batam city overview of the island" in decider.states[1]
     assert llm.calls == []  # no Storyteller call
     story = done_events(got, "storyteller")[0]["data"]
-    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": []}
+    assert story == {"answer": ask_module.NOTHING_FOUND, "citations": [], "model": None}
 
 
 def test_a_final_check_that_finds_a_partial_answer_hands_over_to_the_storyteller(

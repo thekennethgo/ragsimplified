@@ -5,17 +5,25 @@ import { describe, expect, test } from "vitest";
 const read = (...parts: string[]) => readFileSync(resolve(__dirname, ...parts), "utf8");
 
 // Ids and classes the scenes create at run time (buildProps in ask.ts).
-const MADE_BY_CODE = new Set(["a-slip", "j-pile", "j-rejects", "st-kept", "a-sheet", "typed-line"]);
+const MADE_BY_CODE = new Set([
+  "a-slip",
+  "j-pile",
+  "j-rejects",
+  "st-kept",
+  "a-sheet",
+  "typed-line",
+  "board-q",
+  "board-a",
+  "board-none",
+]);
 // Ids the scenes build from a character prefix, such as `#${who}-flip`.
 const BY_PREFIX = {
   upload: ["ch-flip", "tr-flip", "ar-flip", "chopper", "translator", "archivist"],
   ask: [
-    "cl-flip",
     "tr-flip",
     "sc-flip",
     "jd-flip",
     "st-flip",
-    "clerk",
     "translator",
     "scout",
     "judge",
@@ -88,5 +96,5 @@ describe.each(rooms)("$room scenes", ({ room, scene, svg }) => {
 
 test("the scenes use some ids (the extraction works)", () => {
   expect(used(read("upload.ts")).ids.size).toBeGreaterThan(30);
-  expect(used(read("ask.ts")).spots.size).toBe(14);
+  expect(used(read("ask.ts")).spots.size).toBe(10);
 });

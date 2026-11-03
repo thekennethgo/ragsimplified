@@ -275,7 +275,11 @@ def run_ask(
     yield StepEvent(
         step="storyteller",
         status="done",
-        data={"answer": answer, "citations": [asdict(c) for c in citations]},
+        data={
+            "answer": answer,
+            "citations": [asdict(c) for c in citations],
+            "model": getattr(llm, "model", None),
+        },
     )
 
 

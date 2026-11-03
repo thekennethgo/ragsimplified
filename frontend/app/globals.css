@@ -11,6 +11,12 @@
   --accent-dark: #4a3426;
   --tab-soft: #ede2d0;
   --room: #2b1f17;
+  --chopper: #8a5a2b;
+  --translator: #2f6f73;
+  --scout: #a8721a;
+  --judge: #9b3b2e;
+  --storyteller: #4b6b3a;
+  --archivist: #5a5f8a;
 
   --chip-waiting-bg: #e4e1d8;
   --chip-waiting-fg: #4a3426;
@@ -29,6 +35,8 @@
 body {
   margin: 0;
   background: var(--page);
+  background-image: radial-gradient(ellipse at top left, #fbf6ec99, transparent 70%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
@@ -198,4 +206,17 @@ main {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (max-width: 759px) {
+  .panel {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
 }

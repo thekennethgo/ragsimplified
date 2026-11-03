@@ -8,7 +8,12 @@ import { backendUrl } from "./backend";
 export type About = {
   embedder: { provider: string; model: string; dimensions: number };
   reranker: { provider: string; model: string };
-  llm: { provider: string; model: string; max_tokens: number | null };
+  llm: {
+    provider: string;
+    model: string;
+    fallback_model: string | null;
+    max_tokens: number | null;
+  };
   chopper: {
     chunk_tokens: number;
     overlap_tokens: number;

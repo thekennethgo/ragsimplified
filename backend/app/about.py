@@ -24,6 +24,7 @@ def about() -> dict:
         "llm": {
             "provider": provider,
             "model": os.environ.get("LLM_MODEL", ""),
+            "fallback_model": os.environ.get("LLM_FALLBACK_MODEL") or None,
             # Only the Anthropic request sets a limit; the other uses the model's default.
             "max_tokens": ANTHROPIC_MAX_TOKENS if provider == "anthropic" else None,
         },

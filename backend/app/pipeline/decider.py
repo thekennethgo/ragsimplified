@@ -1,4 +1,6 @@
-"""Stage 1 of the second look: a free yes/no decision model (ADR 006).
+"""Stage 1 of the second look: a cheap yes/no decision model ($0.02 per million input tokens).
+
+ADR 006.
 
 Inception's Mercury Decide, through OpenRouter's Decisions API (alpha), returns two probabilities in
 one call: that the sources answer the question completely, and that they hold anything on it at
@@ -13,7 +15,7 @@ from typing import Protocol
 import httpx
 
 DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions"
-MODEL = "inception/mercury-decide:free"
+MODEL = "inception/mercury-decide"
 TIMEOUT_SECONDS = 5
 
 QUESTION = {

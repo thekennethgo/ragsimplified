@@ -84,8 +84,8 @@ export default function LibraryDocView({
           </p>
         )}
         <div className={styles.buttons}>
-          <a className={styles.button} href={originalHref}>
-            Open the original{isPdf && citedChunk?.page ? ` at page ${citedChunk.page}` : ""}
+          <a className={styles.button} href={originalHref} target="_blank" rel="noopener noreferrer">
+            Inspect document
           </a>
           <a className={styles.button} href={`/corpus/${doc.filename}`} download>
             Download

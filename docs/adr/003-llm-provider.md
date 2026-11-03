@@ -31,6 +31,7 @@ Free tiers checked in October 2026 (from the providers' own docs where they publ
 - **Rate limits are handled in the client.** It retries HTTP 429 and 5xx errors (Gemini's free tier returns 503 "high demand" at times) with backoff, using the provider's `retry-after` header when present, and it never retries other 4xx errors. If retries run out, the stream ends with an error event.
 - **Eval results record the provider and model that produced them.** Scores from different models are never compared against each other as if they were one baseline.
 - **The live site's provider is the owner's choice at launch** and is set by env vars on Render, not in code. Haiku with a spend limit (step 2.10) remains the expected default for the live site. The spend limit is only needed once `anthropic` is used.
+- **2026-11-03: OpenRouter as overflow.** With `LLM_FALLBACK_MODEL` set, a 429 from the primary (quota or rate limit used up) sends the same request to that model on OpenRouter, and the primary is skipped for 60 seconds. The owner chose `google/gemini-3.5-flash-lite`, the same model, so answers match. The answer's footer names the model that actually answered.
 
 ## Options considered and rejected
 

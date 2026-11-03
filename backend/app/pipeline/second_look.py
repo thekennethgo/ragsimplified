@@ -1,6 +1,6 @@
 """The second look (ADR 006): after the Judge, decide whether one more search is needed.
 
-Stage 1 (decider.py, free): a decision model gives the probability that the sources answer the
+Stage 1 (decider.py, cheap): a decision model gives the probability that the sources answer the
 question, and that they hold anything on it at all; when it is sure they hold nothing, there is no
 answer to write and the run ends without the Storyteller. Stage 2 (the configured LLM, only when
 needed): write one follow-up search query. After the second round the decision model checks the

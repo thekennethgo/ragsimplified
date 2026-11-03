@@ -74,7 +74,7 @@ test("second look events have scenes of their own, and round 2 never means nothi
   ]);
   const second = event("judge", "done", { round: 2, results: [{ kept: false }], final: ["A"] });
   expect(toSceneEvents(second)).toEqual([{ name: "judge_done", data: { nothing: false } }]);
-  // A final check follows: the Judge only rules, then the check hands over or tells the Clerk.
+  // A final check follows: the Judge only rules, then the check hands over or the board says nothing was found.
   const checked = event("judge", "done", { round: 2, results: [{ kept: true }], check: true });
   expect(toSceneEvents(checked)).toEqual([{ name: "judge_ruled" }]);
   expect(toSceneEvents(event("second_look", "done", { round: 2, nothing: true }))).toEqual([
