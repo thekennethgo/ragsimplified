@@ -2014,3 +2014,30 @@ test("a failed /library shows no count, and a later retry shows it", async () =>
     vi.useRealTimers();
   }
 });
+
+test("the second look's pages show only once the office plays the Judge's check", async () => {
+  mid.gateLook = true;
+  stubAsk(SECOND_LOOK_EVENTS);
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  ask("What is Kenneth's hometown like?");
+  await screen.findByRole("button", { name: "Source 1" });
+  expect(names()).toContain("second_look_rewrite");
+  fireEvent.click(screen.getByRole("button", { name: "Translator" }));
+  expect(screen.queryByRole("button", { name: "Second look" })).toBeNull();
+  expect(screen.queryByText(/New search/)).toBeNull();
+  act(() => mid.releaseLook());
+  expect(await screen.findByRole("button", { name: "Second look" })).toBeInTheDocument();
+});
+
+test("Enter in the question box asks; Shift+Enter and Enter while composing do not", async () => {
+  const fetchMock = stubAsk();
+  render(<AskPage />, { wrapper: PrivateTextsProvider });
+  const box = screen.getByLabelText("Your question");
+  fireEvent.change(box, { target: { value: "When was Apple founded?" } });
+  fireEvent.keyDown(box, { key: "Enter", shiftKey: true });
+  fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+  expect(askCall(fetchMock)).toBeUndefined();
+  fireEvent.keyDown(box, { key: "Enter" });
+  await waitFor(() => expect(askCall(fetchMock)).toBeDefined());
+  expect(JSON.parse(askCall(fetchMock)[1].body as string).question).toBe("When was Apple founded?");
+});

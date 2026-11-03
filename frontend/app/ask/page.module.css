@@ -13,27 +13,13 @@
 
 .scene {
   position: relative;
-  min-height: 120px;
-  container-type: inline-size;
-}
-
-/* The documents-on-file number, beside the plaque above the shelves (skewed the other way from the Upload one). */
-.count {
-  position: absolute;
-  font-family: var(--font-mono), monospace;
-  font-weight: 600;
-  font-size: 1.5cqw;
-  line-height: 1;
-  color: #f2c27e;
-  transform: skewY(-26.57deg);
-  transform-origin: left bottom;
-  pointer-events: none;
-}
-
-.bubbles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+  background: var(--room);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .room {
