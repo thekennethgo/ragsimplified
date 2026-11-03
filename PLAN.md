@@ -744,6 +744,52 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Do: in `frontend/app/ask/page.tsx`, `progress` follows the newest step the office has started (`latestShown`), so it never jumps back to "The Translator is reading your question…"; the Storyteller line reads "The Judge handed over N cards. The Storyteller is writing…". In `frontend/components/ask/StepDetails.tsx` the meter label says "cards" instead of "sources".
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the office scenes, the bubbles.
+- [x] 7.9r Featured questions and placeholder
+  - Do:
+    - `frontend/lib/shelves.ts`: add and export
+      ```ts
+      /** The questions shown as chips under the question bar, in order. */
+      export const FEATURED = [
+        "What is Kenneth's academic background?",
+        "What project is Kenneth most proud of?",
+        "Show Kenneth's CV",
+        "How does RAG work?",
+        "Why do language models hallucinate?",
+      ];
+      ```
+    - `frontend/components/ask/QuestionBubble.tsx`: new optional prop `featured?: string[]`; `const chips = featured ?? all.slice(0, 3);` (the "Browse all topics" filter already leaves chips out). Placeholder: `"e.g. What is Kenneth's academic background?"`.
+    - `frontend/app/ask/page.tsx`: pass `featured={FEATURED}` to `QuestionBubble`.
+    - `frontend/app/page.tsx` (Home): `EXAMPLES` becomes the first three of `FEATURED` (import it).
+  - Done when: `make lint` and `make test` pass (update tests that check the old chips or placeholder).
+  - Out of scope: the shelves' own questions, the chips' styling.
+
+- [ ] 7.9s "Show Kenneth's CV" points to the CV
+  - Do:
+    - `backend/app/pipeline/storyteller_prompt.md`: add a rule after rule 8:
+      "9. If the question asks to show, open or see a document (for example "Show Kenneth's CV"), answer in one sentence that points to it and cite the chunk that comes from that document itself, for example "Here is Kenneth's CV [2]." Do not summarise the document and do not cite a different document that only mentions it."
+    - `backend/app/seed.py`, `title_for`: a filename stem of three letters or fewer is upper-cased (`cv.pdf` → "CV"); other names unchanged. Add the case to `backend/tests/test_seed.py`'s existing `title_for` test if there is one, else leave tests alone.
+    - Local database: `UPDATE documents SET title = 'CV' WHERE title = 'Cv';` on the Docker database (Opus runs it at ship time). The owner runs the same statement on Supabase.
+  - Done when: `make lint` and `make test` pass; live, "Show Kenneth's CV" answers "Here is Kenneth's CV [n]." citing the CV, and its source opens the PDF in the viewer.
+  - Out of scope: a special "show document" code path, other documents' titles.
+
+- [ ] 7.9t Under the hood: a paragraph, then bullet points
+  - Do:
+    - `frontend/lib/characters.ts`: `CharacterCopy.how` becomes `{ intro: string; points: string[] }`. Each `*Copy` function returns the text below (values from `/about` via `v(...)` exactly as today; `pct(x) = Math.round(x * 100) + "%"`). `secondLookLine` is replaced by `secondLookPoints(about): string[]`, appended to the Judge's points.
+    - `frontend/components/characters/CharacterCard.tsx`: `how` prop takes the new shape and renders `<p>{how.intro}</p><ul className={styles.points}>{how.points.map((p) => <li key={p}>{p}</li>)}</ul>` in place of `<p>{how}</p>`. `CharacterCard.module.css`: `.points { margin: 0.5rem 0 0.75rem; padding-left: 1.2em; } .points li { margin-bottom: 0.4em; line-height: 1.5; }`.
+    - Copy (word for word; `{…}` are the existing `/about` values):
+      - **Ask Translator.** Intro: "Computers can't compare meanings directly, so I turn your question into a fingerprint: a list of {dimensions} numbers. A question and a card about the same thing get similar fingerprints, even when they use different words." Points: "Your question goes to {provider}'s {model} model, which sends back the {dimensions} numbers." · "To see which words mattered, I fingerprint the question again with one word left out at a time. The more the fingerprint changes, the more that word mattered; the strongest word scores 1.00." · "Only the first {max_weighted_words} words are scored, to keep it quick." · "On a second look, I fingerprint the follow-up search the same way."
+      - **Scout.** Intro: "Think of a librarian checking two catalogues at once: one sorted by meaning, one by exact words. I take the best {candidates} from each and merge them into one list." Points: "By meaning: the {candidates} cards whose fingerprints sit closest to your question's. This finds a card about a \"hometown\" when you asked where someone \"grew up\"." · "By words: Postgres full-text search finds the {candidates} cards that share your words (\"grew\" also matches \"grow\"). This catches names and exact terms." · "Merging: each card scores 1 ÷ ({rrf_k} + its rank) in each list, added up, so cards near the top of both lists come first." · "Cards from your own folder are searched by meaning only." · "On a second look, I search again for the follow-up and skip cards I already found."
+      - **Judge.** Intro: "Search is fast but rough, so I read each of the {candidates} cards side by side with your question and score it from 0 to 1 for how well it answers it. Only the best {keep} go on." Points: "Scoring uses {provider}'s {model} reranker, which reads the question and the card together. That's more accurate than comparing fingerprints, but too slow to run over the whole library." · "At most {max_per_document} cards come from one document, so one long document can't take every place." · "If the reranker is down, I keep the Scout's order, so you still get an answer." · then `secondLookPoints`:
+        - off: ["The second look is off."]
+        - with a decider: "Then the second look: Mercury Decide, a small decision model, says how sure it is that the best cards fully answer your question. At {pct(threshold)} or more, they go straight to the Storyteller." · "If it's less than {pct(nothing_threshold)} sure the cards mention anything in your question, the run stops and no answer is written." · "Otherwise a short language-model call writes one follow-up search. For example, the cards say Kenneth grew up in Batam, so it searches for \"Batam food\"." · "The Scout searches once more and I keep the best {slots} new cards, ranked against the follow-up. With the first {keep}, the Storyteller gets up to {max_cards}." · "Mercury Decide checks the final cards once more; if they answer no part of the question, no answer is written." · "Cards from your own folder are never sent to Mercury Decide; then the language model decides alone."
+        - without a decider: "Then the second look: a short language-model call decides whether the best cards are enough and, if not, writes one follow-up search." · the same "The Scout searches once more…" point.
+      - **Storyteller.** Intro: "I'm the only step that writes. I get your question, the numbered cards and a fixed set of rules, and write an answer that uses nothing else." Points: "The cards go to {llmName} ({model}) with the rules, which you can read below." · "Every fact gets the number of the card it came from, like [1]. Click a number to see the card." · "If the cards don't answer the question, I say so instead of guessing." · "Afterwards, any number that doesn't match a real card is removed, so every link points somewhere real." · when `fallback_model` is set: "If {llmName} runs out of quota, the same request goes to {fallback_model} through OpenRouter."
+      - **Chopper.** Intro: "A whole document is too big to search well, so I cut it into cards of about {size} characters, roughly a page of a paperback." Points: "I cut at headings and blank lines, so paragraphs stay whole and code blocks are never split." · "Each card holds up to {chunk_tokens} tokens. I count a token as about {chars_per_token} characters, so no extra software is needed." · "Each card starts with the last ~{overlap_tokens} tokens of the one before, so a sentence cut at the edge still appears whole somewhere." · "Each card remembers the heading it sits under." · "A text can be up to {max_text_chars} characters long."
+      - **Upload Translator.** Intro: "I give every card a fingerprint: a list of {dimensions} numbers that captures what it's about. Later, the Scout compares your question's fingerprint with these." Points: "All the cards go to {provider}'s {model} model in one batch, marked as documents (questions are marked as queries, which helps them match)." · "Each fingerprint also becomes a dot on the vector map, placed with the same map as the starter library, so your cards land near the cards they're similar to."
+      - **Archivist.** Intro: "I file your cards in your own folder, so the Scout searches them along with the shared library. Your folder belongs to this browser tab only." Points: "Your cards and fingerprints stay in this tab's memory. They're never added to the shared library or saved on our server; reload or close the tab and they're gone." · "When you ask a question, the browser sends them along so the Scout can search them." · "Your text is sent to Voyage AI to make the fingerprints, and to the language model when one of your cards is used in an answer." · "The shared library lives in Postgres with pgvector: each card's fingerprint is indexed (HNSW) for fast meaning search, and its words (GIN) for word search."
+    - Update `frontend/lib/characters.test.ts` and any other test that reads `how` as a string.
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the speech-bubble `plain` lines, tech chips and settings tables (unchanged).
 - [ ] 7.10 (You) Release review on alt-main
   - Do: deploy `alt-main` as a Vercel preview (and the backend if 7.8 shipped) and check keyboard use, reduced motion, the four sizes, a live run, the example run and a failed request.
   - Done when: the owner signs off on the preview.

@@ -112,3 +112,12 @@ export function groupByShelf<T extends { filename: string }>(
     .filter((id) => byShelf.has(id))
     .map((id) => ({ shelf: shelfFor(id), docs: byShelf.get(id)! }));
 }
+
+/** The questions shown as chips under the question bar, in order. */
+export const FEATURED = [
+  "What is Kenneth's academic background?",
+  "What project is Kenneth most proud of?",
+  "Show Kenneth's CV",
+  "How does RAG work?",
+  "Why do language models hallucinate?",
+];

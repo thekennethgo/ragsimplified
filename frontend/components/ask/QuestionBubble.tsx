@@ -43,6 +43,7 @@ export function QuestionBubble({
   busy,
   offline,
   examples,
+  featured,
 }: {
   question: string;
   onChange: (value: string) => void;
@@ -51,6 +52,8 @@ export function QuestionBubble({
   /** The backend can't be reached, so nothing can be answered. */
   offline: boolean;
   examples?: ExampleCard[];
+  /** The questions to show as chips; the first three examples when absent. */
+  featured?: string[];
 }) {
   const cards = examples ?? [];
   const input = useRef<HTMLTextAreaElement>(null);
@@ -62,7 +65,7 @@ export function QuestionBubble({
     el.style.height = `${el.scrollHeight}px`;
   }, [question]);
   const all = cards.flatMap((card) => card.questions);
-  const chips = all.slice(0, 3);
+  const chips = featured ?? all.slice(0, 3);
   // The cards under "Browse all topics" hold the questions that are not chips.
   const more = cards
     .map((card) => ({ ...card, questions: card.questions.filter((q) => !chips.includes(q)) }))
@@ -84,7 +87,7 @@ export function QuestionBubble({
             }}
             maxLength={MAX_QUESTION_CHARS}
             rows={1}
-            placeholder="e.g. Where did Kenneth grow up?"
+            placeholder="e.g. What is Kenneth's academic background?"
           />
         </label>
         <button

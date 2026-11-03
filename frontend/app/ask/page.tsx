@@ -37,7 +37,7 @@ import { useSceneQueue } from "../../lib/office/useSceneQueue";
 import { useBackendHealth } from "../../lib/health";
 import { ASK_DOC_COUNT } from "../../lib/office-spots";
 import { usePrivateTexts } from "../../lib/PrivateTexts";
-import { SHELVES, shelfOf } from "../../lib/shelves";
+import { FEATURED, SHELVES, shelfOf } from "../../lib/shelves";
 import { type Phase, sceneReducer, toSceneEvents } from "../../lib/sceneState";
 import type { ViewTarget } from "../../lib/viewer";
 import styles from "./page.module.css";
@@ -477,6 +477,7 @@ function AskOffice() {
         busy={running}
         offline={offline}
         examples={examplesFor(library)}
+        featured={FEATURED}
       />
       {error && (
         <p role="alert" className={styles.error}>

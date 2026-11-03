@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import HowWeTestIt from "../components/HowWeTestIt";
 import { reducedMotion } from "../lib/office/motion";
+import { FEATURED } from "../lib/shelves";
 import styles from "./page.module.css";
 
 const REPO = "https://github.com/thekennethgo/ragsimplified";
@@ -12,11 +13,7 @@ const REPO = "https://github.com/thekennethgo/ragsimplified";
 // Set to a video path once the clip is recorded; null shows the picture.
 const HERO_CLIP: string | null = null;
 
-const EXAMPLES = [
-  "Where did Kenneth grow up?",
-  "What is Kenneth's academic background?",
-  "What project is Kenneth most proud of?",
-];
+const EXAMPLES = FEATURED.slice(0, 3);
 
 const STEPS: { id: string; name: string; text: string; clip: string | null }[] =
   [
