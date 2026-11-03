@@ -11,6 +11,7 @@ export default function AnswerCard({
   answer,
   citations,
   askedQuestion,
+  model,
   started,
   progress,
   cardsFound,
@@ -21,6 +22,8 @@ export default function AnswerCard({
   answer: string;
   citations: Citation[];
   askedQuestion: string;
+  /** The model that wrote the answer; falls back to the configured one. */
+  model?: string | null;
   /** A run has begun, so "working" can replace the empty-state hint. */
   started: boolean;
   /** The live line shown instead of the answer until it is revealed. */
@@ -51,7 +54,7 @@ export default function AnswerCard({
                 onOpenInViewer={onOpen}
               />
               <p className={styles.meta}>
-                {cardsFound} cards found · {kept} kept · {about?.llm.model || "…"}
+                {cardsFound} cards found · {kept} kept · {model || about?.llm.model || "…"}
               </p>
             </>
           ) : started ? (

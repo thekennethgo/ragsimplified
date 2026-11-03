@@ -151,7 +151,11 @@ export function storytellerCopy(about: About | null): CharacterCopy {
     role: "writes the answer",
     plain:
       "I write the answer using only the cards the Judge kept, and mark each fact with its card number, like [1]. If the cards don't cover your question, I say so instead of guessing.",
-    how: `The kept cards are numbered and sent, with your question, to ${name} along with a fixed set of rules (the system prompt). The answer streams back word by word. Afterwards, any [n] that doesn't match a real card is removed, and every remaining number becomes a link to its source.`,
+    how: `The kept cards are numbered and sent, with your question, to ${name} along with a fixed set of rules (the system prompt). The answer streams back word by word. Afterwards, any [n] that doesn't match a real card is removed, and every remaining number becomes a link to its source.${
+      llm?.fallback_model
+        ? ` If ${name} runs out of quota, the same request goes to ${llm.fallback_model} through OpenRouter.`
+        : ""
+    }`,
     tech: [`${name} · ${v(llm?.model || undefined)}`, "Streaming", "Citation check"],
     settings: [
       ["Model", v(llm?.model || undefined)],

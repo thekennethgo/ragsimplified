@@ -586,7 +586,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass; after the owner adds OpenRouter credit, a live question's `second_look` event has a number for `enough`.
   - Out of scope: a health check on the decider, other decision models, the thresholds.
 
-- [ ] 7.9f OpenRouter takes over when Gemini runs out
+- [x] 7.9f OpenRouter takes over when Gemini runs out
   - Do: in `backend/app/llm.py`:
     - `_open_stream` takes `retry_429: bool = True`; when it is `False`, a 429 is raised at once (5xx are still retried). `OpenAICompatibleLLM` and `AnthropicLLM` take `retry_429: bool = True` and pass it on.
     - New, after `AnthropicLLM`:

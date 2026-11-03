@@ -94,6 +94,7 @@ function AskOffice() {
   const [askedQuestion, setAskedQuestion] = useState("");
   const [error, setError] = useState("");
   const [answer, setAnswer] = useState("");
+  const [answerModel, setAnswerModel] = useState<string | null>(null);
   // The answer shows when the office reaches the Storyteller (or at once without the office).
   const [revealed, setRevealed] = useState(false);
   const [citations, setCitations] = useState<Citation[]>([]);
@@ -184,6 +185,7 @@ function AskOffice() {
     setAskedQuestion(question.trim());
     setError("");
     setAnswer("");
+    setAnswerModel(null);
     setRevealed(!onRef.current);
     setCitations([]);
     setStates({});
@@ -361,6 +363,7 @@ function AskOffice() {
           const final = String(e.data.answer ?? "");
           const sources = (e.data.citations ?? []) as Citation[];
           setAnswer(final);
+          setAnswerModel(typeof e.data.model === "string" ? e.data.model : null);
           setQuestion("");
           setCitations(sources);
           // The run's last scene: when it ends the office is done.
@@ -518,6 +521,7 @@ function AskOffice() {
                 answer={revealed ? answer : ""}
                 citations={revealed ? citations : []}
                 askedQuestion={askedQuestion}
+                model={answerModel}
                 started={phase("translator") !== "waiting"}
                 progress={progress}
                 cardsFound={scout?.length ?? 0}
