@@ -678,7 +678,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the office bubbles and progress line.
 
-- [ ] 7.9l The second look says why, in plain words
+- [x] 7.9l The second look says why, in plain words
   - Do:
     - `frontend/app/ask/page.tsx`: new state `lookComing` (`false`, reset on submit). In the round 1 `judge` done handler, `setLookComing(e.data?.second_look === true)`. Pass it to `StepDetails` as `lookComing`.
     - `frontend/components/ask/StepDetails.tsx`:

@@ -49,19 +49,23 @@ const where = (r: { title: string; heading: string | null; page: number | null }
 const ROUND_TABS = ["translator", "scout", "judge"] as const;
 type RoundTab = (typeof ROUND_TABS)[number];
 
-/** Who decided whether the sources were enough, in one line. */
-function decidedLine(look: Look): string {
-  const pct = look.enough === null ? null : `${Math.round(look.enough * 100)}%`;
+/** Who decided whether the cards were enough, and why, in one line. */
+function decidedLine(look: Look, threshold: number, nothingThreshold: number): string {
+  const pct = (x: number) => `${Math.round(x * 100)}%`;
   if (look.nothing && look.relevant !== null) {
-    return `Mercury Decide was only ${Math.round(look.relevant * 100)}% sure the sources say anything about this.`;
+    return `Mercury Decide was only ${pct(look.relevant)} sure the cards mention anything in your question (it stops below ${pct(nothingThreshold)}), so no answer was written.`;
   }
-  if (pct === null) return "The language model decided.";
+  if (look.enough === null) {
+    return look.query
+      ? "The language model read the cards, found something missing, and wrote a follow-up search."
+      : "The language model read the cards and found them enough.";
+  }
   if (look.decidedBy === "decider") {
-    return `Mercury Decide judged the sources enough (${pct} sure they were).`;
+    return `Mercury Decide was ${pct(look.enough)} sure the cards fully answer the question (it needs ${pct(threshold)}), so no second search was needed.`;
   }
   return look.query
-    ? `Mercury Decide judged the sources not enough (${pct} sure they were).`
-    : `Mercury Decide was only ${pct} sure, so the language model decided the sources were enough.`;
+    ? `Mercury Decide was only ${pct(look.enough)} sure the cards fully answer the question (it needs ${pct(threshold)}), so the language model wrote a follow-up search.`
+    : `Mercury Decide was only ${pct(look.enough)} sure (it needs ${pct(threshold)}), but the language model found nothing to search for, so the cards go as they are.`;
 }
 
 function RoundSwitch({ round, onChange }: { round: 1 | 2; onChange: (round: 1 | 2) => void }) {
@@ -220,6 +224,7 @@ export default function StepDetails({
   words,
   scout,
   look = null,
+  lookComing,
   translator2 = null,
   scout2 = null,
   judge2 = null,
@@ -247,6 +252,8 @@ export default function StepDetails({
   scout: ScoutResult[] | null;
   /** The second look: the check's outcome, each character's round 2 page, and its progress. */
   look?: Look | null;
+  /** Round 1 asked for a second look that has not played yet. */
+  lookComing: boolean;
   translator2?: TranslatorRound2 | null;
   scout2?: ScoutRound2 | null;
   judge2?: JudgeRound2 | null;
@@ -273,6 +280,7 @@ export default function StepDetails({
   const { points, error } = useMapPoints(tab === "scout");
   const about = useAbout();
   const threshold = about?.second_look.threshold ?? 0.5;
+  const nothingThreshold = about?.second_look.nothing_threshold ?? 0.1;
   const started: Record<RoundTab, boolean> = {
     translator: round2.translator !== undefined,
     scout: round2.scout !== undefined,
@@ -448,18 +456,9 @@ export default function StepDetails({
                                 </div>
                               </div>
                             </div>
-                            {look.decidedBy === "llm" && !look.query && (
-                              <p>The language model decided the sources were enough.</p>
-                            )}
                           </>
-                        ) : (
-                          <>
-                            <div className={styles.chips}>
-                              <span className={styles.chipSoft}>Decided by the language model</span>
-                            </div>
-                            <p>The language model decided.</p>
-                          </>
-                        )}
+                        ) : null}
+                        <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                       </div>
                     </>
                   )}
@@ -596,7 +595,7 @@ export default function StepDetails({
                                   Not enough to answer yet. Second look: searching for “{look.query}”
                                 </strong>
                               </p>
-                              <p>{decidedLine(look)}</p>
+                              <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                               {round2.judge === "done" ? (
                                 <button
                                   type="button"
@@ -614,18 +613,18 @@ export default function StepDetails({
                               <p>
                                 <strong>Nothing on file about this, so no answer was written.</strong>
                               </p>
-                              <p>{decidedLine(look)}</p>
+                              <p>{decidedLine(look, threshold, nothingThreshold)}</p>
                             </div>
                           )}
                           {kept.length > 0 &&
                             !look?.query &&
                             !look?.nothing &&
-                            (look !== null || phase("judge") !== "working") && (
+                            (look !== null || !lookComing) && (
                               <div className={styles.banner}>
                                 <p>
                                   <strong>Enough to answer. These cards go to the Storyteller.</strong>
                                 </p>
-                                {look && <p>{decidedLine(look)}</p>}
+                                {look && <p>{decidedLine(look, threshold, nothingThreshold)}</p>}
                               </div>
                             )}
                           <JudgeVerdict

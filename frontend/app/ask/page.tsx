@@ -115,6 +115,7 @@ function AskOffice() {
   const [look, setLook] = useState<Look | null>(null);
   // The second look's pages show once the office has played the Judge's check, not when the backend reports it.
   const [lookPlayed, setLookPlayed] = useState(false);
+  const [lookComing, setLookComing] = useState(false);
   const [translator2, setTranslator2] = useState<TranslatorRound2 | null>(null);
   const [scout2, setScout2] = useState<ScoutRound2 | null>(null);
   const [judge2, setJudge2] = useState<JudgeRound2 | null>(null);
@@ -194,6 +195,7 @@ function AskOffice() {
     setScout(null);
     setJudge(null);
     setLook(null);
+    setLookComing(false);
     setLookPlayed(!onRef.current);
     setTranslator2(null);
     setScout2(null);
@@ -357,6 +359,7 @@ function AskOffice() {
         } else if (e.step === "judge") {
           const results = (e.data?.results ?? []) as JudgeResult[];
           setJudge(results);
+          setLookComing(e.data?.second_look === true);
           queue.emit(sceneEvent, { onEnd: update });
         } else if (e.step === "storyteller" && e.data) {
           // The final answer has made-up [n] markers removed.
@@ -520,6 +523,7 @@ function AskOffice() {
             onTab={setTab}
             states={states}
             played={animationsOn ? shown : states}
+            lookComing={lookComing}
             answer={
               <AnswerCard
                 answer={revealed ? answer : ""}

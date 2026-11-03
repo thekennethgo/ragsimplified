@@ -21,6 +21,7 @@ const props = {
   judge: null,
   follow: false,
   privateSent: 0,
+  lookComing: false,
   sentPrompt: null,
 };
 

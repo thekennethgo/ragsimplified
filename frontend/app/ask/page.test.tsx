@@ -1664,7 +1664,9 @@ test("the Judge's round 2 page shows who decided", async () => {
   expect(screen.getByTestId("decide-meter-fill")).toHaveStyle({ width: "20%" });
   expect(screen.getByTestId("decide-meter-tick")).toHaveStyle({ left: "50%" });
   expect(screen.getByText("needs 50%")).toBeInTheDocument();
-  expect(screen.queryByText("Decided by the language model")).toBeNull();
+  expect(
+    screen.getByText(/Mercury Decide was only 20% sure the cards fully answer the question \(it needs 50%\)/),
+  ).toBeInTheDocument();
 });
 
 test("the Judge says the language model decided when no probability was given", async () => {
@@ -1680,8 +1682,9 @@ test("the Judge says the language model decided when no probability was given", 
   ask("What is Kenneth's hometown like?");
   await screen.findByRole("button", { name: "Source 1" });
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
-  expect(screen.getByText("Decided by the language model")).toBeInTheDocument();
-  expect(screen.getByText("The language model decided.")).toBeInTheDocument();
+  expect(
+    screen.getByText("The language model read the cards, found something missing, and wrote a follow-up search."),
+  ).toBeInTheDocument();
   expect(screen.queryByTestId("decide-meter-fill")).toBeNull();
 });
 
@@ -1756,7 +1759,7 @@ test("a check that says enough shows the Judge's banner with the decision", asyn
   await screen.findByRole("button", { name: "Source 1" });
   fireEvent.click(screen.getByRole("button", { name: "Judge" }));
   expect(screen.getByText("Enough to answer. These cards go to the Storyteller.")).toBeInTheDocument();
-  expect(screen.getByText(/Mercury Decide judged the sources enough \(90% sure they were\)/)).toBeInTheDocument();
+  expect(screen.getByText(/Mercury Decide was 90% sure the cards fully answer the question \(it needs 50%\), so no second search was needed\./)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Initial" })).toBeNull();
 });
 
@@ -1788,7 +1791,7 @@ test("a check that finds nothing on file has the board say so instead of the Sto
     screen.getByText("Nothing on file about this, so no answer was written."),
   ).toBeInTheDocument();
   expect(
-    screen.getByText("Mercury Decide was only 2% sure the sources say anything about this."),
+    screen.getByText("Mercury Decide was only 2% sure the cards mention anything in your question (it stops below 10%), so no answer was written."),
   ).toBeInTheDocument();
   expect(screen.queryByText("Enough to answer. These cards go to the Storyteller.")).toBeNull();
 });
