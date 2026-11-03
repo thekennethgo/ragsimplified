@@ -22,7 +22,8 @@ def title_for(path: Path) -> str:
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.startswith("# "):
                 return line[2:].strip()
-    return path.stem.replace("-", " ").replace("_", " ").strip().title()
+    name = path.stem.replace("-", " ").replace("_", " ").strip()
+    return name.upper() if len(name) <= 3 else name.title()
 
 
 def seed(

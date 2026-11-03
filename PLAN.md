@@ -763,7 +763,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass (update tests that check the old chips or placeholder).
   - Out of scope: the shelves' own questions, the chips' styling.
 
-- [ ] 7.9s "Show Kenneth's CV" points to the CV
+- [x] 7.9s "Show Kenneth's CV" points to the CV
   - Do:
     - `backend/app/pipeline/storyteller_prompt.md`: add a rule after rule 8:
       "9. If the question asks to show, open or see a document (for example "Show Kenneth's CV"), answer in one sentence that points to it and cite the chunk that comes from that document itself, for example "Here is Kenneth's CV [2]." Do not summarise the document and do not cite a different document that only mentions it."
