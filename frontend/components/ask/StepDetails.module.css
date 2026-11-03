@@ -533,3 +533,21 @@
     min-height: 44px;
   }
 }
+
+.aside .mono {
+  margin-left: 0;
+}
+
+.aside .rule {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.aside li .empty {
+  display: inline;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  text-align: left;
+}

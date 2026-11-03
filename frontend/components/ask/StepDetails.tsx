@@ -153,15 +153,21 @@ function JudgeVerdict({
   results,
   title,
   none,
+  rule,
+  maxPerDocument,
   offset = 0,
 }: {
   results: JudgeResult[];
   title: string;
   none: string;
+  rule: string;
+  maxPerDocument: string;
   offset?: number;
 }) {
   const kept = results.filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const setAside = results.filter((r) => !r.kept);
+  const worstKept = Math.max(...kept.map((r) => r.new_rank));
+  const score = (r: JudgeResult) => (r.rerank_score === null ? "" : `score ${r.rerank_score.toFixed(2)}`);
   return (
     <div className={styles.judge}>
       <div className={styles.block}>
@@ -174,7 +180,9 @@ function JudgeVerdict({
               <li key={r.n}>
                 <span className={styles.num}>{(r.n ?? 0) + offset}</span>
                 <span className={styles.name}>{where(r)}</span>
-                <span className={styles.mono}>was #{r.old_rank}</span>
+                <span className={styles.mono}>
+                  {r.rerank_score === null ? "" : `${score(r)} · `}was #{r.old_rank}
+                </span>
               </li>
             ))}
           </ol>
@@ -182,9 +190,16 @@ function JudgeVerdict({
       </div>
       <div className={`${styles.block} ${styles.aside}`}>
         <h3>Set aside: {setAside.length} cards</h3>
+        <p className={styles.rule}>{rule}</p>
         <ul>
           {setAside.map((r) => (
-            <li key={`${r.old_rank}`}>{where(r)}</li>
+            <li key={`${r.old_rank}`}>
+              {where(r)}
+              {r.rerank_score !== null && <span className={styles.mono}> {score(r)}</span>}
+              {r.new_rank < worstKept && (
+                <span className={styles.empty}> {maxPerDocument} already from this document</span>
+              )}
+            </li>
           ))}
         </ul>
       </div>
@@ -474,6 +489,8 @@ export default function StepDetails({
                         results={judge2.results}
                         title={`New cards, ranked against “${judge2.query}”`}
                         none="None of the new cards were kept."
+                        rule={about ? `Only the best ${about.second_look.slots} new cards are added.` : "…"}
+                        maxPerDocument={about ? String(about.judge.max_per_document) : "…"}
                         offset={judge2.finalCards.filter((c) => c.round === 1).length}
                       />
                       {judge2.check?.nothing && (
@@ -615,6 +632,12 @@ export default function StepDetails({
                             results={judge ?? []}
                             title={`Kept: the best ${kept.length} of ${judge?.length ?? 0}`}
                             none="None of the cards answered the question, so the Judge kept nothing."
+                            rule={
+                              about
+                                ? `Only the best ${about.judge.keep} are kept, at most ${about.judge.max_per_document} from one document.`
+                                : "…"
+                            }
+                            maxPerDocument={about ? String(about.judge.max_per_document) : "…"}
                           />
                         </>
                       )}

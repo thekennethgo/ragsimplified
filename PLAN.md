@@ -665,7 +665,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the Storyteller tab's "card N" label.
 
-- [ ] 7.9j The Judge shows its scores and why a card was set aside (after 7.9i)
+- [x] 7.9j The Judge shows its scores and why a card was set aside (after 7.9i)
   - Do: in `frontend/components/ask/StepDetails.tsx`, `JudgeVerdict`:
     - Kept rows: the mono column reads `score 0.90 · was #1` (`rerank_score.toFixed(2)`); when `rerank_score` is `null` (the reranker failed), it stays `was #1`.
     - Set-aside rows: each `<li>` gets the same mono score after the name, when there is one. A set-aside card whose `new_rank` is lower (better) than the highest `new_rank` among the kept cards was skipped by the per-document limit: add the note “2 already from this document” after it (use `about.judge.max_per_document` for the number).
