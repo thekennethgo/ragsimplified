@@ -17,6 +17,7 @@
   gap: 4px;
   padding-left: 12px;
   overflow-x: auto;
+  position: relative; /* so a tab's offsetLeft is measured from this row */
 }
 
 .tabs button {
@@ -227,4 +228,10 @@
   width: 100%;
   max-width: 760px;
   margin-inline: auto;
+}
+
+@media (max-width: 759px) {
+  .tabs button {
+    min-height: 44px;
+  }
 }

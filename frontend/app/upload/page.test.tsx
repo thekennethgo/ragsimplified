@@ -457,3 +457,28 @@ test("sending moves the panel from the form to the steps", async () => {
   );
   expect(screen.getByRole("button", { name: /^(Chopper|Translator|Archivist)$/ , pressed: true })).toBeInTheDocument();
 });
+
+test("the Watch the office button folds and opens the room", () => {
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  const watch = screen.getByRole("button", { name: /Watch the office/ });
+  expect(watch).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "true");
+  fireEvent.click(watch);
+  expect(watch).toHaveAttribute("aria-expanded", "false");
+});
+
+test("on a phone, sending opens the office and scrolls it into view", async () => {
+  const scrollIntoView = vi.fn();
+  Element.prototype.scrollIntoView = scrollIntoView;
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === "(max-width: 759px)" }));
+  stubBackend();
+  render(<UploadPage />, { wrapper: PrivateTextsProvider });
+  paste("My note", "hello");
+
+  expect(screen.getByRole("button", { name: /Watch the office/ })).toHaveAttribute("aria-expanded", "true");
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
+  expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByLabelText("The office"));
+  await screen.findByRole("status");
+});

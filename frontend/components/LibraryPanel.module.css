@@ -223,3 +223,9 @@
   border-radius: 50%;
   background: var(--shelf);
 }
+
+@media (max-width: 759px) {
+  .toggle button {
+    min-height: 44px;
+  }
+}

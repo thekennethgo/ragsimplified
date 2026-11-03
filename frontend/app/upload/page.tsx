@@ -12,6 +12,7 @@ import WhatHappened, { type ChunkDetail } from "../../components/upload/WhatHapp
 import { backendUrl, readEvents } from "../../lib/backend";
 import { archivistSays, chopperSays, uploadTranslatorSays } from "../../lib/characters";
 import { useBackendHealth } from "../../lib/health";
+import { reducedMotion } from "../../lib/office/motion";
 import { useAnimationsSetting } from "../../lib/office/animationSetting";
 import { UPLOAD_DOC_COUNT } from "../../lib/office-spots";
 import { buildUploadScenes } from "../../lib/office/scenes/upload";
@@ -34,6 +35,8 @@ export default function UploadPage() {
     if (!animationsOn) queue.skipAll();
   }, [animationsOn, queue]);
   const officeRef = useRef<HTMLElement>(null);
+  // Under 760px the room picture is hidden until the visitor asks to watch.
+  const [watching, setWatching] = useState(false);
   // Private texts live only in the browser's memory (ADR 002): nothing is stored server-side.
   const { texts, add } = usePrivateTexts();
   const offline = useBackendHealth() === "offline";
@@ -84,6 +87,11 @@ export default function UploadPage() {
     const upload = typeof source === "string" ? null : source;
     const text = upload ? upload.pages.map((p) => p.text).join("\n\n") : (source as string);
     setRun((n) => n + 1);
+    // On a phone the office is folded, so open it and bring it into view.
+    if (window.matchMedia?.("(max-width: 759px)").matches) {
+      setWatching(true);
+      officeRef.current?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+    }
     setBusy(true);
     setAnimating(true);
     setError("");
@@ -192,7 +200,15 @@ export default function UploadPage() {
 
       <div className={styles.grid}>
         <section ref={officeRef} aria-label="The office" className={styles.scene}>
-          <div className={styles.room}>
+          <button
+            type="button"
+            className={styles.watch}
+            aria-expanded={watching}
+            onClick={() => setWatching((on) => !on)}
+          >
+            {watching ? "▾" : "▸"} Watch the office
+          </button>
+          <div className={`${styles.room} ${watching ? styles.roomOpen : ""}`}>
             <div className={styles.stage}>
               <OfficeRoom
                 src="/office/upload-room.svg"

@@ -344,3 +344,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 759px) {
+  .primary,
+  .secondary,
+  .built a {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 759px) {
+  .github {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+}

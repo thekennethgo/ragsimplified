@@ -54,6 +54,18 @@
   pointer-events: none;
 }
 
+.watch {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: #cdbba3;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
 .bubbles {
   position: absolute;
   inset: 0;
@@ -124,6 +136,18 @@
 }
 
 @media (max-width: 760px) {
+  .watch {
+    display: block;
+  }
+
+  .room {
+    display: none;
+  }
+
+  .roomOpen {
+    display: block;
+  }
+
   .bubbles {
     position: static;
     display: flex;
@@ -134,5 +158,11 @@
 
   .bubbles:empty {
     display: none;
+  }
+}
+
+@media (max-width: 759px) {
+  .watch {
+    min-height: 44px;
   }
 }

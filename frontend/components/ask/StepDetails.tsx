@@ -24,6 +24,7 @@ import { FOUND_BY_COLOR, keyOf, useMapPoints, type MapOverlay, type MapPoint } f
 import type { Phase } from "../../lib/sceneState";
 import CharacterCard from "../characters/CharacterCard";
 import VectorMap from "../map/VectorMap";
+import { showSelectedTab } from "../../lib/tabRow";
 import styles from "./StepDetails.module.css";
 import { HighlightedWords } from "./QuestionBubble";
 
@@ -240,6 +241,8 @@ export default function StepDetails({
   // Once the visitor picks a tab, the panel stops switching on its own until the next run.
   // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
   const touched = useRef(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => showSelectedTab(tabsRef.current), [tab]);
   // Which round each tab shows; a tab with a second page opens on it when round 2 starts.
   const [rounds, setRounds] = useState<Record<string, 1 | 2>>({});
   const { points, error } = useMapPoints(tab === "scout");
@@ -266,7 +269,9 @@ export default function StepDetails({
   const phase = (id: string): Phase => states[id] ?? "waiting";
   // Follow the newest step whose results are in; once the answer is there, stay where it is.
   const playedPhase = (id: string): Phase => played[id] ?? "waiting";
-  const latest = [...FOLLOWED].reverse().find((id) => playedPhase(id) === "done");
+  // The last step still working, else the newest one done; so a second look never pulls the panel back.
+  const lastWhere = (p: Phase) => [...FOLLOWED].reverse().find((id) => playedPhase(id) === p);
+  const latest = lastWhere("working") ?? lastWhere("done");
   // The tab this panel last chose; any other change to `tab` came from the page (the step strip) and counts as a pick.
   const chosen = useRef(tab);
   useEffect(() => {
@@ -321,7 +326,7 @@ export default function StepDetails({
         <h2 id="steps-h" className="visually-hidden">
           Answer and how it got there
         </h2>
-        <div role="group" aria-label="The characters" className={styles.tabs}>
+        <div ref={tabsRef} role="group" aria-label="The characters" className={styles.tabs}>
           {STEPS.map((s) => (
             <button
               key={s.id}

@@ -11,6 +11,7 @@ import {
 } from "../../lib/characters";
 import type { Phase } from "../../lib/sceneState";
 import CharacterCard from "../characters/CharacterCard";
+import { showSelectedTab } from "../../lib/tabRow";
 import styles from "./WhatHappened.module.css";
 
 export type ChunkDetail = {
@@ -50,6 +51,8 @@ export default function WhatHappened({
   // A ref, set inside the click, so an effect left over from an earlier render cannot undo the pick.
   const touched = useRef(false);
   const prevRun = useRef(run);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => showSelectedTab(tabsRef.current), [step]);
   useEffect(() => {
     touched.current = false;
     // Sending moves the panel from the form to the steps.
@@ -88,7 +91,12 @@ export default function WhatHappened({
         <h2 id="team-h" className="visually-hidden">
           Meet the team
         </h2>
-        <div role="group" aria-label="The characters that filed your text" className={styles.tabs}>
+        <div
+          ref={tabsRef}
+          role="group"
+          aria-label="The characters that filed your text"
+          className={styles.tabs}
+        >
           <button
             type="button"
             aria-pressed={step === "doc"}
