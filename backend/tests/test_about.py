@@ -63,6 +63,6 @@ def test_second_look_facts_never_include_the_key(monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-secret")
     monkeypatch.setenv("SECOND_LOOK", "off")
     body = client.get("/about").json()
-    assert body["second_look"]["decider"] == "inception/mercury-decide:free"
+    assert body["second_look"]["decider"] == "inception/mercury-decide"
     assert body["second_look"]["enabled"] is False
     assert "sk-or-secret" not in json.dumps(body)

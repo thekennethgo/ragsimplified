@@ -25,10 +25,10 @@ test("the Judge's how text states the per-document cap", () => {
 });
 
 test("the Judge's how text says whether the second look is on and what decides it", () => {
-  const look = { enabled: true, decider: "inception/mercury-decide:free", slots: 2 };
+  const look = { enabled: true, decider: "inception/mercury-decide", slots: 2 };
   const on = { ...withTokens(null), scout: { candidates: 20 }, second_look: look } as About;
   expect(judgeCopy(on).how).toContain("The second look is on");
-  expect(judgeCopy(on).how).toContain("inception/mercury-decide:free");
+  expect(judgeCopy(on).how).toContain("inception/mercury-decide");
   expect(judgeCopy(on).how).toContain("best 2 cards of that second search, and they join the first search's best 3");
   const off = { ...on, second_look: { ...look, enabled: false } } as About;
   expect(judgeCopy(off).how).toContain("The second look is off.");

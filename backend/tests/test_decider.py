@@ -34,7 +34,7 @@ def test_sends_the_decisions_request_and_reads_both_probabilities():
     assert seen["url"] == "https://openrouter.ai/api/alpha/decisions"
     assert seen["auth"] == "Bearer or-key"
     body = seen["body"]
-    assert body["model"] == "inception/mercury-decide:free"
+    assert body["model"] == "inception/mercury-decide"
     assert body["state"] == "Question: q"
     assert set(body["questions"]) == {"enough", "relevant"}  # both in one call
     for question in body["questions"].values():

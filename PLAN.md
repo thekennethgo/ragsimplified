@@ -576,6 +576,103 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Tests: `StepDetails`: with the Judge's played phase back to "working" during the second look (and the Scout "done"), the Judge tab stays selected. `StepDetails`: selecting the last tab sets the row's `scrollLeft` (mock `offsetLeft`/`clientWidth` in jsdom). `upload/page.test.tsx`: the "Watch the office" button toggles `aria-expanded`; with `matchMedia` mocked to match, submitting opens the room and calls `scrollIntoView` on the office section.
   - Done when: the tests pass, and in Opus's preview at 390×844 and 360×740 the Answer tab is visible when selected, Upload opens with the envelope near the top and the office folded, Send brings the office into view, and no button, tab, chip or summary listed above is under 44px tall; then the owner checks it on a real phone.
   - Out of scope: desktop sizes, the office scenes, reduced-motion behaviour beyond the scroll above, the library's map controls.
+- [x] 7.9e Decider on the paid Mercury Decide
+  - Do: the free `inception/mercury-decide:free` was withdrawn (OpenRouter 404, 2026-11-03); switch to the paid slug.
+    - `backend/app/pipeline/decider.py`: `MODEL = "inception/mercury-decide"`. In the module docstring, "a free yes/no decision model" becomes "a cheap yes/no decision model ($0.02 per million input tokens)".
+    - `backend/app/pipeline/second_look.py` docstring: "Stage 1 (decider.py, free)" → "Stage 1 (decider.py, cheap)".
+    - `docs/adr/006-second-look.md`: the slug becomes `inception/mercury-decide`; "(System 1, free)" → "(System 1, cheap)"; the sentence "Why a System 1 decision model for stage 1: it is free," → "Why a System 1 decision model for stage 1: it costs about $0.0001 a question,". Add at the end of the Consequences section: "- 2026-11-03: the free `:free` slug was withdrawn; the app now uses the paid `inception/mercury-decide`, which needs OpenRouter credit. Without credit, every decider call fails and the language model decides alone."
+    - `README.md` line 128: the slug becomes `inception/mercury-decide`.
+    - Tests: replace the slug in `backend/tests/test_about.py`, `backend/tests/test_decider.py`, `frontend/app/ask/page.test.tsx` and `frontend/lib/characters.test.ts`.
+  - Done when: `make lint` and `make test` pass; after the owner adds OpenRouter credit, a live question's `second_look` event has a number for `enough`.
+  - Out of scope: a health check on the decider, other decision models, the thresholds.
+
+- [ ] 7.9f OpenRouter takes over when Gemini runs out
+  - Do: in `backend/app/llm.py`:
+    - `_open_stream` takes `retry_429: bool = True`; when it is `False`, a 429 is raised at once (5xx are still retried). `OpenAICompatibleLLM` and `AnthropicLLM` take `retry_429: bool = True` and pass it on.
+    - New, after `AnthropicLLM`:
+      ```python
+      OPENROUTER_URL = "https://openrouter.ai/api/v1"
+      FALLBACK_COOLDOWN = 60.0  # seconds the primary is skipped after a 429
+
+
+      class FallbackLLM:
+          """The primary LLM, or `fallback` when the primary answers 429 (its quota is used up).
+
+          `model` is the model that served the latest call, so the answer can name it.
+          """
+
+          # shortcut: shared by every request in this process, lost on restart; fine for one Render instance.
+          skip_until = 0.0
+
+          def __init__(self, primary, fallback, clock=time.monotonic) -> None:
+              self.primary, self.fallback, self.clock = primary, fallback, clock
+              self.model = primary.model
+
+          def stream(self, system, messages, *, max_tokens=None):
+              if self.clock() >= FallbackLLM.skip_until:
+                  self.model = self.primary.model
+                  started = False
+                  try:
+                      for piece in self.primary.stream(system, messages, max_tokens=max_tokens):
+                          started = True
+                          yield piece
+                      return
+                  except httpx.HTTPStatusError as error:
+                      if started or error.response.status_code != 429:
+                          raise
+                      FallbackLLM.skip_until = self.clock() + FALLBACK_COOLDOWN
+              self.model = self.fallback.model
+              yield from self.fallback.stream(system, messages, max_tokens=max_tokens)
+      ```
+      (add the type hints the file already uses: `LLM`, `list[Message]`, `int | None`, `Iterator[str]`).
+    - `get_llm`: read `fallback = os.environ.get("LLM_FALLBACK_MODEL")`. Build the primary as today with `retry_429=not fallback`. If `fallback` is set, return `FallbackLLM(primary, OpenAICompatibleLLM(OPENROUTER_URL, os.environ["OPENROUTER_API_KEY"], fallback))`; otherwise return the primary. Update the module docstring with one line on `LLM_FALLBACK_MODEL`.
+    - `backend/app/ask.py`: the final `storyteller` done event's data gets `"model": getattr(llm, "model", None)`.
+    - `backend/app/about.py`: `llm` gets `"fallback_model": os.environ.get("LLM_FALLBACK_MODEL") or None`.
+    - `frontend/lib/about.ts`: `llm` gets `fallback_model: string | null`. `frontend/lib/characters.ts` `storytellerCopy`: when `llm?.fallback_model` is set, `how` ends with `` ` If ${name} runs out of quota, the same request goes to ${llm.fallback_model} through OpenRouter.` ``
+    - `frontend/app/ask/page.tsx`: keep the storyteller done event's `model` in a new `answerModel` state (reset to `null` on submit) and pass it to `AnswerCard` as `model`. `frontend/components/ask/AnswerCard.tsx`: optional prop `model?: string | null`; the footer shows `{model || about?.llm.model || "…"}`.
+    - `.env.example`: after `LLM_API_KEY`, add `# Optional: when the LLM answers 429, the request goes to this OpenRouter model (uses OPENROUTER_API_KEY).` and `LLM_FALLBACK_MODEL=google/gemini-3.5-flash-lite`.
+    - `docs/adr/003-llm-provider.md`: add under Decision: "- **2026-11-03: OpenRouter as overflow.** With `LLM_FALLBACK_MODEL` set, a 429 from the primary (quota or rate limit used up) sends the same request to that model on OpenRouter, and the primary is skipped for 60 seconds. The owner chose `google/gemini-3.5-flash-lite`, the same model, so answers match. The answer's footer names the model that actually answered."
+    - Fix any existing test this breaks (for example a full-dict check in `backend/tests/test_about.py`).
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: falling back on 5xx or timeouts, a fallback for the embedder or reranker, new tests (owner's rule for now).
+
+- [ ] 7.9g Home: a true "With RAG" example
+  - Do: in `frontend/app/page.tsx`, the "Same question, both ways" comparison:
+    - Question: “How long can my question be here?”
+    - Model on its own: “Up to 4,000 characters.” (the "Confident, and made up." line stays).
+    - With RAG: “1,000 characters. <cite>1</cite>” (same markup as today).
+    - Source line: `[1] Site FAQ · card 2: “…a question at most 1,000 characters…”` (the FAQ's chunk at position 1, shown as card 2 like the Ask page).
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the rest of Home (FAQ wording, the second look on Home).
+
+- [ ] 7.9h Card counts after a second look
+  - Do:
+    - `frontend/lib/characters.ts`, `secondLookLine`: replace the last sentence with `` ` I keep the best ${look.slots} new cards of that second search, and they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.` ``
+    - `storytellerCopy`, setting "Cards used": `` `up to ${v(about?.second_look.enabled ? about.second_look.max_cards : about?.judge.keep)}` ``.
+    - `frontend/app/ask/page.tsx`: next to `keptCount`, add
+      ```ts
+      // After a second look the Storyteller gets the final cards, not just the first round's.
+      const handedCount = judge2 && !judge2.check?.nothing ? judge2.finalCards.length : keptCount;
+      const foundCount = (scout?.length ?? 0) + (scout2?.results.length ?? 0);
+      ```
+      Use `handedCount` in place of `keptCount` in `progress`'s Storyteller line, in `storytellerSays(...)` and in `AnswerCard`'s `kept`. Use `foundCount` in that progress line and in `AnswerCard`'s `cardsFound`. The Judge and Scout lines stay on round 1's numbers.
+    - Update `frontend/lib/characters.test.ts` line 32 to the new sentence ("…and they join the first search's 5, so the Storyteller gets up to 7.").
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: Home's "keeps the best 5", the Judge tab's own lists.
+
+- [ ] 7.9i Second-look cards keep their citation numbers
+  - Do: in `frontend/components/ask/StepDetails.tsx`, `JudgeVerdict` takes an optional `offset = 0` and shows `r.n + offset` in each kept row's number (the React key stays `r.n`). The round 2 call passes `offset={judge2.finalCards.filter((c) => c.round === 1).length}`, so the new cards show as 6 and 7, matching "Handed to the Storyteller" and the answer's [n]. Round 1 is unchanged.
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the Storyteller tab's "card N" label.
+
+- [ ] 7.9j The Judge shows its scores and why a card was set aside (after 7.9i)
+  - Do: in `frontend/components/ask/StepDetails.tsx`, `JudgeVerdict`:
+    - Kept rows: the mono column reads `score 0.90 · was #1` (`rerank_score.toFixed(2)`); when `rerank_score` is `null` (the reranker failed), it stays `was #1`.
+    - Set-aside rows: each `<li>` gets the same mono score after the name, when there is one. A set-aside card whose `new_rank` is lower (better) than the highest `new_rank` among the kept cards was skipped by the per-document limit: add the note “2 already from this document” after it (use `about.judge.max_per_document` for the number).
+    - Under the "Set aside" heading, one line: round 1 “Only the best {keep} are kept, at most {max_per_document} from one document.”; round 2 “Only the best {slots} new cards are added.” (`JudgeVerdict` takes the line as a prop `rule`; both callers pass it from `useAbout()`, using "…" while it loads).
+    - CSS for the score and note in `StepDetails.module.css`, reusing the existing `.mono` and `.empty` styles; no new colours.
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: scores on the Scout tab, the "why" of the second look (review fix 6).
 - [ ] 7.10 (You) Release review on alt-main
   - Do: deploy `alt-main` as a Vercel preview (and the backend if 7.8 shipped) and check keyboard use, reduced motion, the four sizes, a live run, the example run and a failed request.
   - Done when: the owner signs off on the preview.

@@ -25,7 +25,7 @@ const ABOUT = {
   judge: { keep: 5, max_per_document: 2 },
   second_look: {
     enabled: true,
-    decider: "inception/mercury-decide:free",
+    decider: "inception/mercury-decide",
     threshold: 0.5,
     max_cards: 7,
     slots: 2,

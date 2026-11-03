@@ -125,7 +125,7 @@ More in [evals/README.md](evals/README.md).
 | Database | Supabase Postgres + pgvector (chunks only, no file storage) |
 | Embeddings and reranking | Voyage AI (`voyage-4`, `rerank-3-lite`) |
 | LLM | Google Gemini 3.5 Flash Lite via `LLM_MODEL` (OpenAI-compatible client; Claude also supported) ([ADR 003](docs/adr/003-llm-provider.md)) |
-| Second look | Mercury Decide (`inception/mercury-decide:free`) via OpenRouter (optional) |
+| Second look | Mercury Decide (`inception/mercury-decide`) via OpenRouter (optional) |
 
 ## Run it locally
 
