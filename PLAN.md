@@ -673,6 +673,73 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
     - CSS for the score and note in `StepDetails.module.css`, reusing the existing `.mono` and `.empty` styles; no new colours.
   - Done when: `make lint` and `make test` pass.
   - Out of scope: scores on the Scout tab, the "why" of the second look (review fix 6).
+- [x] 7.9k The footer counts the cards actually used
+  - Do: in `frontend/app/ask/page.tsx`, next to `handedCount`, add `const nothingOnFile = look?.nothing === true || judge2?.check?.nothing === true;` and pass `kept={nothingOnFile ? 0 : handedCount ?? 0}` to `AnswerCard`. In `frontend/components/ask/AnswerCard.tsx` the footer word "kept" becomes "used" (`{cardsFound} cards found · {kept} used · …`).
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the office bubbles and progress line.
+
+- [ ] 7.9l The second look says why, in plain words
+  - Do:
+    - `frontend/app/ask/page.tsx`: new state `lookComing` (`false`, reset on submit). In the round 1 `judge` done handler, `setLookComing(e.data?.second_look === true)`. Pass it to `StepDetails` as `lookComing`.
+    - `frontend/components/ask/StepDetails.tsx`:
+      - Prop `lookComing: boolean`. The "Enough to answer" banner's condition `(look !== null || phase("judge") !== "working")` becomes `(look !== null || !lookComing)`, so it never shows before the check has played.
+      - `decidedLine(look, threshold, nothingThreshold)` (thresholds from `about.second_look.threshold` / `nothing_threshold`, defaults 0.5 / 0.1; `pct(x) = Math.round(x * 100) + "%"`) returns:
+        - `nothing` with `relevant`: "Mercury Decide was only {relevant} sure the cards mention anything in your question (it stops below {nothing}), so no answer was written."
+        - `enough === null` with a `query`: "The language model read the cards, found something missing, and wrote a follow-up search."
+        - `enough === null`, no `query`: "The language model read the cards and found them enough."
+        - `decidedBy === "decider"`: "Mercury Decide was {enough} sure the cards fully answer the question (it needs {threshold}), so no second search was needed."
+        - not enough, with a `query`: "Mercury Decide was only {enough} sure the cards fully answer the question (it needs {threshold}), so the language model wrote a follow-up search."
+        - not enough, no `query`: "Mercury Decide was only {enough} sure (it needs {threshold}), but the language model found nothing to search for, so the cards go as they are."
+      - Round 2's "Who decided" block: keep the meter when `look.enough !== null`; below it one `<p>{decidedLine(…)}</p>`; delete the "Decided by the language model" chip and both "The language model decided…" lines.
+  - Done when: `make lint` and `make test` pass (update tests that check the old lines).
+  - Out of scope: asking the language model for a reason.
+
+- [ ] 7.9m The Judge tab tells the whole second look
+  - Do: in `frontend/lib/characters.ts`:
+    - `secondLookLine`, when on (`pct` as in 7.9l, from `look.threshold` / `look.nothing_threshold`):
+      - With a decider: `` ` The second look is on. Mercury Decide, a small decision model, gives the chance that the best cards fully answer the question: at ${pct(threshold)} or more they go straight to the Storyteller, and below ${pct(nothing)} that they mention anything in the question at all, no answer is written. Otherwise a short language-model call writes one follow-up search. Cards from your own folder are never sent to Mercury Decide; then the language model decides alone.` ``
+      - Without: `` ` The second look is on. A short language-model call decides whether the best cards are enough and, if not, writes one follow-up search.` ``
+      - Then always: `` ` The Scout searches once more, and I rank the new cards against the follow-up, not your question, because the linked text rarely repeats your words. I keep the best ${look.slots} new cards; they join the first search's ${v(about?.judge.keep)}, so the Storyteller gets up to ${look.max_cards}.` `` and, with a decider: `` ` Mercury Decide then checks the final cards once more: below ${pct(nothing)} that they answer any part of the question, no answer is written.` ``
+      - The raw model id is no longer printed.
+    - `judgeCopy`: `tech` adds `"Mercury Decide"` when `about?.second_look.decider`; `settings` adds `["Second look", on ? `on, needs ${pct(threshold)}` : "off"]`.
+    - `frontend/lib/characters.test.ts`: update the expectations to the new text ("Mercury Decide" instead of the model id; the new "join the first search's 5, so the Storyteller gets up to 7").
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the other characters' copy.
+
+- [ ] 7.9n "part 3 of 12" instead of "card 3"
+  - Do:
+    - `frontend/app/ask/page.tsx`: add
+      ```ts
+      /** "part 3 of 12": where a card sits in its document (just "part 3" until the library loads). */
+      function partOf(r: { source: "library" | "private"; document_id: number | null; title: string; position: number }) {
+        const total =
+          r.source === "library"
+            ? library?.find((d) => d.id === r.document_id)?.chunk_count
+            : texts.find((t) => t.title === r.title)?.chunks.length;
+        return total ? `part ${r.position + 1} of ${total}` : `part ${r.position + 1}`;
+      }
+      ```
+      and pass `partOf` to `StepDetails` and `AnswerCard` as a prop.
+    - `frontend/components/ask/StepDetails.tsx`: `where(r, part)` appends `part` as the last piece (`title · heading · page N · part 3 of 12`); every call passes `partOf(r)`. The Storyteller tab's `card {c.position + 1}` becomes `{partOf(c)}`.
+    - `frontend/components/ask/AnswerCard.tsx`: the Sources list's `card {c.position + 1}` becomes `{partOf(c)}`.
+    - `frontend/app/page.tsx` (Home example): `Site FAQ · card 2:` → `Site FAQ · part 2 of 4:`.
+  - Done when: `make lint` and `make test` pass (update tests that check "card N").
+  - Out of scope: the library panel's own "N cards" counts, the Upload page.
+
+- [ ] 7.9o The Scout shows where each card ranked
+  - Do:
+    - `frontend/lib/ask.ts`: `ScoutResult` gets `vector_rank: number | null; keyword_rank: number | null;` (the backend already sends them).
+    - `frontend/components/ask/StepDetails.tsx`, `ScoutPage`: each row's mono column shows `[r.vector_rank && `meaning #${r.vector_rank}`, r.keyword_rank && `words #${r.keyword_rank}`].filter(Boolean).join(" · ")` instead of `r.score.toFixed(3)`, with `title={`merged score ${r.score.toFixed(3)}`}` on that span. Above the list, `<p className={styles.empty}>Each card's place in the meaning search and in the word search; cards high in both come first.</p>`.
+  - Done when: `make lint` and `make test` pass.
+  - Out of scope: the map, the chips.
+
+- [ ] 7.9p Home FAQ matches the Ask page
+  - Do: in `frontend/app/page.tsx`, `BUILT`:
+    - "How does it search?": "By meaning and by words at once; a reranker then keeps the best 5. If they aren't enough, it searches once more and adds up to 2."
+    - "Can it make things up?": link text "See the Storyteller".
+    - "What if nothing fits?": "It says “I can't answer that from the available documents.” instead of guessing."
+  - Done when: `make lint` and `make test` pass (update tests that check the old text).
+  - Out of scope: the rest of Home.
 - [ ] 7.10 (You) Release review on alt-main
   - Do: deploy `alt-main` as a Vercel preview (and the backend if 7.8 shipped) and check keyboard use, reduced motion, the four sizes, a live run, the example run and a failed request.
   - Done when: the owner signs off on the preview.

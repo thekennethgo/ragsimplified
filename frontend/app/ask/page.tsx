@@ -406,6 +406,7 @@ function AskOffice() {
   const keptCount = judge ? judge.filter((r) => r.kept).length : null;
   // After a second look the Storyteller gets the final cards, not just the first round's.
   const handedCount = judge2 && !judge2.check?.nothing ? judge2.finalCards.length : keptCount;
+  const nothingOnFile = look?.nothing === true || judge2?.check?.nothing === true;
   const foundCount = (scout?.length ?? 0) + (scout2?.results.length ?? 0);
   const progress =
     shownPhase("storyteller") === "working"
@@ -528,7 +529,7 @@ function AskOffice() {
                 started={phase("translator") !== "waiting"}
                 progress={progress}
                 cardsFound={foundCount}
-                kept={handedCount ?? 0}
+                kept={nothingOnFile ? 0 : handedCount ?? 0}
                 targetFor={targetFor}
                 onOpen={openViewer}
               />

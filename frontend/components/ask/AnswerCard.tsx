@@ -54,7 +54,7 @@ export default function AnswerCard({
                 onOpenInViewer={onOpen}
               />
               <p className={styles.meta}>
-                {cardsFound} cards found · {kept} kept · {model || about?.llm.model || "…"}
+                {cardsFound} cards found · {kept} used · {model || about?.llm.model || "…"}
               </p>
             </>
           ) : started ? (
