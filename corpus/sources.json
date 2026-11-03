@@ -1,5 +1,5 @@
 {
-  "about-kenneth/cv.pdf": {
+  "about-kenneth/CV.pdf": {
     "source": "Written by Kenneth Go",
     "licence": "All rights reserved"
   },
@@ -12,6 +12,10 @@
     "licence": "All rights reserved"
   },
   "about-kenneth/personal.md": {
+    "source": "Written by Kenneth Go",
+    "licence": "All rights reserved"
+  },
+  "about-kenneth/skills.md": {
     "source": "Written by Kenneth Go",
     "licence": "All rights reserved"
   },
@@ -315,6 +319,10 @@
     "licence": "CC BY-SA 4.0",
     "note": "revision 1364195936"
   },
+  "rag-basics/glossary.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
+  },
   "rag-basics/information-retrieval.md": {
     "source": "Wikipedia",
     "url": "https://en.wikipedia.org/wiki/Information_retrieval",
@@ -326,6 +334,10 @@
     "url": "https://en.wikipedia.org/wiki/Learning_to_rank",
     "licence": "CC BY-SA 4.0",
     "note": "revision 1360702101"
+  },
+  "rag-basics/rag-vs-fine-tuning.md": {
+    "source": "Written for this project",
+    "licence": "MIT"
   },
   "rag-basics/retrieval-augmented-generation.md": {
     "source": "Wikipedia",

@@ -13,17 +13,20 @@ Written by Kenneth Go about himself. Only public contact details; no phone numbe
 | `personal.md` | Written by Kenneth Go | All rights reserved |
 | `experience-and-projects.md` | Written by Kenneth Go | All rights reserved |
 | `faq-about-kenneth.md` | Written by Kenneth Go | All rights reserved |
-| `cv.pdf` | Kenneth Go's CV (no phone number) | All rights reserved |
+| `skills.md` | Written by Kenneth Go | All rights reserved |
+| `CV.pdf` | Kenneth Go's CV (no phone number) | All rights reserved |
 
 ## RAG basics (`rag-basics/`)
 
-Wikipedia articles on retrieval, trimmed to at most 3,000 words.
+Wikipedia articles on retrieval, trimmed to at most 3,000 words, and two plain-English explainers written for this project (MIT, same as the repository).
 
 | File | Source | Licence |
 |---|---|---|
+| `glossary.md` | Written for this project | MIT |
 | `full-text-search.md` | https://en.wikipedia.org/wiki/Full-text_search (revision 1364195936) | CC BY-SA 4.0 |
 | `information-retrieval.md` | https://en.wikipedia.org/wiki/Information_retrieval (revision 1375036430) | CC BY-SA 4.0 |
 | `learning-to-rank.md` | https://en.wikipedia.org/wiki/Learning_to_rank (revision 1360702101) | CC BY-SA 4.0 |
+| `rag-vs-fine-tuning.md` | Written for this project | MIT |
 | `retrieval-augmented-generation.md` | https://en.wikipedia.org/wiki/Retrieval-augmented_generation (revision 1377227095) | CC BY-SA 4.0 |
 | `semantic-search.md` | https://en.wikipedia.org/wiki/Semantic_search (revision 1376135669) | CC BY-SA 4.0 |
 | `vector-database.md` | https://en.wikipedia.org/wiki/Vector_database (revision 1374243120) | CC BY-SA 4.0 |

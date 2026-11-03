@@ -4,20 +4,70 @@
     {
       "name": "backend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd backend && set -a && . ../.env && set +a && .venv/bin/uvicorn app.main:app --port 8000"],
+      "runtimeArgs": [
+        "-c",
+        "cd backend && set -a && . ../.env && set +a && .venv/bin/uvicorn app.main:app --port 8000"
+      ],
       "port": 8000
     },
     {
       "name": "frontend",
       "runtimeExecutable": "bash",
-      "runtimeArgs": ["-c", "cd frontend && set -a && . ../.env && set +a && npm run dev"],
+      "runtimeArgs": [
+        "-c",
+        "cd frontend && set -a && . ../.env && set +a && npm run dev"
+      ],
       "port": 3000
     },
     {
       "name": "mockup",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8765"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765"
+      ],
       "port": 8765
+    },
+    {
+      "name": "review-backend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd backend && set -a && . ../.env && set +a && CORS_ORIGINS=http://localhost:3000,http://localhost:3001 .venv/bin/uvicorn app.main:app --port 8000"
+      ],
+      "port": 8000,
+      "autoPort": false
+    },
+    {
+      "name": "review-before",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd frontend && set -a && . ../.env && set +a && npx next dev -p 3000"
+      ],
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "review-after",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd frontend && set -a && . ../.env && set +a && npx next dev -p 3001"
+      ],
+      "port": 3001,
+      "autoPort": false
+    },
+    {
+      "name": "review-home",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/step-7-9a-home-bc6361/frontend && set -a && . ../../../../.env && set +a && npx next dev -p 3002"
+      ],
+      "port": 3002,
+      "autoPort": false
     }
   ]
 }
