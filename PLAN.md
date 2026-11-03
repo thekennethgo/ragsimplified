@@ -636,7 +636,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: falling back on 5xx or timeouts, a fallback for the embedder or reranker, new tests (owner's rule for now).
 
-- [ ] 7.9g Home: a true "With RAG" example
+- [x] 7.9g Home: a true "With RAG" example
   - Do: in `frontend/app/page.tsx`, the "Same question, both ways" comparison:
     - Question: “How long can my question be here?”
     - Model on its own: “Up to 4,000 characters.” (the "Confident, and made up." line stays).

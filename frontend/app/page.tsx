@@ -203,14 +203,14 @@ export default function Home() {
           <div className={styles.compare}>
             <p className={styles.small}>
               Same question, both ways:{" "}
-              <strong>“How many questions can I ask here per day?”</strong>
+              <strong>“How long can my question be here?”</strong>
             </p>
             <div className={styles.answerBox}>
               <div>
                 <h3>Model on its own</h3>
                 <span className={styles.bad}>No source</span>
               </div>
-              <p>“Up to 100 a day.”</p>
+              <p>“Up to 4,000 characters.”</p>
               <p className={styles.small}>Confident, and made up.</p>
             </div>
             <div className={`${styles.answerBox} ${styles.withRag}`}>
@@ -219,11 +219,11 @@ export default function Home() {
                 <span className={styles.good}>1 source</span>
               </div>
               <p>
-                “20 a day. <span className={styles.cite}>1</span>”
+                “1,000 characters. <span className={styles.cite}>1</span>”
               </p>
               <p className={styles.small}>
-                <span className={styles.mono}>[1]</span> Site rules · card 3:
-                “…20 questions per visitor each day…”
+                <span className={styles.mono}>[1]</span> Site FAQ · card 2:
+                “…a question at most 1,000 characters…”
               </p>
             </div>
           </div>
