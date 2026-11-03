@@ -149,7 +149,17 @@ function ScoutPage({
 }
 
 /** The Judge's verdict on a list of candidates: the kept rows and the cards set aside. */
-function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title: string; none: string }) {
+function JudgeVerdict({
+  results,
+  title,
+  none,
+  offset = 0,
+}: {
+  results: JudgeResult[];
+  title: string;
+  none: string;
+  offset?: number;
+}) {
   const kept = results.filter((r) => r.kept).sort((a, b) => (a.n ?? 0) - (b.n ?? 0));
   const setAside = results.filter((r) => !r.kept);
   return (
@@ -162,7 +172,7 @@ function JudgeVerdict({ results, title, none }: { results: JudgeResult[]; title:
           <ol className={styles.rows}>
             {kept.map((r) => (
               <li key={r.n}>
-                <span className={styles.num}>{r.n}</span>
+                <span className={styles.num}>{(r.n ?? 0) + offset}</span>
                 <span className={styles.name}>{where(r)}</span>
                 <span className={styles.mono}>was #{r.old_rank}</span>
               </li>
@@ -464,6 +474,7 @@ export default function StepDetails({
                         results={judge2.results}
                         title={`New cards, ranked against “${judge2.query}”`}
                         none="None of the new cards were kept."
+                        offset={judge2.finalCards.filter((c) => c.round === 1).length}
                       />
                       {judge2.check?.nothing && (
                         <div className={styles.banner}>

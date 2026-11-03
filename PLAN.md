@@ -660,7 +660,7 @@ After v1.0.0. The Ask page becomes one screen: answer first, the office animatio
   - Done when: `make lint` and `make test` pass.
   - Out of scope: Home's "keeps the best 5", the Judge tab's own lists.
 
-- [ ] 7.9i Second-look cards keep their citation numbers
+- [x] 7.9i Second-look cards keep their citation numbers
   - Do: in `frontend/components/ask/StepDetails.tsx`, `JudgeVerdict` takes an optional `offset = 0` and shows `r.n + offset` in each kept row's number (the React key stays `r.n`). The round 2 call passes `offset={judge2.finalCards.filter((c) => c.round === 1).length}`, so the new cards show as 6 and 7, matching "Handed to the Storyteller" and the answer's [n]. Round 1 is unchanged.
   - Done when: `make lint` and `make test` pass.
   - Out of scope: the Storyteller tab's "card N" label.
